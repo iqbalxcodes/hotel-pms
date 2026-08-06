@@ -1,0 +1,22 @@
+.table-container{
+    width: fit-content;
+}
+
+
+.reservation-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    width:100%;
+}
+
+
+.reservation-header h2{
+    margin:0;
+}
+
+
+#clock{
+    font-size:16px;
+    color:#555;
+}
