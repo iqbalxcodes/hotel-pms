@@ -62,10 +62,15 @@ function renderReservations(reservations){
 // Initial Load
 // ======================================================
 
-document.addEventListener("DOMContentLoaded", async() => {
-    await simulateReservationStatus();
+document.addEventListener("DOMContentLoaded", async () => {
+
+    if (typeof simulateReservationStatus === "function") {
+        await simulateReservationStatus();
+    }
+
     updateToolbar();
-    loadReservations();
+    await loadReservations();
+
 });
 
 const form = document.getElementById("reservationForm");
