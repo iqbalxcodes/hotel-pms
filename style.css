@@ -1,22 +1,19 @@
 .table-container{
-    width: fit-content;
+    width:100%;
 }
-
 
 .reservation-header{
     display:flex;
     justify-content:space-between;
     align-items:center;
+    margin-bottom:10px;
+}
+
+.table-container table{
     width:100%;
+    border-collapse:collapse;
 }
 
-
-.reservation-header h2{
-    margin:0;
-}
-
-
-#clock{
-    font-size:16px;
-    color:#555;
+#toolbar{
+    margin-bottom:10px;
 }
