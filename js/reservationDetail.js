@@ -429,37 +429,43 @@ async function saveEditMode(){
 
     FIELD_CONFIG.forEach(field => {
 
-        if(field.editable === false){
-
-            return;
-
-        }
-
         if(field.group){
-
-            // combine first/last into a single db column once,
-            // handled separately below to avoid double work
+            // combine first/last, ditangani terpisah di bawah
             return;
-
         }
 
-        let value = rawValues[field.id];
-
-        if(field.type === "number"){
-
-            value = value === "" ? null : Number(value);
-
+        if(!field.column){
+            // pseudo-field murni tampilan (mis. det_nights), tidak disimpan
+            return;
         }
 
-        if(field.type === "date"){
+        let value;
 
-            value = value === "" ? null : value;
+        if(field.editable === false){
+            // field non-editable (mis. confirmation_no) tetap harus disimpan
+            // apa adanya dari data yang sudah ada, bukan dari input
+            value = currentReservation[field.column];
+        } else {
 
+            value = rawValues[field.id];
+
+            if(field.type === "number"){
+                value = value === "" ? null : Number(value);
+            }
+
+            if(field.type === "date"){
+                value = value === "" ? null : value;
+            }
         }
 
         payload[field.column] = value;
 
     });
+
+    // pastikan status ikut terkirim khusus saat reservasi baru
+    if(isNewReservation){
+        payload.status = currentReservation.status || "RESERVED";
+    }
 
     // combine guest_name
     const guestFirst = rawValues["det_first_name"] ?? "";
