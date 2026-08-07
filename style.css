@@ -32,11 +32,11 @@ h1 {
 .table-container {
     flex: 1 1 auto;
     min-height: 0;
-    width: 100%;
+    width: auto;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    margin: 8px 16px 8px 16px;
+    margin: 8px 24px 8px 24px;
 }
 
 #toolbar {
@@ -50,8 +50,23 @@ h1 {
     overflow-y: auto;
 }
 
-.reservation-header {
-    flex: none;
+
+
+.reservation-controls {
+
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+}
+
+
+#clock {
+    margin-left: auto;
 }
 
 
@@ -80,8 +95,8 @@ h1 {
 
 .reservation-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    position: relative;
     border-bottom: 1px solid #ddd;
     margin-bottom: 12px;
     padding-bottom: 6px;
@@ -103,7 +118,6 @@ h1 {
     border-collapse: collapse;
     border: none;
     margin-top: 8px;
-    margin-right: 5px;
 }
 
 

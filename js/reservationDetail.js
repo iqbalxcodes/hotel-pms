@@ -544,20 +544,71 @@ document.addEventListener("keydown", (e) => {
 
 async function loadReservationDetail(redirectOnMissingId = true){
 
-    const id = getReservationIdFromUrl();
+    const params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+
+    const isNew =
+        params.get("new");
+
+
+    const id =
+        params.get("id");
+
+
+    console.log("NEW MODE:", isNew);
+    console.log("ID:", id);
+
+
+    // ================================
+    // CREATE NEW RESERVATION
+    // ================================
+
+    if(isNew === "true"){
+
+        isNewReservation = true;
+
+
+        currentReservation =
+            createEmptyReservation();
+
+
+        renderDetail(
+            currentReservation
+        );
+
+
+        enterEditMode();
+
+
+        return;
+
+    }
+
+
+    // ================================
+    // LOAD EXISTING RESERVATION
+    // ================================
 
     if(!id){
 
         if(redirectOnMissingId){
 
-            alert("Reservation ID tidak ditemukan di URL");
-            window.location.href = "index.html";
+            alert(
+                "Reservation ID tidak ditemukan di URL"
+            );
+
+            window.location.href =
+                "index.html";
 
         }
 
         return;
 
     }
+
 
     const { data: res, error } =
         await supabaseClient
@@ -566,13 +617,19 @@ async function loadReservationDetail(redirectOnMissingId = true){
         .eq("id", id)
         .single();
 
+
     if(error || !res){
 
         console.error(error);
-        alert("Gagal memuat detail reservasi");
+
+        alert(
+            "Gagal memuat detail reservasi"
+        );
+
         return;
 
     }
+
 
     currentReservation = res;
 
