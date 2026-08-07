@@ -471,10 +471,6 @@ async function saveEditMode(){
         payload.status = currentReservation.status || "RESERVED";
     }
 
-    // pastikan status ikut terkirim khusus saat reservasi baru
-    if(isNewReservation){
-        payload.status = currentReservation.status || "RESERVED";
-    }
 
     // combine guest_name
     const guestFirst = rawValues["det_first_name"] ?? "";
@@ -501,32 +497,38 @@ async function saveEditMode(){
         const { error: insertError } =
             await supabaseClient
             .from("reservation")
-            .insert(payload);
+            .insert(payload)
+            .select()
+            .single();
 
         error = insertError;
 
-    }
-    else{
+        if (!error && insertedData) {
+            isNewReservation = false;
+            const newUrl = `reservationDetail.html?id=${insertedData.id}`;
 
-        const { error: updateError } =
-            await supabaseClient
-            .from("reservation")
-            .update(payload)
-            .eq("id", currentReservation.id);
+            window.history.replaceState(null, "", newUrl);
+        }else{
 
-        error = updateError;
+            const { error: updateError } =
+                await supabaseClient
+                .from("reservation")
+                .update(payload)
+                .eq("id", currentReservation.id);
 
-    }
-
-if(error){
-
-        console.error(error);
-        alert("Gagal menyimpan perubahan: " + error.message);
-        return;
+            error = updateError;
+        }
 
     }
 
-    await loadReservationDetail(false);
+    if(error){
+
+            console.error(error);
+            alert("Gagal menyimpan perubahan: " + error.message);
+            return;
+
+        }
+
     await loadReservationDetail(false);
 
     isEditMode = false;
