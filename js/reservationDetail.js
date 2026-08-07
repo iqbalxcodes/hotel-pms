@@ -479,11 +479,38 @@ async function saveEditMode(){
         .filter(part => part && part.trim() !== "")
         .join(" ");
 
-    const { error } =
-        await supabaseClient
-        .from("reservation")
-        .update(payload)
-        .eq("id", currentReservation.id);
+    let error;
+
+    if(isNewReservation){
+
+        const { error: insertError } =
+            await supabaseClient
+            .from("reservation")
+            .insert(payload);
+
+        error = insertError;
+
+    }
+    else{
+
+        const { error: updateError } =
+            await supabaseClient
+            .from("reservation")
+            .update(payload)
+            .eq("id", currentReservation.id);
+
+        error = updateError;
+
+    }
+
+
+    if(error){
+
+        console.error(error);
+        alert("Gagal menyimpan perubahan");
+        return;
+
+    }
 
     if(error){
 

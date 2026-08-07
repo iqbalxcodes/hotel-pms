@@ -39,38 +39,71 @@
     <div class="table-container detail-card">
 
         <div class="reservation-header">
+
+    <!-- LEFT -->
+        <div class="header-title">
             <h3>Reservation List</h3>
+        </div>
 
-            <div class="reservation-controls">
 
-                <button onclick="changeDate(-1)">◀</button>
+        <!-- CENTER -->
+        <div class="header-menu">
 
-                <select id="dateScope" onchange="changeDateScope(this.value)">
-                    <option value="today">Today's</option>
-                    <option value="entire">Entire</option>
-                </select>
+            <button onclick="changeDate(-1)">
+                ◀
+            </button>
 
-                <select id="modeSelect" onchange="changeMode(this.value)">
-                    <option value="arrival">Arrival</option>
-                    <option value="departure">Departure</option>
-                    <option value="inhouse">In House</option>
-                    <option value="pending">Pending</option>
-                    <option value="cancelled">Cancelled</option>
-                </select>
 
-                <input 
-                    type="date" 
-                    id="currentDate" 
-                    onchange="changeSelectedDate(this.value)"
-                >
+            <select id="dateScope" onchange="changeDateScope(this.value)">
+                <option value="today">
+                    Today's
+                </option>
+                <option value="entire">
+                    Entire
+                </option>
+            </select>
 
-                <button onclick="changeDate(1)">▶</button>
 
-                <span id="clock"></span>
+            <select id="modeSelect" onchange="changeMode(this.value)">
+                <option value="arrival">
+                    Arrival
+                </option>
+                <option value="departure">
+                    Departure
+                </option>
+                <option value="inhouse">
+                    In House
+                </option>
+                <option value="pending">
+                    Pending
+                </option>
+                <option value="cancelled">
+                    Cancelled
+                </option>
+            </select>
 
-            </div>
+
+            <button onclick="changeDate(1)">
+                ▶
+            </button>
 
         </div>
+
+
+        <!-- RIGHT -->
+        <div class="header-date">
+
+            <input 
+                type="date"
+                id="currentDate"
+                onchange="changeSelectedDate(this.value)"
+            >
+
+            <span id="clock"></span>
+
+        </div>
+
+    </div>
 
         <div id="toolbar">
 

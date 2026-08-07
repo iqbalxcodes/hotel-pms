@@ -2,9 +2,10 @@
    LOCK PAGE SCROLL — only .table-scroll scrolls
    ====================================================== */
 
-html, body {
-    height: 100vh;   /* fallback untuk browser lama yg belum support dvh */
-    height: 100dvh;  /* browser modern: tinggi viewport yang BENERAN kelihatan */
+html,
+body {
+    height: 100vh;
+    height: 100dvh;
     margin: 0;
     overflow: hidden;
 }
@@ -34,9 +35,11 @@ h1 {
     min-height: 0;
     width: auto;
     box-sizing: border-box;
+
     display: flex;
     flex-direction: column;
-    margin: 8px 24px 8px 24px;
+
+    margin: 8px 24px;
 }
 
 #toolbar {
@@ -50,13 +53,9 @@ h1 {
     overflow-y: auto;
 }
 
-#clock {
-    margin-left: auto;
-}
-
 
 /* ======================================================
-   CARD STYLE (Dipakai Detail Card & Container Tabel)
+   CARD STYLE
    ====================================================== */
 
 .detail-card {
@@ -68,29 +67,112 @@ h1 {
 }
 
 
-/* Header di dalam Card/Tabel */
-
-.detail-card h3,
-.reservation-header h3 {
-    margin-top: 0;
-    margin-bottom: 12px;
-    border-bottom: 1px solid #ddd;
-    padding-bottom: 6px;
-}
+/* ======================================================
+   RESERVATION HEADER
+   3 PARTS:
+   
+   Reservation List | Menu | Date
+   ====================================================== */
 
 .reservation-header {
-    display: flex;
+
+    display: grid;
+
+    /*
+       LEFT  = Reservation List
+       CENTER = menu
+       RIGHT = date
+    */
+    grid-template-columns: 1fr auto 1fr;
+
     align-items: center;
-    position: relative;
+
     border-bottom: 1px solid #ddd;
+
     margin-bottom: 12px;
+
     padding-bottom: 6px;
+
 }
 
-.reservation-header h3 {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
+
+/* ------------------------------------------------------
+   PART 1 — Reservation List
+   ------------------------------------------------------ */
+
+.header-title {
+    min-width: 0;
+}
+
+.header-title h3 {
+
+    margin: 0;
+
+    border: none;
+
+    padding: 0;
+
+}
+
+
+/* ------------------------------------------------------
+   PART 2 — Dropdown / Navigation Menu
+   ------------------------------------------------------ */
+
+.header-menu {
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    white-space: nowrap;
+
+}
+
+
+.header-menu button,
+.header-menu select {
+
+    font-size: 13px;
+
+}
+
+
+/* ------------------------------------------------------
+   PART 3 — Date
+   ------------------------------------------------------ */
+
+.header-date {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: flex-end;
+
+    gap: 12px;
+
+}
+
+
+.header-date input {
+
+    font-size: 13px;
+
+}
+
+
+#clock {
+
+    color: #666;
+
+    font-size: 13px;
+
+    white-space: nowrap;
+
 }
 
 
@@ -106,7 +188,9 @@ h1 {
 }
 
 
-/* Sticky table header */
+/* ======================================================
+   STICKY TABLE HEADER
+   ====================================================== */
 
 .table-container thead th {
     position: sticky;
@@ -115,34 +199,45 @@ h1 {
 }
 
 
-/* Header Kolom Tabel */
+/* ======================================================
+   HEADER KOLOM TABEL
+   ====================================================== */
 
 .table-container th {
     text-align: left;
     padding: 10px 8px;
+
     background-color: #fafafa;
+
     border-bottom: 1px solid #ddd;
+
     color: #444;
+
     font-size: 13px;
     font-weight: 600;
 }
 
 
-/* Cell/Isi Data Tabel */
+/* ======================================================
+   CELL / ISI DATA TABEL
+   ====================================================== */
 
 .table-container td {
     padding: 10px 8px;
+
     border-bottom: 1px solid #eee;
+
     font-size: 14px;
 }
-
 
 .table-container tr:last-child td {
     border-bottom: none;
 }
 
 
-/* Hover */
+/* ======================================================
+   TABLE HOVER
+   ====================================================== */
 
 #reservationTable tr {
     cursor: pointer;
@@ -179,6 +274,7 @@ h1 {
 
 .detail-card-tall {
     grid-row: span 2;
+
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -194,8 +290,10 @@ h1 {
 
 .detail-card label {
     display: block;
+
     font-size: 12px;
     color: #777;
+
     margin-top: 8px;
 }
 
@@ -209,15 +307,23 @@ h1 {
 .billing-total {
     display: flex;
     justify-content: space-between;
+
     border-top: 1px solid #ddd;
+
     margin-top: auto;
     padding-top: 12px;
+
     font-weight: bold;
 }
 
 
+/* ======================================================
+   DETAIL TOPBAR ACTIONS
+   ====================================================== */
+
 .topbar-actions {
     margin-left: auto;
+
     display: flex;
     gap: 6px;
 }
@@ -225,10 +331,14 @@ h1 {
 
 .icon-btn {
     background: #fff;
+
     border: 1px solid #ccc;
     border-radius: 4px;
+
     cursor: pointer;
+
     padding: 4px 10px;
+
     font-size: 14px;
 }
 
@@ -244,22 +354,35 @@ h1 {
 }
 
 
+/* ======================================================
+   DETAIL EDIT INPUT
+   ====================================================== */
+
 .detail-card .value input,
 .detail-card .value textarea {
+
     width: 100%;
+
     font: inherit;
     font-weight: 600;
+
     border: 1px solid #999;
     border-radius: 4px;
+
     padding: 4px 6px;
+
     box-sizing: border-box;
+
     background: #fffef2;
 }
 
 
 .detail-card .value textarea {
+
     min-height: 80px;
+
     resize: vertical;
+
 }
 
 
@@ -273,31 +396,50 @@ h1 {
    ====================================================== */
 
 #statusBar {
+
     flex: none;
+
     display: flex;
     align-items: center;
+
     height: 40px;
+
     border-top: 1px solid #ccc;
+
     background: #f5f5f5;
+
     font-size: 13px;
     color: #333;
+
 }
 
 
 #statusBar > div {
+
     padding: 0 12px;
+
     white-space: nowrap;
+
 }
 
 
 #statusBar > div + div {
+
     border-left: 1px solid #ddd;
+
 }
 
 
+/* ======================================================
+   USER AREA
+   ====================================================== */
+
 #userArea {
+
     cursor: pointer;
+
     flex: none;
+
 }
 
 
@@ -306,74 +448,132 @@ h1 {
 }
 
 
+/* ======================================================
+   CONTEXT AREA
+   ====================================================== */
+
 #contextArea {
+
     flex: 1 1 auto;
+
     overflow: hidden;
+
     text-overflow: ellipsis;
+
     display: flex;
     align-items: center;
+
     gap: 8px;
+
 }
 
+
+/* ======================================================
+   PAGINATION INFO
+   ====================================================== */
 
 #paginationInfo {
+
     flex: none;
+
     cursor: pointer;
+
     position: relative;
+
 }
 
 
+/* ======================================================
+   PAGINATION NAV
+   ====================================================== */
+
 #paginationNav {
+
     flex: none;
+
     display: flex;
+
     align-items: center;
+
     gap: 4px;
+
 }
 
 
 #paginationNav button {
+
     border: 1px solid #ccc;
+
     background: #fff;
+
     border-radius: 3px;
+
     padding: 2px 8px;
+
     cursor: pointer;
+
     font-size: 12px;
+
 }
 
 
 #paginationNav button:disabled {
+
     opacity: 0.4;
+
     cursor: default;
+
 }
 
 
 #paginationNav button.active-page {
+
     background: #333;
+
     color: #fff;
+
     border-color: #333;
+
 }
 
 
+/* ======================================================
+   ROWS PER PAGE
+   ====================================================== */
+
 .rows-per-page-popover {
+
     display: flex;
+
     align-items: center;
+
     gap: 6px;
+
 }
 
 
 .rows-per-page-popover button,
 .rows-per-page-popover input {
+
     border: 1px solid #ccc;
+
     border-radius: 3px;
+
     padding: 2px 6px;
+
     font-size: 12px;
+
     cursor: pointer;
+
 }
 
 
 .rows-per-page-popover input {
+
     width: 50px;
+
     cursor: text;
+
 }
 
 
@@ -394,70 +594,245 @@ h1 {
 }
 
 
+/* ======================================================
+   CONFIRM MESSAGE
+   ====================================================== */
+
 .status-confirm {
+
     color: #e65100;
+
     display: flex;
+
     align-items: center;
+
     gap: 8px;
+
 }
 
 
 .status-confirm button,
 .logout-confirm button,
 .login-form button {
+
     border: 1px solid #ccc;
+
     border-radius: 3px;
+
     padding: 2px 10px;
+
     cursor: pointer;
+
     background: #fff;
+
     font-size: 12px;
+
 }
 
+
+/* ======================================================
+   LOGOUT
+   ====================================================== */
 
 .logout-confirm {
+
     display: flex;
+
     align-items: center;
+
     gap: 8px;
+
 }
 
 
+/* ======================================================
+   LOGIN
+   ====================================================== */
+
 .login-form {
+
     display: flex;
+
     align-items: center;
+
     gap: 6px;
+
 }
 
 
 .login-form input {
+
     border: 1px solid #ccc;
+
     border-radius: 3px;
+
     padding: 2px 6px;
+
     font-size: 12px;
+
     width: 110px;
-}
-
-.reservation-controls {
-
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-
-    display: flex;
-    align-items: center;
-    gap: 6px;
 
 }
 
 
-.reservation-controls button,
-.reservation-controls select,
-.reservation-controls input {
-    font-size: 13px;
+/* ======================================================
+   MOBILE / SMALL SCREEN
+   ====================================================== */
+
+@media (max-width: 700px) {
+
+    /*
+       Desktop:
+       
+       Reservation List | Menu | Date
+
+
+       Mobile:
+
+       Reservation List
+       Menu
+       Date
+    */
+
+    .reservation-header {
+
+        display: flex;
+
+        flex-direction: column;
+
+        align-items: stretch;
+
+        gap: 10px;
+
+    }
+
+
+    /* --------------------------------------------------
+       Reservation List
+       -------------------------------------------------- */
+
+    .header-title {
+
+        width: 100%;
+
+        text-align: left;
+
+    }
+
+
+    /* --------------------------------------------------
+       Menu
+       -------------------------------------------------- */
+
+    .header-menu {
+
+        width: 100%;
+
+        justify-content: flex-start;
+
+        flex-wrap: wrap;
+
+    }
+
+
+    /* --------------------------------------------------
+       Date
+       -------------------------------------------------- */
+
+    .header-date {
+
+        width: 100%;
+
+        justify-content: flex-start;
+
+    }
+
+
+    #currentDate {
+
+        width: 100%;
+
+        box-sizing: border-box;
+
+    }
+
+
+    #clock {
+
+        display: none;
+
+    }
+
+
+    /* --------------------------------------------------
+       Table container
+       -------------------------------------------------- */
+
+    .table-container {
+
+        margin-left: 8px;
+        margin-right: 8px;
+
+        padding-left: 10px;
+        padding-right: 10px;
+
+    }
+
+
+    /* --------------------------------------------------
+       Bottom status bar
+       -------------------------------------------------- */
+
+    #statusBar {
+
+        overflow-x: auto;
+
+    }
+
 }
 
 
-#clock {
-    margin-left: 12px;
-    color: #666;
-    font-size: 13px;
+/* ======================================================
+   VERY SMALL SCREEN
+   ====================================================== */
+
+@media (max-width: 420px) {
+
+    .header-menu {
+
+        display: grid;
+
+        grid-template-columns: auto 1fr;
+
+        gap: 6px;
+
+    }
+
+
+    .header-menu select {
+
+        min-width: 0;
+
+        width: 100%;
+
+    }
+
+
+    .header-menu button {
+
+        min-width: 32px;
+
+    }
+
+
+    .table-container {
+
+        margin-left: 4px;
+        margin-right: 4px;
+
+        padding-left: 8px;
+        padding-right: 8px;
+
+    }
+
 }
