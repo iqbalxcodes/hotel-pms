@@ -43,9 +43,9 @@ const FIELD_CONFIG = [
     { id: "det_room_type",      column: "room_type",     type: "text" },
     { id: "det_bed_type",       column: "bed_type",      type: "text" },
     { id: "det_breakfast",      column: "breakfast_qty", type: "number", step: "1" },
-    { id: "det_dinner",         column: "dinner",        type: "text" },
-    { id: "det_parking",        column: "parking",       type: "text" },
-    { id: "det_shuttle",        column: "shuttle",       type: "text" },
+    { id: "det_dinner",         column: "dinner",        type: "boolean" },
+    { id: "det_parking",        column: "parking",       type: "boolean" },
+    { id: "det_shuttle",        column: "shuttle",       type: "boolean" },
 
     { id: "det_sg_first_name",  column: null,   group: "secondary_guest_name", part: "first", type: "text" },
     { id: "det_sg_last_name",   column: null,   group: "secondary_guest_name", part: "last",  type: "text" },
@@ -254,9 +254,9 @@ function renderDetail(res){
     setDisplay("det_room_type", res.room_type);
     setDisplay("det_bed_type", res.bed_type);
     setDisplay("det_breakfast", res.breakfast_qty);
-    setDisplay("det_dinner", res.dinner);
-    setDisplay("det_parking", res.parking);
-    setDisplay("det_shuttle", res.shuttle);
+    setDisplay("det_dinner", res.dinner ? "Yes" : "No");
+    setDisplay("det_parking", res.parking ? "Yes" : "No");
+    setDisplay("det_shuttle", res.shuttle ? "Yes" : "No");
 
     setDisplay("det_sg_first_name", secondaryGuestName.first);
     setDisplay("det_sg_last_name", secondaryGuestName.last);
@@ -349,6 +349,13 @@ function enterEditMode(){
             inputHtml = `<input type="number" step="${field.step || "1"}" class="inline-edit-input" value="${rawValue}">`;
 
         }
+
+        else if(field.type === "boolean"){
+
+            inputHtml = `<input type="checkbox" class="inline-edit-input" ${rawValue ? "checked" : ""}>`;
+
+        }
+
         else{
 
             inputHtml = `<input type="text" class="inline-edit-input" value="${String(rawValue).replace(/"/g, "&quot;")}">`;
@@ -410,7 +417,8 @@ async function saveEditMode(){
 
         const input = container.querySelector("input, textarea");
 
-        rawValues[field.id] = input ? input.value : "";
+        rawValues[field.id] =
+            field.type === "boolean" ? input.checked : input.value;
 
     });
 
@@ -439,28 +447,29 @@ async function saveEditMode(){
             return;
         }
 
-        let value;
+        let value = rawValues[field.id];
 
-        if(field.editable === false){
-            // field non-editable (mis. confirmation_no) tetap harus disimpan
-            // apa adanya dari data yang sudah ada, bukan dari input
-            value = currentReservation[field.column];
-        } else {
-
-            value = rawValues[field.id];
-
-            if(field.type === "number"){
-                value = value === "" ? null : Number(value);
-            }
-
-            if(field.type === "date"){
-                value = value === "" ? null : value;
-            }
+        if(field.type === "number"){
+            value = value === "" ? null : Number(value);
+        }
+        else if(field.type === "date"){
+            value = value === "" ? null : value;
+        }
+        else if(field.type === "boolean"){
+            value = Boolean(value);
+        }
+        else if(field.type === "text" || field.type === "textarea"){
+            value = value === "" ? null : value;
         }
 
         payload[field.column] = value;
 
     });
+
+    if(isNewReservation){
+        payload.confirmation_no = currentReservation.confirmation_no;
+        payload.status = currentReservation.status || "RESERVED";
+    }
 
     // pastikan status ikut terkirim khusus saat reservasi baru
     if(isNewReservation){
