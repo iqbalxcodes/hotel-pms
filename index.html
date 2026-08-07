@@ -82,6 +82,17 @@
                 </option>
             </select>
 
+            <div class="header-date">
+    
+                <input 
+                    type="date"
+                    id="currentDate"
+                    onchange="changeSelectedDate(this.value)"
+                >
+    
+                <span id="clock"></span>
+    
+            </div>
 
             <button onclick="changeDate(1)">
                 ▶
@@ -91,17 +102,6 @@
 
 
         <!-- RIGHT -->
-        <div class="header-date">
-
-            <input 
-                type="date"
-                id="currentDate"
-                onchange="changeSelectedDate(this.value)"
-            >
-
-            <span id="clock"></span>
-
-        </div>
 
     </div>
 
