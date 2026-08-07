@@ -20,6 +20,16 @@ let currentMode = "arrival";
 // pending
 // cancelled
 
+// ======================================================
+// Pagination & Search State
+// ======================================================
+
+let currentPage = 1;
+let rowsPerPage = 25; // number or "all"
+let totalCount = 0;
+
+let activeSearchKeyword = "";
+
 
 
 // ======================================================
@@ -268,60 +278,46 @@ function buildReservationQuery(){
 function changeMode(value){
 
     currentMode = value;
+    currentPage = 1;
 
     updateToolbar();
 
-    loadReservations();
+    refreshTable();
 
 }
-
-
 
 function changeDateScope(value){
 
     currentScope = value;
+    currentPage = 1;
 
     updateToolbar();
 
-    loadReservations();
+    refreshTable();
 
 }
-
-
 
 function changeDate(step){
 
+    currentDate.setDate(currentDate.getDate() + step);
 
-    currentDate.setDate(
-
-        currentDate.getDate()
-        +
-        step
-
-    );
-
+    currentPage = 1;
 
     updateToolbar();
 
-    loadReservations();
-
+    refreshTable();
 
 }
 
-
-
 function changeSelectedDate(value){
 
+    currentDate = new Date(value);
 
-    currentDate =
-        new Date(value);
-
-
+    currentPage = 1;
 
     updateToolbar();
 
-    loadReservations();
-
+    refreshTable();
 
 }
 
@@ -369,5 +365,151 @@ async function updateFilterCount(){
     }
 
     updateDropdownText(counts);
+
+}
+
+// ======================================================
+// Base Query (mode filter + search filter, shared by
+// data query, count query, and export query)
+// ======================================================
+
+function buildBaseQuery(forCount = false){
+
+    let query;
+
+    if(forCount){
+
+        query =
+            supabaseClient
+            .from("reservation")
+            .select("*", { count: "exact", head: true });
+
+    }
+    else{
+
+        query =
+            supabaseClient
+            .from("reservation")
+            .select("*");
+
+    }
+
+    const date = formatDate(currentDate);
+
+    query = applyModeFilter(query, currentMode, currentScope, date);
+
+    if(activeSearchKeyword){
+
+        const kw = activeSearchKeyword;
+
+        const filter =
+            `confirmation_no.ilike.%${kw}%,guest_name.ilike.%${kw}%,room_number.ilike.%${kw}%,status.ilike.%${kw}%`;
+
+        query = query.or(filter);
+
+    }
+
+    return query;
+
+}
+
+
+// ======================================================
+// Data Query (base + sort + pagination range)
+// ======================================================
+
+function buildDataQuery(){
+
+    let query = buildBaseQuery(false);
+
+    if(typeof activeSortColumn !== "undefined" && activeSortColumn){
+
+        const dbColumn = sortMap[activeSortColumn];
+
+        if(dbColumn){
+
+            query =
+                query.order(dbColumn, {
+                    ascending: sortDirection[activeSortColumn] === "asc"
+                });
+
+        }
+
+    }
+
+    if(rowsPerPage !== "all"){
+
+        const from = (currentPage - 1) * rowsPerPage;
+        const to = from + rowsPerPage - 1;
+
+        query = query.range(from, to);
+
+    }
+
+    return query;
+
+}
+
+
+// ======================================================
+// Export Query (base + sort, NO pagination — exports
+// everything matching the current filter/search)
+// ======================================================
+
+function buildExportQuery(){
+
+    let query = buildBaseQuery(false);
+
+    if(typeof activeSortColumn !== "undefined" && activeSortColumn){
+
+        const dbColumn = sortMap[activeSortColumn];
+
+        if(dbColumn){
+
+            query =
+                query.order(dbColumn, {
+                    ascending: sortDirection[activeSortColumn] === "asc"
+                });
+
+        }
+
+    }
+
+    return query;
+
+}
+
+
+// ======================================================
+// Pagination Helpers
+// ======================================================
+
+function getTotalPages(){
+
+    if(rowsPerPage === "all"){
+
+        return 1;
+
+    }
+
+    return Math.max(1, Math.ceil(totalCount / rowsPerPage));
+
+}
+
+function clampCurrentPage(){
+
+    const totalPages = getTotalPages();
+
+    if(currentPage > totalPages){
+
+        currentPage = totalPages;
+
+    }
+
+    if(currentPage < 1){
+
+        currentPage = 1;
+
+    }
 
 }

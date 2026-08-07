@@ -100,42 +100,52 @@
         </div>
 
         <!-- Tag Table Bersih Tanpa border="1" -->
-        <table>
-            <thead>
-                <tr>
-                    <th>
-                        <input type="checkbox" id="selectAll" onchange="toggleAllCheckbox(this)">
-                    </th>
+         <div class="table=scroll">
 
-                    <th onclick="sortTable('reservation')">Reservation Number ↕</th>
+             <table>
+                 <thead>
+                     <tr>
+                         <th>
+                             <input type="checkbox" id="selectAll" onchange="toggleAllCheckbox(this)">
+                         </th>
+     
+                         <th onclick="sortTable('reservation')">Reservation Number ↕</th>
+     
+                         <th id="guestHeader" onclick="sortTable('guest')">
+                             Guest ↕
+                             <button onclick="event.stopPropagation(); enableEdit('guest')">✏️</button>
+                         </th>
+     
+                         <th id="roomHeader" onclick="sortTable('room')">
+                             Room ↕
+                             <button onclick="event.stopPropagation(); enableEdit('room')">✏️</button>
+                         </th>
+     
+                         <th id="arrivalHeader" onclick="sortTable('arrival')">
+                             Arrival ↕
+                             <button onclick="event.stopPropagation(); enableEdit('arrival','date')">✏️</button>
+                         </th>
+     
+                         <th id="departureHeader" onclick="sortTable('departure')">
+                             Departure ↕
+                             <button onclick="event.stopPropagation(); enableEdit('departure','date')">✏️</button>
+                         </th>
+     
+                         <th onclick="sortTable('status')">Status ↕</th>
+                     </tr>
+                 </thead>
+     
+                 <tbody id="reservationTable"></tbody>
+             </table>
+         </div>
 
-                    <th id="guestHeader" onclick="sortTable('guest')">
-                        Guest ↕
-                        <button onclick="event.stopPropagation(); enableEdit('guest')">✏️</button>
-                    </th>
+    </div>
 
-                    <th id="roomHeader" onclick="sortTable('room')">
-                        Room ↕
-                        <button onclick="event.stopPropagation(); enableEdit('room')">✏️</button>
-                    </th>
-
-                    <th id="arrivalHeader" onclick="sortTable('arrival')">
-                        Arrival ↕
-                        <button onclick="event.stopPropagation(); enableEdit('arrival','date')">✏️</button>
-                    </th>
-
-                    <th id="departureHeader" onclick="sortTable('departure')">
-                        Departure ↕
-                        <button onclick="event.stopPropagation(); enableEdit('departure','date')">✏️</button>
-                    </th>
-
-                    <th onclick="sortTable('status')">Status ↕</th>
-                </tr>
-            </thead>
-
-            <tbody id="reservationTable"></tbody>
-        </table>
-
+    <div id="statusBar">
+        <div id="userArea"></div>
+        <div id="contextArea"></div>
+        <div id="paginationInfo"></div>
+        <div id="paginationNav"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

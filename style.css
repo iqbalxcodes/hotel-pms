@@ -1,34 +1,79 @@
 /* ======================================================
+   LOCK PAGE SCROLL — only .table-scroll scrolls
+   ====================================================== */
+
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+h1 {
+    flex: none;
+    margin: 12px 16px 8px;
+}
+
+#addReservationPanel {
+    flex: none;
+    margin: 0 16px;
+}
+
+
+/* ======================================================
    GLOBAL & CONTAINER STYLES
    ====================================================== */
 
 .table-container {
+    flex: 1 1 auto;
+    min-height: 0;
     width: 100%;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    margin: 8px 16px 0;
 }
 
 #toolbar {
+    flex: none;
     margin-bottom: 12px;
 }
+
+.table-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.reservation-header {
+    flex: none;
+}
+
 
 /* ======================================================
    CARD STYLE (Dipakai Detail Card & Container Tabel)
    ====================================================== */
 
 .detail-card {
-    border: 1px solid #ccc;          /* Garis luar tipis abu-abu */
-    border-radius: 6px;             /* Sudut melengkung */
+    border: 1px solid #ccc;
+    border-radius: 6px;
     padding: 12px 16px;
     background-color: #fff;
     box-sizing: border-box;
 }
 
+
 /* Header di dalam Card/Tabel */
+
 .detail-card h3,
 .reservation-header h3 {
     margin-top: 0;
     margin-bottom: 12px;
-    border-bottom: 1px solid #ddd;   /* Garis horizontal abu-abu tipis pembatas header */
+    border-bottom: 1px solid #ddd;
     padding-bottom: 6px;
 }
 
@@ -42,10 +87,11 @@
 }
 
 .reservation-header h3 {
-    border-bottom: none;             /* Hapus border internal h3 agar tidak ganda */
+    border-bottom: none;
     margin-bottom: 0;
     padding-bottom: 0;
 }
+
 
 /* ======================================================
    STYLING TABEL APLIKASI
@@ -54,34 +100,49 @@
 .table-container table {
     width: 100%;
     border-collapse: collapse;
-    border: none;                    /* Menghilangkan sisa pembatas default */
+    border: none;
     margin-top: 8px;
 }
 
+
+/* Sticky table header */
+
+.table-container thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+
 /* Header Kolom Tabel */
+
 .table-container th {
     text-align: left;
     padding: 10px 8px;
     background-color: #fafafa;
-    border-bottom: 1px solid #ddd;   /* Garis pembatas header kolom */
+    border-bottom: 1px solid #ddd;
     color: #444;
     font-size: 13px;
     font-weight: 600;
 }
 
+
 /* Cell/Isi Data Tabel */
+
 .table-container td {
     padding: 10px 8px;
-    border-bottom: 1px solid #eee;   /* Garis abu-abu halus pemisah antar baris */
+    border-bottom: 1px solid #eee;
     font-size: 14px;
 }
 
-/* Menghilangkan garis bawah pada baris terakhir agar kartu rapi */
+
 .table-container tr:last-child td {
     border-bottom: none;
 }
 
-/* Interaksi Efek Hover Baris Tabel */
+
+/* Hover */
+
 #reservationTable tr {
     cursor: pointer;
 }
@@ -89,6 +150,7 @@
 #reservationTable tr:hover {
     background-color: #f5f5f5;
 }
+
 
 /* ======================================================
    ELEMENTS & DETAIL PAGE COMPONENTS
@@ -101,15 +163,18 @@
     margin-bottom: 16px;
 }
 
+
 .detail-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 16px;
 }
 
+
 .detail-card-wide {
     grid-column: span 2;
 }
+
 
 .detail-card-tall {
     grid-row: span 2;
@@ -118,11 +183,13 @@
     justify-content: space-between;
 }
 
+
 .field-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
 }
+
 
 .detail-card label {
     display: block;
@@ -131,10 +198,12 @@
     margin-top: 8px;
 }
 
+
 .detail-card .value {
     font-weight: 600;
     margin-bottom: 4px;
 }
+
 
 .billing-total {
     display: flex;
@@ -145,11 +214,13 @@
     font-weight: bold;
 }
 
+
 .topbar-actions {
     margin-left: auto;
     display: flex;
     gap: 6px;
 }
+
 
 .icon-btn {
     background: #fff;
@@ -160,14 +231,17 @@
     font-size: 14px;
 }
 
+
 .icon-btn:hover {
     background: #f0f0f0;
 }
+
 
 .icon-btn-confirm {
     border-color: #2e7d32;
     color: #2e7d32;
 }
+
 
 .detail-card .value input,
 .detail-card .value textarea {
@@ -181,11 +255,182 @@
     background: #fffef2;
 }
 
+
 .detail-card .value textarea {
     min-height: 80px;
     resize: vertical;
 }
 
+
 .field-locked {
     opacity: 0.6;
+}
+
+
+/* ======================================================
+   BOTTOM STATUS BAR
+   ====================================================== */
+
+#statusBar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    height: 40px;
+    border-top: 1px solid #ccc;
+    background: #f5f5f5;
+    font-size: 13px;
+    color: #333;
+}
+
+
+#statusBar > div {
+    padding: 0 12px;
+    white-space: nowrap;
+}
+
+
+#statusBar > div + div {
+    border-left: 1px solid #ddd;
+}
+
+
+#userArea {
+    cursor: pointer;
+    flex: none;
+}
+
+
+#userArea:hover {
+    background: #eaeaea;
+}
+
+
+#contextArea {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+#paginationInfo {
+    flex: none;
+    cursor: pointer;
+    position: relative;
+}
+
+
+#paginationNav {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+
+#paginationNav button {
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 3px;
+    padding: 2px 8px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+
+#paginationNav button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+
+#paginationNav button.active-page {
+    background: #333;
+    color: #fff;
+    border-color: #333;
+}
+
+
+.rows-per-page-popover {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+
+.rows-per-page-popover button,
+.rows-per-page-popover input {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+
+.rows-per-page-popover input {
+    width: 50px;
+    cursor: text;
+}
+
+
+/* ======================================================
+   STATUS MESSAGE
+   ====================================================== */
+
+.status-msg-success {
+    color: #2e7d32;
+}
+
+.status-msg-error {
+    color: #c62828;
+}
+
+.status-msg-info {
+    color: #555;
+}
+
+
+.status-confirm {
+    color: #e65100;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+.status-confirm button,
+.logout-confirm button,
+.login-form button {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 2px 10px;
+    cursor: pointer;
+    background: #fff;
+    font-size: 12px;
+}
+
+
+.logout-confirm {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+.login-form {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+
+.login-form input {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 12px;
+    width: 110px;
 }

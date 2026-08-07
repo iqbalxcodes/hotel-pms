@@ -2,32 +2,90 @@
 // reservation.js
 // ======================================================
 
+let activeSortColumn = null;
+
+const sortMap = {
+
+    reservation: "confirmation_no",
+    guest: "guest_name",
+    room: "room_number",
+    arrival: "arrival_date",
+    departure: "departure_date",
+    status: "status"
+
+};
+
+let sortDirection = {};
+
+
 // ======================================================
-// Load & Render Reservations
+// Core Fetch + Render (respects current mode/scope/date/
+// search/sort/page/rowsPerPage state)
 // ======================================================
 
-async function loadReservations(){
+async function refreshTable(){
 
-    const query = buildReservationQuery();
+    const { count, error: countError } = await buildBaseQuery(true);
 
-    const { data, error } = await query;
+    if(countError){
+
+        console.error(countError);
+        showMessage("Gagal memuat data reservasi", "error");
+        return;
+
+    }
+
+    totalCount = count ?? 0;
+
+    clampCurrentPage();
+
+    const { data, error } = await buildDataQuery();
 
     if(error){
+
         console.error(error);
-        alert("Gagal memuat data reservasi");
+        showMessage("Gagal memuat data reservasi", "error");
         return;
+
     }
 
     renderReservations(data);
+
     resetHeader("guest");
     resetHeader("room");
     resetHeader("arrival");
     resetHeader("departure");
-    updateToolbar(data.length);
+
+    updateToolbar();
     updateFilterCount();
 
+    renderPaginationBar();
 
 }
+
+// Full reset entry point (search + sort + page cleared)
+async function loadReservations(){
+
+    activeSearchKeyword = "";
+    activeSortColumn = null;
+    currentPage = 1;
+
+    const searchInput = document.getElementById("searchInput");
+
+    if(searchInput){
+
+        searchInput.value = "";
+
+    }
+
+    await refreshTable();
+
+}
+
+
+// ======================================================
+// Render Rows
+// ======================================================
 
 function renderReservations(reservations){
 
@@ -50,6 +108,18 @@ function renderReservations(reservations){
             <td>${res.status ?? ""}</td>
         `;
 
+        tr.addEventListener("click", (e) => {
+
+            if(e.target.closest("input, .edit-input")){
+
+                return;
+
+            }
+
+            window.location.href = `reservation-detail.html?id=${res.id}`;
+
+        });
+
         tbody.appendChild(tr);
 
     });
@@ -57,6 +127,7 @@ function renderReservations(reservations){
     setupCheckbox();
 
 }
+
 
 // ======================================================
 // Initial Load
@@ -101,15 +172,22 @@ form.addEventListener("submit", async (e) => {
 
     if (error) {
         console.error(error);
-        alert("Failed to save reservation");
+        showMessage("Failed to save reservation", "error");
         return;
     }
 
-    alert("Reservation saved");
-    await loadReservations();
+    showMessage("Reservation saved", "success");
+
+    await refreshTable();
+
     form.reset();
     hideAddReservation();
 });
+
+
+// ======================================================
+// Status Update (with confirm step for checkout)
+// ======================================================
 
 async function updateStatus(status){
 
@@ -119,48 +197,64 @@ async function updateStatus(status){
         )
     ];
 
-    if(selected.length===0){
+    if(selected.length === 0){
 
-        alert("No reservation selected");
+        showMessage("No reservation selected", "error");
         return;
 
     }
+
+    if(status === "CHECKED_OUT"){
+
+        showConfirm(
+            "There is pending to bill, are you sure want to check out?",
+            () => performStatusUpdate(status, selected),
+            () => showMessage("Checkout cancelled", "info")
+        );
+
+        return;
+
+    }
+
+    await performStatusUpdate(status, selected);
+
+}
+
+async function performStatusUpdate(status, selected){
 
     const ids = selected.map(
         item => Number(item.dataset.id)
     );
 
-    const {error} = await supabaseClient
+    const { error } = await supabaseClient
         .from("reservation")
         .update({
-            status:status
+            status: status
         })
-        .in("id",ids);
+        .in("id", ids);
 
     if(error){
 
         console.error(error);
-        alert("Failed");
+        showMessage("Failed to update status", "error");
         return;
 
     }
 
-    await loadReservations();
+    showMessage(
+        status === "CHECKED_OUT" ? "Checkout completed" : "Status updated",
+        "success"
+    );
+
+    await refreshTable();
     hideActionBar();
+
 }
 
-const sortMap = {
 
-    reservation: "confirmation_no",
-    guest: "guest_name",
-    room: "room_number",
-    arrival: "arrival_date",
-    departure: "departure_date",
-    status: "status"
-
-};
-
-let sortDirection = {};
+// ======================================================
+// Sort
+// ======================================================
 
 async function sortTable(column){
 
@@ -170,172 +264,80 @@ async function sortTable(column){
         return;
     }
 
-
     sortDirection[column] =
         sortDirection[column] === "asc"
         ? "desc"
         : "asc";
 
+    activeSortColumn = column;
+    currentPage = 1;
 
+    await refreshTable();
 
-    let query =
-        buildReservationQuery();
+    const selectAll = document.getElementById("selectAll");
 
+    if(selectAll){
 
-
-    const { data, error } =
-        await query.order(
-            dbColumn,
-            {
-                ascending:
-                    sortDirection[column] === "asc"
-            }
-        );
-
-
-
-    if(error){
-
-        console.error(error);
-        return;
+        selectAll.checked = false;
 
     }
-
-    renderReservations(data);
-
-    document.getElementById("selectAll").checked = false;
-
-    resetHeader("guest");
-    resetHeader("room");
-    resetHeader("arrival");
-    resetHeader("departure");
-
 
     hideActionBar();
 
 }
+
+
+// ======================================================
+// Search
+// ======================================================
 
 async function searchReservation(){
 
-
     const keyword =
-        document.getElementById(
-            "searchInput"
-        )
+        document.getElementById("searchInput")
         .value
         .trim();
 
+    activeSearchKeyword = keyword;
+    currentPage = 1;
 
+    await refreshTable();
 
-    if(keyword === ""){
+    const selectAll = document.getElementById("selectAll");
 
-        loadReservations();
+    if(selectAll){
 
-        return;
-
-    }
-
-
-
-    let filter =
-    `confirmation_no.ilike.%${keyword}%,guest_name.ilike.%${keyword}%,room_number.ilike.%${keyword}%,status.ilike.%${keyword}%`;
-
-
-
-    const { data, error } =
-        await buildReservationQuery()
-        .or(filter);
-
-
-
-    if(error){
-
-        console.error(error);
-        alert("Search failed");
-        return;
+        selectAll.checked = false;
 
     }
-
-
-
-    renderReservations(data);
-
-    document.getElementById("selectAll").checked = false;
-
-    resetHeader("guest");
-    resetHeader("room");
-    resetHeader("arrival");
-    resetHeader("departure");
 
     hideActionBar();
 
 }
 
 
+// ======================================================
+// Export (exports ALL rows matching filter+search, no
+// pagination limit)
+// ======================================================
 
 async function exportReservations(){
 
-    const query =
-        buildReservationQuery();
-
-
-    const { data, error } =
-        await query;
-
+    const { data, error } = await buildExportQuery();
 
     if(error){
 
         console.error(error);
-        alert("Export failed");
+        showMessage("Export failed", "error");
         return;
 
     }
-
 
     exportList(
         data,
         "reservations.csv"
     );
 
-}
-
-function renderReservations(reservations){
-
-    const tbody = document.getElementById("reservationTable");
-    tbody.innerHTML = "";
-
-    reservations.forEach(res => {
-
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-            <td>
-                <input type="checkbox" class="reservation-checkbox" data-id="${res.id}">
-            </td>
-            <td>${res.confirmation_no}</td>
-            <td class="guest-cell" data-id="${res.id}">${res.guest_name ?? ""}</td>
-            <td class="room-cell" data-id="${res.id}">${res.room_number ?? ""}</td>
-            <td class="arrival-cell" data-id="${res.id}">${res.arrival_date ?? ""}</td>
-            <td class="departure-cell" data-id="${res.id}">${res.departure_date ?? ""}</td>
-            <td>${res.status ?? ""}</td>
-        `;
-
-        tr.addEventListener("click", (e) => {
-
-            if(e.target.closest("input, .edit-input")){
-
-                return;
-
-            }
-
-            window.location.href = `reservation-detail.html?id=${res.id}`;
-
-        });
-
-        tbody.appendChild(tr);
-
-    });
-
-    setupCheckbox();
+    showMessage("Export completed", "success");
 
 }

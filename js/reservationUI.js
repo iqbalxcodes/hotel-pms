@@ -163,6 +163,7 @@ async function saveEdit(column){
 
     }
 
+    showMessage("Update successful", "success");
     await loadReservations();
     hideActionBar();
 
@@ -212,7 +213,7 @@ function headerTitle(column){
 
 async function cancelEdit(column){
 
-    await loadReservations();
+    await refreshTable();
 
 }
 
@@ -335,9 +336,7 @@ function hideAddReservation(){
 
 function showDevelopmentAlert(feature){
 
-    alert(
-        feature + " Function under development"
-    );
+    showDevMessage(feature);
 
 }
 
@@ -368,7 +367,10 @@ function hideSearch(){
     ).value = "";
 
 
-    loadReservations();
+    activeSearchKeyword = "";
+    currentPage = 1;
+
+    refreshTable();
 
 }
 
