@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel PMS — Rooms</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>Hotel PMS</h1>
+
+    <div id="addRoomPanel" style="display: none;">
+        <h2>Add Room</h2>
+
+        <form id="roomForm">
+            <input type="text" id="r_room_number" placeholder="Room Number" required>
+
+            <input type="text" id="r_room_type" placeholder="Room Type" required>
+
+            <select id="r_status">
+                <option value="AVAILABLE">AVAILABLE</option>
+                <option value="CLEAN">CLEAN</option>
+                <option value="DIRTY">DIRTY</option>
+                <option value="INSPECTED">INSPECTED</option>
+                <option value="OUT_OF_SERVICE">OUT OF SERVICE</option>
+                <option value="BLOCKED">BLOCKED</option>
+            </select>
+
+            <input type="text" id="r_notes" placeholder="Notes">
+
+            <button type="submit">Save Room</button>
+        </form>
+    </div>
+
+    <!-- Container Utama Bertipe Kartu / Detail-Card (sama seperti reservation & client list) -->
+    <div class="table-container detail-card">
+
+        <div class="reservation-header">
+
+            <!-- LEFT -->
+            <div class="header-title">
+                <h3>Room List</h3>
+            </div>
+
+            <!-- CENTER (kosong — room tidak punya date scope/mode) -->
+            <div class="header-menu"></div>
+
+            <!-- RIGHT -->
+            <div class="header-clock">
+                <span id="clock"></span>
+            </div>
+
+        </div>
+
+        <div id="toolbar">
+
+            <!-- DEFAULT TOOLBAR -->
+            <div id="normalToolbar">
+                <button id="addRoomBtn" onclick="showAddRoom()">+</button>
+
+                <button id="cancelAddRoomBtn" onclick="hideAddRoom()" style="display:none;">
+                    Cancel
+                </button>
+
+                <button onclick="showSearch()">🔍</button>
+
+                <div id="searchContainer" style="display:none;">
+                    <input id="searchInput" type="text" placeholder="Search room number / type / notes" onkeyup="searchRoom()">
+                    <button onclick="hideSearch()">✕</button>
+                </div>
+
+                <button onclick="exportRooms()">Export</button>
+
+            </div>
+
+            <!-- SELECT TOOLBAR: dipakai untuk menandai status housekeeping -->
+            <div id="selectionToolbar" style="display:none;">
+
+                <span id="selectedCount">0 selected</span>
+
+                <button onclick="setRoomStatus('DIRTY')">DIRTY</button>
+                <button onclick="setRoomStatus('CLEAN')">CLEAN</button>
+                <button onclick="setRoomStatus('INSPECTED')">INSPECTED</button>
+                <button onclick="setRoomStatus('OUT_OF_SERVICE')">OUT OF SERVICE</button>
+                <button onclick="setRoomStatus('BLOCKED')">BLOCKED</button>
+
+            </div>
+        </div>
+
+        <div class="table-scroll">
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="selectAll" onchange="toggleAllCheckbox(this)">
+                        </th>
+
+                        <th onclick="sortTable('room_number')">Room Number ↕</th>
+
+                        <th id="room_typeHeader" onclick="sortTable('room_type')">
+                            Room Type ↕
+                            <button onclick="event.stopPropagation(); enableEdit('room_type','text')">✏️</button>
+                        </th>
+
+                        <th onclick="sortTable('status')">Status ↕</th>
+
+                        <th id="notesHeader" onclick="sortTable('notes')">
+                            Notes ↕
+                            <button onclick="event.stopPropagation(); enableEdit('notes','text')">✏️</button>
+                        </th>
+
+                        <th onclick="sortTable('updated_at')">Updated ↕</th>
+                    </tr>
+                </thead>
+
+                <tbody id="roomTable"></tbody>
+            </table>
+
+        </div>
+
+    </div>
+
+    <div id="statusBar">
+        <div id="userArea">👤 Iqbal</div>
+        <div id="contextArea"></div>
+        <div id="paginationInfo"></div>
+        <div id="paginationNav"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script src="js/supabase.js"></script>
+    <script src="js/export.js"></script>
+
+    <script src="js/roomFilter.js"></script>
+    <script src="js/roomUI.js"></script>
+    <script src="js/room.js"></script>
+
+</body>
+</html>
