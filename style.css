@@ -773,3 +773,21 @@ h1 {
     }
 
 }
+
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: #eee;
+    color: #555;
+}
+
+.status-available    { background: #e8f5e9; color: #2e7d32; }
+.status-clean         { background: #e8f5e9; color: #2e7d32; }
+.status-dirty          { background: #fff3e0; color: #e65100; }
+.status-inspected     { background: #e3f2fd; color: #1565c0; }
+.status-out_of_service{ background: #fce4ec; color: #ad1457; }
+.status-blocked        { background: #eeeeee; color: #424242; }
