@@ -50,21 +50,6 @@ h1 {
     overflow-y: auto;
 }
 
-
-
-.reservation-controls {
-
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-
-    display: flex;
-    align-items: center;
-    gap: 6px;
-
-}
-
-
 #clock {
     margin-left: auto;
 }
@@ -452,9 +437,15 @@ h1 {
 }
 
 .reservation-controls {
+
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+
     display: flex;
     align-items: center;
     gap: 6px;
+
 }
 
 
