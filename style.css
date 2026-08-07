@@ -1,148 +1,191 @@
+/* ======================================================
+   GLOBAL & CONTAINER STYLES
+   ====================================================== */
+
 .table-container {
     width: 100%;
+    box-sizing: border-box;
 }
 
-.table-container.detail-card {
-    border: 1px solid #ccc;       /* Garis tipis abu-abu luar */
-    border-radius: 6px;          /* Sudut melengkung */
+#toolbar {
+    margin-bottom: 12px;
+}
+
+/* ======================================================
+   CARD STYLE (Dipakai Detail Card & Container Tabel)
+   ====================================================== */
+
+.detail-card {
+    border: 1px solid #ccc;          /* Garis luar tipis abu-abu */
+    border-radius: 6px;             /* Sudut melengkung */
     padding: 12px 16px;
     background-color: #fff;
-    overflow: hidden;             /* Memastikan tabel di dalam tidak keluar dari sudut lengkung */
+    box-sizing: border-box;
+}
+
+/* Header di dalam Card/Tabel */
+.detail-card h3,
+.reservation-header h3 {
+    margin-top: 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #ddd;   /* Garis horizontal abu-abu tipis pembatas header */
+    padding-bottom: 6px;
 }
 
 .reservation-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
     border-bottom: 1px solid #ddd;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
 }
+
+.reservation-header h3 {
+    border-bottom: none;             /* Hapus border internal h3 agar tidak ganda */
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* ======================================================
+   STYLING TABEL APLIKASI
+   ====================================================== */
 
 .table-container table {
     width: 100%;
     border-collapse: collapse;
+    border: none;                    /* Menghilangkan sisa pembatas default */
+    margin-top: 8px;
 }
 
-#toolbar {
-    margin-bottom: 10px;
+/* Header Kolom Tabel */
+.table-container th {
+    text-align: left;
+    padding: 10px 8px;
+    background-color: #fafafa;
+    border-bottom: 1px solid #ddd;   /* Garis pembatas header kolom */
+    color: #444;
+    font-size: 13px;
+    font-weight: 600;
 }
 
-.detail-topbar{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    margin-bottom:16px;
+/* Cell/Isi Data Tabel */
+.table-container td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #eee;   /* Garis abu-abu halus pemisah antar baris */
+    font-size: 14px;
 }
 
-.detail-grid{
-    display:grid;
+/* Menghilangkan garis bawah pada baris terakhir agar kartu rapi */
+.table-container tr:last-child td {
+    border-bottom: none;
+}
+
+/* Interaksi Efek Hover Baris Tabel */
+#reservationTable tr {
+    cursor: pointer;
+}
+
+#reservationTable tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* ======================================================
+   ELEMENTS & DETAIL PAGE COMPONENTS
+   ====================================================== */
+
+.detail-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.detail-grid {
+    display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap:16px;
+    gap: 16px;
 }
 
-.detail-card{
-    border:1px solid #ccc;
-    border-radius:6px;
-    padding:12px 16px;
-    background-color: #fff;
-}
-
-.detail-card h3{
-    margin-top:0;
-    margin-bottom:12px;
-    border-bottom:1px solid #ddd;
-    padding-bottom:6px;
-}
-
-/* Melebarkan Remarks mencakup 2 Kolom (Kolom 1 & 2) */
-.detail-card-wide{
+.detail-card-wide {
     grid-column: span 2;
 }
 
-/* Memanjangkan Billing mencakup 2 Baris ke bawah (Sejajar bawah Remarks) */
-.detail-card-tall{
+.detail-card-tall {
     grid-row: span 2;
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* Membuat Total billing otomatis berada di paling bawah card */
+    justify-content: space-between;
 }
 
-.field-row{
-    display:grid;
+.field-row {
+    display: grid;
     grid-template-columns: 1fr 1fr;
-    gap:12px;
+    gap: 12px;
 }
 
-.detail-card label{
-    display:block;
-    font-size:12px;
-    color:#777;
-    margin-top:8px;
+.detail-card label {
+    display: block;
+    font-size: 12px;
+    color: #777;
+    margin-top: 8px;
 }
 
-.detail-card .value{
-    font-weight:600;
-    margin-bottom:4px;
+.detail-card .value {
+    font-weight: 600;
+    margin-bottom: 4px;
 }
 
-.billing-total{
-    display:flex;
-    justify-content:space-between;
-    border-top:1px solid #ddd;
-    margin-top: auto; /* Memastikan total berada di posisi paling bawah pada card Billing */
-    padding-top:12px;
-    font-weight:bold;
+.billing-total {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #ddd;
+    margin-top: auto;
+    padding-top: 12px;
+    font-weight: bold;
 }
 
-#reservationTable tr{
-    cursor:pointer;
+.topbar-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
 }
 
-#reservationTable tr:hover{
-    background-color:#f5f5f5;
+.icon-btn {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 4px 10px;
+    font-size: 14px;
 }
 
-.topbar-actions{
-    margin-left:auto;
-    display:flex;
-    gap:6px;
+.icon-btn:hover {
+    background: #f0f0f0;
 }
 
-.icon-btn{
-    background:#fff;
-    border:1px solid #ccc;
-    border-radius:4px;
-    cursor:pointer;
-    padding:4px 10px;
-    font-size:14px;
-}
-
-.icon-btn:hover{
-    background:#f0f0f0;
-}
-
-.icon-btn-confirm{
-    border-color:#2e7d32;
-    color:#2e7d32;
+.icon-btn-confirm {
+    border-color: #2e7d32;
+    color: #2e7d32;
 }
 
 .detail-card .value input,
-.detail-card .value textarea{
-    width:100%;
-    font:inherit;
-    font-weight:600;
-    border:1px solid #999;
-    border-radius:4px;
-    padding:4px 6px;
-    box-sizing:border-box;
-    background:#fffef2;
+.detail-card .value textarea {
+    width: 100%;
+    font: inherit;
+    font-weight: 600;
+    border: 1px solid #999;
+    border-radius: 4px;
+    padding: 4px 6px;
+    box-sizing: border-box;
+    background: #fffef2;
 }
 
-.detail-card .value textarea{
-    min-height:80px;
-    resize:vertical;
+.detail-card .value textarea {
+    min-height: 80px;
+    resize: vertical;
 }
 
-.field-locked{
-    opacity:0.6;
+.field-locked {
+    opacity: 0.6;
 }
