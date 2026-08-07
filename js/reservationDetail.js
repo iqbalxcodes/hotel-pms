@@ -594,16 +594,11 @@ async function loadReservationDetail(redirectOnMissingId = true){
 
     if(!id){
 
-        if(redirectOnMissingId){
-
-            alert(
-                "Reservation ID tidak ditemukan di URL"
-            );
-
-            window.location.href =
-                "index.html";
-
+        if(isNew === "true"){
+            return;
         }
+
+        console.warn("No reservation id");
 
         return;
 
