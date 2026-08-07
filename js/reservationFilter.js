@@ -9,8 +9,8 @@
 let currentDate = new Date();
 
 let currentScope = "today";
-// today
-// entire
+// today  -> scoped to currentDate (label shows Today's/Tomorrow's/etc.)
+// entire -> no date restriction
 
 
 let currentMode = "arrival";
@@ -126,6 +126,7 @@ function updateToolbar(count=null){
 
     if(scope){
 
+        // index 0 = dynamic-label option (Today's / Tomorrow's / <Day>'s)
         scope.options[0].text =
             dateLabel;
 
@@ -148,177 +149,110 @@ function updateToolbar(count=null){
 
 
 
+// ======================================================
+// Shared Mode Filter (used by BOTH the table query and the
+// dropdown count query, so they always stay in sync)
+// ======================================================
+
+function applyModeFilter(query, mode, scope, date){
+
+    switch(mode){
+
+        case "arrival":
+
+            if(scope === "today"){
+
+                query = query.eq("arrival_date", date);
+
+            }
+            else{
+
+                query = query.order("arrival_date");
+
+            }
+
+            break;
+
+
+        case "departure":
+
+            if(scope === "today"){
+
+                query = query.eq("departure_date", date);
+
+            }
+            else{
+
+                query = query.order("departure_date");
+
+            }
+
+            break;
+
+
+        case "inhouse":
+
+            query = query.eq("status", "CHECKED_IN");
+
+            if(scope === "today"){
+
+                query =
+                    query
+                    .lte("arrival_date", date)
+                    .gte("departure_date", date);
+
+            }
+
+            break;
+
+
+        case "pending":
+
+            query = query.eq("status", "RESERVED");
+
+            if(scope === "today"){
+
+                query = query.eq("arrival_date", date);
+
+            }
+
+            break;
+
+
+        case "cancelled":
+
+            query = query.eq("status", "CANCELLED");
+
+            if(scope === "today"){
+
+                query = query.eq("arrival_date", date);
+
+            }
+
+            break;
+
+    }
+
+    return query;
+
+}
 
 
 
 // ======================================================
-// Query Builder
+// Query Builder (drives what's shown in the table)
 // ======================================================
 
 function buildReservationQuery(){
-
 
     let query =
         supabaseClient
         .from("reservation")
         .select("*");
 
+    const date = formatDate(currentDate);
 
-
-    const date =
-        formatDate(currentDate);
-
-
-
-    if(currentScope === "today"){
-
-
-        switch(currentMode){
-
-
-            case "arrival":
-
-                query =
-                    query.eq(
-                        "arrival_date",
-                        date
-                    );
-
-                break;
-
-
-
-            case "departure":
-
-                query =
-                    query.eq(
-                        "departure_date",
-                        date
-                    );
-
-                break;
-
-
-
-            case "inhouse":
-
-                query =
-                    query
-                    .lte(
-                        "arrival_date",
-                        date
-                    )
-                    .gte(
-                        "departure_date",
-                        date
-                    )
-                    .eq(
-                        "status",
-                        "CHECKED_IN"
-                    );
-
-                break;
-
-
-
-            case "pending":
-
-                query =
-                    query.eq(
-                        "status",
-                        "RESERVED"
-                    );
-
-                break;
-
-
-
-            case "cancelled":
-
-                query =
-                    query.eq(
-                        "status",
-                        "CANCELLED"
-                    );
-
-                break;
-
-
-        }
-
-
-    }
-
-
-    else{
-
-
-        switch(currentMode){
-
-
-            case "arrival":
-
-                query =
-                    query.order(
-                        "arrival_date"
-                    );
-
-                break;
-
-
-
-            case "departure":
-
-                query =
-                    query.order(
-                        "departure_date"
-                    );
-
-                break;
-
-
-
-            case "inhouse":
-
-                query =
-                    query.eq(
-                        "status",
-                        "CHECKED_IN"
-                    );
-
-                break;
-
-
-
-            case "pending":
-
-                query =
-                    query.eq(
-                        "status",
-                        "RESERVED"
-                    );
-
-                break;
-
-
-
-            case "cancelled":
-
-                query =
-                    query.eq(
-                        "status",
-                        "CANCELLED"
-                    );
-
-                break;
-
-
-        }
-
-
-    }
-
-
+    query = applyModeFilter(query, currentMode, currentScope, date);
 
     return query;
 
@@ -391,6 +325,13 @@ function changeSelectedDate(value){
 
 }
 
+
+
+// ======================================================
+// Dropdown Counts (mirrors buildReservationQuery exactly,
+// mode by mode, so numbers always match the table)
+// ======================================================
+
 async function updateFilterCount(){
 
     const date = formatDate(currentDate);
@@ -415,92 +356,7 @@ async function updateFilterCount(){
                 head: true
             });
 
-        switch(key){
-
-            case "arrival":
-
-                query =
-                    query.eq(
-                        "arrival_date",
-                        date
-                    );
-
-                break;
-
-
-            case "departure":
-
-                query =
-                    query.eq(
-                        "departure_date",
-                        date
-                    );
-
-                break;
-
-
-            case "inhouse":
-
-                query =
-                    query
-                    .lte(
-                        "arrival_date",
-                        date
-                    )
-                    .gte(
-                        "departure_date",
-                        date
-                    )
-                    .eq(
-                        "status",
-                        "CHECKED_IN"
-                    );
-
-                break;
-
-
-            case "pending":
-
-                query =
-                    query.eq(
-                        "status",
-                        "RESERVED"
-                    );
-
-                if(currentScope === "today"){
-
-                    query =
-                        query.eq(
-                            "arrival_date",
-                            date
-                        );
-
-                }
-
-                break;
-
-
-            case "cancelled":
-
-                query =
-                    query.eq(
-                        "status",
-                        "CANCELLED"
-                    );
-
-                if(currentScope === "today"){
-
-                    query =
-                        query.eq(
-                            "arrival_date",
-                            date
-                        );
-
-                }
-
-                break;
-
-        }
+        query = applyModeFilter(query, key, currentScope, date);
 
         const { count, error } =
             await query;
