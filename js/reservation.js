@@ -140,6 +140,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     updateToolbar();
+    renderUserArea();
 
     rowsPerPage = calculateRowsPerPage();
 

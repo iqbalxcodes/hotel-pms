@@ -8,7 +8,7 @@ html, body {
     margin: 0;
     overflow: hidden;
 }
-                                                                                                                                                                                                                                                                                                         if
+
 body {
     display: flex;
     flex-direction: column;
@@ -103,6 +103,7 @@ h1 {
     border-collapse: collapse;
     border: none;
     margin-top: 8px;
+    margin-right: 5px;
 }
 
 

@@ -488,3 +488,54 @@ function renderPaginationBar(){
     nav.appendChild(nextBtn);
 
 }
+
+function escapeHtml(str){
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+    return div.innerHTML;
+}
+
+function showMessage(text, type = "info"){
+
+    const contextArea = document.getElementById("contextArea");
+    if(!contextArea) return;
+
+    contextArea.innerHTML =
+        `<span class="status-msg-${type}">${escapeHtml(text)}</span>`;
+
+    clearTimeout(showMessage._timer);
+
+    showMessage._timer = setTimeout(() => {
+        contextArea.innerHTML = "";
+    }, 4000);
+
+}
+
+function showConfirm(message, onConfirm, onCancel){
+
+    const contextArea = document.getElementById("contextArea");
+    if(!contextArea) return;
+
+    contextArea.innerHTML = `
+        <span class="status-confirm">
+            ${escapeHtml(message)}
+            <button id="confirmYesBtn">Yes</button>
+            <button id="confirmNoBtn">No</button>
+        </span>
+    `;
+
+    document.getElementById("confirmYesBtn").onclick = () => {
+        contextArea.innerHTML = "";
+        onConfirm();
+    };
+
+    document.getElementById("confirmNoBtn").onclick = () => {
+        contextArea.innerHTML = "";
+        if(onCancel) onCancel();
+    };
+
+}
+
+function showDevMessage(feature){
+    showMessage(`${feature} is still in development`, "info");
+}
