@@ -1,3 +1,30 @@
+<h1>Hotel PMS</h1>
+
+<div id="addReservationPanel" style="display: none;">
+    <h2>Add Reservation</h2>
+
+    <button onclick="generateRandomReservations()">
+        Generate Test Reservation
+    </button>
+
+    <button onclick="showDevelopmentAlert('Group Reservation')">
+        Group Reservation
+    </button>
+
+    <form id="reservationForm">
+        <input type="text" id="guest_name" placeholder="Guest Name" required>
+        <input type="text" id="room_number" placeholder="Room Number" required>
+        <input type="date" id="arrival_date" required>
+        <input type="date" id="departure_date" required>
+
+        <select id="status">
+            <option value="RESERVED">RESERVED</option>
+        </select>
+
+        <button type="submit">Save Reservation</button>
+    </form>
+</div>
+
 <div class="table-container">
 
     <div class="reservation-header">
@@ -5,243 +32,107 @@
         <span id="clock"></span>
     </div>
 
-
-    <!-- TOOLBAR -->
     <div id="toolbar">
 
         <!-- DEFAULT TOOLBAR -->
         <div id="normalToolbar">
 
-            <button onclick="changeDate(-1)">
-                ◀
-            </button>
+            <button onclick="changeDate(-1)">◀</button>
 
-
-            <select
-                id="dateScope"
-                onchange="changeDateScope(this.value)"
-            >
-                <option value="today">
-                    Today's
-                </option>
-
-                <option value="entire">
-                    Entire
-                </option>
+            <select id="dateScope" onchange="changeDateScope(this.value)">
+                <option value="today">Today's</option>
+                <option value="entire">Entire</option>
             </select>
 
-
-            <select
-                id="modeSelect"
-                onchange="changeMode(this.value)"
-            >
-                <option value="arrival">
-                    Arrival
-                </option>
-
-                <option value="departure">
-                    Departure
-                </option>
-
-                <option value="inhouse">
-                    In House
-                </option>
-
-                <option value="pending">
-                    Pending
-                </option>
-
-                <option value="cancelled">
-                    Cancelled
-                </option>
+            <select id="modeSelect" onchange="changeMode(this.value)">
+                <option value="arrival">Arrival</option>
+                <option value="departure">Departure</option>
+                <option value="inhouse">In House</option>
+                <option value="pending">Pending</option>
+                <option value="cancelled">Cancelled</option>
             </select>
 
+            <input type="date" id="currentDate" onchange="changeSelectedDate(this.value)">
 
-            <input
-                type="date"
-                id="currentDate"
-                onchange="changeSelectedDate(this.value)"
-            >
+            <button onclick="changeDate(1)">▶</button>
 
+            <button id="addReservationBtn" onclick="showAddReservation()">+</button>
 
-            <button onclick="changeDate(1)">
-                ▶
-            </button>
-
-
-            <button 
-                id="addReservationBtn"
-                onclick="showAddReservation()"
-            >
-                +
-            </button>
-
-
-            <button
-                id="cancelAddBtn"
-                onclick="hideAddReservation()"
-                style="display:none;"
-            >
+            <button id="cancelAddBtn" onclick="hideAddReservation()" style="display:none;">
                 Cancel
             </button>
 
-
-            <button onclick="showRoomList()">
-                🛏
-            </button>
-
-
-            <button onclick="showClientList()">
-                👤
-            </button>
-
-
-            <button onclick="showBilling()">
-                ＄
-            </button>
-
-
-            <button onclick="showSearch()">
-                🔍
-            </button>
-
+            <button onclick="showRoomList()">🛏</button>
+            <button onclick="showClientList()">👤</button>
+            <button onclick="showBilling()">＄</button>
+            <button onclick="showSearch()">🔍</button>
 
             <div id="searchContainer" style="display:none;">
-
-                <input
-                    id="searchInput"
-                    type="text"
-                    placeholder="Search guest / room / ID"
-                    onkeyup="searchReservation()"
-                >
-
-                <button onclick="hideSearch()">
-                    ✕
-                </button>
-
+                <input id="searchInput" type="text" placeholder="Search guest / room / ID" onkeyup="searchReservation()">
+                <button onclick="hideSearch()">✕</button>
             </div>
 
-
-            <button onclick="exportReservations()">
-                Export
-            </button>
-
+            <button onclick="exportReservations()">Export</button>
 
         </div>
-
-
 
         <!-- SELECT TOOLBAR -->
         <div id="selectionToolbar" style="display:none;">
 
-            <span id="selectedCount">
-                0 selected
-            </span>
+            <span id="selectedCount">0 selected</span>
 
-
-            <button onclick="updateStatus('CHECKED_IN')">
-                CHECK-IN
-            </button>
-
-
-            <button onclick="updateStatus('CHECKED_OUT')">
-                CHECK-OUT
-            </button>
-
-
-            <button onclick="updateStatus('CANCELLED')">
-                CANCEL
-            </button>
+            <button onclick="updateStatus('CHECKED_IN')">CHECK-IN</button>
+            <button onclick="updateStatus('CHECKED_OUT')">CHECK-OUT</button>
+            <button onclick="updateStatus('CANCELLED')">CANCEL</button>
 
         </div>
-
-
     </div>
-    <!-- END TOOLBAR -->
 
-
-
-    <!-- TABLE -->
     <table border="1">
-
         <thead>
-
             <tr>
-
                 <th>
-                    <input 
-                        type="checkbox"
-                        id="selectAll"
-                        onchange="toggleAllCheckbox(this)"
-                    >
+                    <input type="checkbox" id="selectAll" onchange="toggleAllCheckbox(this)">
                 </th>
 
-
-                <th onclick="sortTable('reservation')">
-                    Reservation Number ↕
-                </th>
-
+                <th onclick="sortTable('reservation')">Reservation Number ↕</th>
 
                 <th id="guestHeader" onclick="sortTable('guest')">
-
                     Guest ↕
-
-                    <button onclick="event.stopPropagation(); enableEdit('guest')">
-                        ✏️
-                    </button>
-
+                    <button onclick="event.stopPropagation(); enableEdit('guest')">✏️</button>
                 </th>
-
 
                 <th id="roomHeader" onclick="sortTable('room')">
-
                     Room ↕
-
-                    <button onclick="event.stopPropagation(); enableEdit('room')">
-                        ✏️
-                    </button>
-
+                    <button onclick="event.stopPropagation(); enableEdit('room')">✏️</button>
                 </th>
-
 
                 <th id="arrivalHeader" onclick="sortTable('arrival')">
-
                     Arrival ↕
-
-                    <button onclick="event.stopPropagation(); enableEdit('arrival','date')">
-                        ✏️
-                    </button>
-
+                    <button onclick="event.stopPropagation(); enableEdit('arrival','date')">✏️</button>
                 </th>
-
 
                 <th id="departureHeader" onclick="sortTable('departure')">
-
                     Departure ↕
-
-                    <button onclick="event.stopPropagation(); enableEdit('departure','date')">
-                        ✏️
-                    </button>
-
+                    <button onclick="event.stopPropagation(); enableEdit('departure','date')">✏️</button>
                 </th>
 
-
-                <th onclick="sortTable('status')">
-                    Status ↕
-                </th>
-
-
+                <th onclick="sortTable('status')">Status ↕</th>
             </tr>
-
         </thead>
 
-
-        <tbody id="reservationTable">
-
-        </tbody>
-
-
+        <tbody id="reservationTable"></tbody>
     </table>
 
-
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/export.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/guestData.js"></script>
+<script src="js/roomData.js"></script>
+<script src="js/developmentStatusSimulator.js"></script>
+<script src="js/reservationFilter.js"></script>
+<script src="js/reservationUI.js"></script>
+<script src="js/reservation.js"></script>
+<script src="js/generator.js"></script>
