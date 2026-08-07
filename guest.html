@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel PMS — Clients</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>Hotel PMS</h1>
+
+    <div id="addGuestPanel" style="display: none;">
+        <h2>Add Client</h2>
+
+        <form id="guestForm">
+            <select id="g_salutation">
+                <option value="">Salutation</option>
+                <option value="Mr.">Mr.</option>
+                <option value="Mrs.">Mrs.</option>
+                <option value="Ms.">Ms.</option>
+                <option value="Dr.">Dr.</option>
+            </select>
+
+            <input type="text" id="g_first_name" placeholder="First Name" required>
+            <input type="text" id="g_last_name" placeholder="Last Name">
+            <input type="email" id="g_email" placeholder="Email">
+            <input type="text" id="g_phone" placeholder="Phone">
+            <input type="text" id="g_address" placeholder="Address">
+            <input type="text" id="g_city" placeholder="City">
+            <input type="text" id="g_postal_code" placeholder="Postal Code">
+            <input type="text" id="g_country" placeholder="Country">
+
+            <select id="g_loyalty_level">
+                <option value="Standard">Standard</option>
+                <option value="Silver">Silver</option>
+                <option value="Gold">Gold</option>
+                <option value="VIP">VIP</option>
+            </select>
+
+            <input type="number" id="g_loyalty_points" placeholder="Loyalty Points" value="0" min="0">
+
+            <button type="submit">Save Client</button>
+        </form>
+    </div>
+
+    <!-- Container Utama Bertipe Kartu / Detail-Card (sama seperti reservation list) -->
+    <div class="table-container detail-card">
+
+        <div class="reservation-header">
+
+            <!-- LEFT -->
+            <div class="header-title">
+                <h3>Client List</h3>
+            </div>
+
+            <!-- CENTER (kosong — guest tidak punya date scope/mode) -->
+            <div class="header-menu"></div>
+
+            <!-- RIGHT -->
+            <div class="header-clock">
+                <span id="clock"></span>
+            </div>
+
+        </div>
+
+        <div id="toolbar">
+
+            <!-- DEFAULT TOOLBAR -->
+            <div id="normalToolbar">
+                <button id="addGuestBtn" onclick="showAddGuest()">+</button>
+
+                <button id="cancelAddGuestBtn" onclick="hideAddGuest()" style="display:none;">
+                    Cancel
+                </button>
+
+                <button onclick="showSearch()">🔍</button>
+
+                <div id="searchContainer" style="display:none;">
+                    <input id="searchInput" type="text" placeholder="Search name / email / phone" onkeyup="searchGuest()">
+                    <button onclick="hideSearch()">✕</button>
+                </div>
+
+                <button onclick="exportGuests()">Export</button>
+
+            </div>
+
+            <!-- SELECT TOOLBAR -->
+            <div id="selectionToolbar" style="display:none;">
+
+                <span id="selectedCount">0 selected</span>
+
+                <button onclick="setLoyaltyLevel('VIP')">MARK VIP</button>
+                <button onclick="deleteSelectedGuests()">DELETE</button>
+
+            </div>
+        </div>
+
+        <div class="table-scroll">
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="selectAll" onchange="toggleAllCheckbox(this)">
+                        </th>
+
+                        <th id="salutationHeader" onclick="sortTable('salutation')">
+                            Sal. ↕
+                            <button onclick="event.stopPropagation(); enableEdit('salutation','text')">✏️</button>
+                        </th>
+
+                        <th id="first_nameHeader" onclick="sortTable('first_name')">
+                            First Name ↕
+                            <button onclick="event.stopPropagation(); enableEdit('first_name','text')">✏️</button>
+                        </th>
+
+                        <th id="last_nameHeader" onclick="sortTable('last_name')">
+                            Last Name ↕
+                            <button onclick="event.stopPropagation(); enableEdit('last_name','text')">✏️</button>
+                        </th>
+
+                        <th id="emailHeader" onclick="sortTable('email')">
+                            Email ↕
+                            <button onclick="event.stopPropagation(); enableEdit('email','email')">✏️</button>
+                        </th>
+
+                        <th id="phoneHeader" onclick="sortTable('phone')">
+                            Phone ↕
+                            <button onclick="event.stopPropagation(); enableEdit('phone','text')">✏️</button>
+                        </th>
+
+                        <th id="cityHeader" onclick="sortTable('city')">
+                            City ↕
+                            <button onclick="event.stopPropagation(); enableEdit('city','text')">✏️</button>
+                        </th>
+
+                        <th id="countryHeader" onclick="sortTable('country')">
+                            Country ↕
+                            <button onclick="event.stopPropagation(); enableEdit('country','text')">✏️</button>
+                        </th>
+
+                        <th id="loyalty_levelHeader" onclick="sortTable('loyalty_level')">
+                            Loyalty ↕
+                            <button onclick="event.stopPropagation(); enableEdit('loyalty_level','text')">✏️</button>
+                        </th>
+
+                        <th id="loyalty_pointsHeader" onclick="sortTable('loyalty_points')">
+                            Points ↕
+                            <button onclick="event.stopPropagation(); enableEdit('loyalty_points','number')">✏️</button>
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody id="guestTable"></tbody>
+            </table>
+
+        </div>
+
+    </div>
+
+    <div id="statusBar">
+        <div id="userArea">👤 Iqbal</div>
+        <div id="contextArea"></div>
+        <div id="paginationInfo"></div>
+        <div id="paginationNav"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script src="js/supabase.js"></script>
+    <script src="js/export.js"></script>
+
+    <script src="js/guestFilter.js"></script>
+    <script src="js/guestUI.js"></script>
+    <script src="js/guest.js"></script>
+
+</body>
+</html>
