@@ -40,67 +40,43 @@
 
         <div class="reservation-header">
 
-    <!-- LEFT -->
-        <div class="header-title">
-            <h3>Reservation List</h3>
+            <!-- LEFT: Pojok Kiri -->
+            <div class="header-title">
+                <h3>Reservation List</h3>
+            </div>
+
+            <!-- CENTER: Posisi Tengah -->
+            <div class="header-menu">
+                <button onclick="changeDate(-1)">◀</button>
+
+                <select id="dateScope" onchange="changeDateScope(this.value)">
+                    <option value="today">Today's</option>
+                    <option value="entire">Entire</option>
+                </select>
+
+                <select id="modeSelect" onchange="changeMode(this.value)">
+                    <option value="arrival">Arrival</option>
+                    <option value="departure">Departure</option>
+                    <option value="inhouse">In House</option>
+                    <option value="pending">Pending</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+
+                <input 
+                    type="date"
+                    id="currentDate"
+                    onchange="changeSelectedDate(this.value)"
+                >
+
+                <button onclick="changeDate(1)">▶</button>
+            </div>
+
+            <!-- RIGHT: Pojok Kanan -->
+            <div class="header-clock">
+                <span id="clock"></span>
+            </div>
+
         </div>
-
-
-        <!-- CENTER -->
-        <div class="header-menu">
-
-            <button onclick="changeDate(-1)">
-                ◀
-            </button>
-
-
-            <select id="dateScope" onchange="changeDateScope(this.value)">
-                <option value="today">
-                    Today's
-                </option>
-                <option value="entire">
-                    Entire
-                </option>
-            </select>
-
-
-            <select id="modeSelect" onchange="changeMode(this.value)">
-                <option value="arrival">
-                    Arrival
-                </option>
-                <option value="departure">
-                    Departure
-                </option>
-                <option value="inhouse">
-                    In House
-                </option>
-                <option value="pending">
-                    Pending
-                </option>
-                <option value="cancelled">
-                    Cancelled
-                </option>
-            </select>
-    
-            <input 
-                type="date"
-                id="currentDate"
-                onchange="changeSelectedDate(this.value)"
-            >
-            
-            <button onclick="changeDate(1)">
-                ▶
-            </button>
-            
-        </div>
-        
-        <!-- RIGHT -->
-        <div class="header-clock">
-
-            <span id="clock"></span>
-        </div>
-
-    </div>
 
         <div id="toolbar">
 

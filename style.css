@@ -68,15 +68,14 @@ h1 {
 
 
 /* ======================================================
-   RESERVATION HEADER
-   3 PARTS:
-   
-   Reservation List | Menu | Date
+   RESERVATION HEADER (Kiri - Tengah - Kanan)
    ====================================================== */
 
 .reservation-header {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    /* Ubah grid-template-columns agar bagian kiri dan kanan seimbang (1fr), 
+       sehingga bagian tengah (auto) berada pas di tengah-tengah */
+    grid-template-columns: 1fr auto 1fr; 
     align-items: center;
 
     border-bottom: 1px solid #ddd;
@@ -84,9 +83,10 @@ h1 {
     padding-bottom: 6px;
 }
 
-
+/* Kiri: rata kiri */
 .header-title {
     min-width: 0;
+    text-align: left;
 }
 
 .header-title h3 {
@@ -95,7 +95,7 @@ h1 {
     padding: 0;
 }
 
-
+/* Tengah: pas di tengah */
 .header-menu {
     display: flex;
     align-items: center;
@@ -104,28 +104,14 @@ h1 {
     white-space: nowrap;
 }
 
-
-.header-date {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    margin-left: 20px;
-}
-
-
+/* Kanan: rata kanan */
 .header-clock {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    margin-left: 12px;
+    justify-content: flex-end; /* Memastikan posisi rapat ke pojok kanan */
+    margin-left: 0;           /* Hapus margin-left sebelumnya */
 }
 
-
-#clock {
-    color: #666;
-    font-size: 13px;
-    white-space: nowrap;
-}
 
 /* ======================================================
    STYLING TABEL APLIKASI
