@@ -523,8 +523,6 @@ function showDevMessage(feature){
 
 function createNewReservation(){
 
-    alert("NEW FUNCTION LOADED");
-
     window.location.href =
         "reservation-detail.html?new=true";
 
