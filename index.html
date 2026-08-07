@@ -40,13 +40,8 @@
 
         <div class="reservation-header">
             <h3>Reservation List</h3>
-            <span id="clock"></span>
-        </div>
 
-        <div id="toolbar">
-
-            <!-- DEFAULT TOOLBAR -->
-            <div id="normalToolbar">
+            <div class="reservation-controls">
 
                 <button onclick="changeDate(-1)">◀</button>
 
@@ -63,11 +58,29 @@
                     <option value="cancelled">Cancelled</option>
                 </select>
 
-                <input type="date" id="currentDate" onchange="changeSelectedDate(this.value)">
+                <input 
+                    type="date" 
+                    id="currentDate" 
+                    onchange="changeSelectedDate(this.value)"
+                >
 
                 <button onclick="changeDate(1)">▶</button>
 
-                <button id="addReservationBtn" onclick="showAddReservation()">+</button>
+                <span id="clock"></span>
+
+            </div>
+
+        </div>
+
+        <div id="toolbar">
+
+            <!-- DEFAULT TOOLBAR -->
+            <div id="normalToolbar">
+                <button 
+                    id="addReservationBtn" 
+                    onclick="createNewReservation()">
+                    +
+                </button>
 
                 <button id="cancelAddBtn" onclick="hideAddReservation()" style="display:none;">
                     Cancel

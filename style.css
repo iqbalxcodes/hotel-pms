@@ -436,3 +436,23 @@ h1 {
     font-size: 12px;
     width: 110px;
 }
+
+.reservation-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+
+.reservation-controls button,
+.reservation-controls select,
+.reservation-controls input {
+    font-size: 13px;
+}
+
+
+#clock {
+    margin-left: 12px;
+    color: #666;
+    font-size: 13px;
+}

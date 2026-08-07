@@ -4,6 +4,8 @@
 
 let currentReservation = null;
 let isEditMode = false;
+let isNewReservation = false;
+
 
 // ------------------------------------------------------
 // Field configuration
@@ -575,6 +577,46 @@ async function loadReservationDetail(redirectOnMissingId = true){
     currentReservation = res;
 
     renderDetail(res);
+
+}
+
+// ======================================================
+// Reservation Number Generator
+// ======================================================
+
+function generateReservationNumber(){
+
+    const confirmation =
+        "HT" +
+        Math.floor(
+            1000000000 +
+            Math.random() * 9000000000
+        );
+
+    return confirmation;
+
+}
+
+function createEmptyReservation(){
+
+    return {
+
+        id: null,
+
+        confirmation_no:
+            generateReservationNumber(),
+
+        guest_name: "",
+        secondary_guest_name: "",
+
+        arrival_date: null,
+        departure_date: null,
+
+        room_number: "",
+
+        status: "RESERVED"
+
+    };
 
 }
 

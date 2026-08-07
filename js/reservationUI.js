@@ -521,6 +521,13 @@ function showDevMessage(feature){
     showMessage(`${feature} is still in development`, "info");
 }
 
+function createNewReservation(){
+
+    window.location.href =
+        "reservation-detail.html?new=true";
+
+}
+
 document.addEventListener(
     "DOMContentLoaded",
     startClock
