@@ -140,12 +140,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     updateToolbar();
-    
+
     rowsPerPage = calculateRowsPerPage();
 
-    await loadReservations();
+    try {
+        await loadReservations();
+    } catch (err) {
+        console.error("loadReservations failed:", err);
+    }
 
-    await adjustRowsPerPageAndRefresh();
+    try {
+        await adjustRowsPerPageAndRefresh();
+    } catch (err) {
+        console.error("adjustRowsPerPageAndRefresh failed:", err);
+    }
 
     window.addEventListener(
         "resize",

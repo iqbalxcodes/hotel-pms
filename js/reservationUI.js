@@ -450,3 +450,41 @@ function updateDropdownText(counts){
         `Cancelled (${counts.cancelled})`;
 
 }
+
+function renderPaginationBar(){
+
+    const info = document.getElementById("paginationInfo");
+    const nav = document.getElementById("paginationNav");
+
+    if(!info || !nav){
+        return;
+    }
+
+    const totalPages = getTotalPages();
+
+    info.innerText =
+        totalCount > 0
+        ? `${totalCount} reservations · Page ${currentPage}/${totalPages}`
+        : "No reservations";
+
+    nav.innerHTML = "";
+
+    const prevBtn = document.createElement("button");
+    prevBtn.innerText = "‹ Prev";
+    prevBtn.disabled = currentPage <= 1;
+    prevBtn.onclick = async () => {
+        currentPage--;
+        await refreshTable();
+    };
+    nav.appendChild(prevBtn);
+
+    const nextBtn = document.createElement("button");
+    nextBtn.innerText = "Next ›";
+    nextBtn.disabled = currentPage >= totalPages;
+    nextBtn.onclick = async () => {
+        currentPage++;
+        await refreshTable();
+    };
+    nav.appendChild(nextBtn);
+
+}
