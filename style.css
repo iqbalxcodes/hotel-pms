@@ -92,3 +92,48 @@
 #reservationTable tr:hover{
     background-color:#f5f5f5;
 }
+
+.topbar-actions{
+    margin-left:auto;
+    display:flex;
+    gap:6px;
+}
+
+.icon-btn{
+    background:#fff;
+    border:1px solid #ccc;
+    border-radius:4px;
+    cursor:pointer;
+    padding:4px 10px;
+    font-size:14px;
+}
+
+.icon-btn:hover{
+    background:#f0f0f0;
+}
+
+.icon-btn-confirm{
+    border-color:#2e7d32;
+    color:#2e7d32;
+}
+
+.detail-card .value input,
+.detail-card .value textarea{
+    width:100%;
+    font:inherit;
+    font-weight:600;
+    border:1px solid #999;
+    border-radius:4px;
+    padding:4px 6px;
+    box-sizing:border-box;
+    background:#fffef2;
+}
+
+.detail-card .value textarea{
+    min-height:80px;
+    resize:vertical;
+}
+
+.field-locked{
+    opacity:0.6;
+}

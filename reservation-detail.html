@@ -10,6 +10,21 @@
     <div class="detail-topbar">
         <button onclick="window.location.href='index.html'">← Back</button>
         <h2>Reservation Detail</h2>
+
+        <div class="topbar-actions">
+            <button id="editBtn" class="icon-btn" onclick="enterEditMode()" title="Edit">
+                ✏️
+            </button>
+
+            <span id="editActions" style="display:none;">
+                <button id="cancelEditBtn" class="icon-btn" onclick="exitEditMode()" title="Cancel">
+                    ✕
+                </button>
+                <button id="confirmEditBtn" class="icon-btn icon-btn-confirm" onclick="saveEditMode()" title="Save">
+                    ✓
+                </button>
+            </span>
+        </div>
     </div>
 
     <div class="detail-grid">
