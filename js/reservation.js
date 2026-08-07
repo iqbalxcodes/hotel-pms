@@ -363,3 +363,12 @@ async function exportReservations(){
     showMessage("Export completed", "success");
 
 }
+
+document.addEventListener(
+    "DOMContentLoaded",
+    async () => {
+
+        await refreshTable();
+
+    }
+);
