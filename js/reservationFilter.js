@@ -513,3 +513,92 @@ function clampCurrentPage(){
     }
 
 }
+
+// ======================================================
+// Dynamic Rows Per Page (mengikuti tinggi layar device)
+// ======================================================
+
+function estimateRowHeight(){
+
+    const sampleRow =
+        document.querySelector("#reservationTable tr");
+
+    if(sampleRow){
+
+        return sampleRow.getBoundingClientRect().height;
+
+    }
+
+    // fallback kalau belum ada row ter-render sama sekali
+    return 41;
+
+}
+
+function calculateRowsPerPage(){
+
+    const scrollContainer =
+        document.querySelector(".table-scroll");
+
+    if(!scrollContainer){
+
+        return rowsPerPage;
+
+    }
+
+    const thead =
+        document.querySelector(".table-container thead");
+
+    const containerHeight =
+        scrollContainer.clientHeight;
+
+    const theadHeight =
+        thead
+        ? thead.getBoundingClientRect().height
+        : 41;
+
+    const rowHeight =
+        estimateRowHeight();
+
+    const available =
+        containerHeight - theadHeight;
+
+    const computed =
+        Math.floor(available / rowHeight);
+
+    // minimal 5 row biar nggak aneh di layar super kecil
+    return Math.max(5, computed);
+
+}
+
+function debounce(fn, delay){
+
+    let timer;
+
+    return (...args) => {
+
+        clearTimeout(timer);
+
+        timer = setTimeout(
+            () => fn(...args),
+            delay
+        );
+
+    };
+
+}
+
+async function adjustRowsPerPageAndRefresh(){
+
+    const newRowsPerPage =
+        calculateRowsPerPage();
+
+    if(newRowsPerPage !== rowsPerPage && newRowsPerPage > 0){
+
+        rowsPerPage = newRowsPerPage;
+        currentPage = 1;
+
+        await refreshTable();
+
+    }
+
+}

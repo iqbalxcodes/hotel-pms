@@ -140,7 +140,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     updateToolbar();
+    
+    rowsPerPage = calculateRowsPerPage();
+
     await loadReservations();
+
+    await adjustRowsPerPageAndRefresh();
+
+    window.addEventListener(
+        "resize",
+        debounce(async () => {
+            await adjustRowsPerPageAndRefresh();
+        }, 300)
+    );
 
 });
 
