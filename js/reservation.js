@@ -298,3 +298,44 @@ async function exportReservations(){
     );
 
 }
+
+function renderReservations(reservations){
+
+    const tbody = document.getElementById("reservationTable");
+    tbody.innerHTML = "";
+
+    reservations.forEach(res => {
+
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td>
+                <input type="checkbox" class="reservation-checkbox" data-id="${res.id}">
+            </td>
+            <td>${res.confirmation_no}</td>
+            <td class="guest-cell" data-id="${res.id}">${res.guest_name ?? ""}</td>
+            <td class="room-cell" data-id="${res.id}">${res.room_number ?? ""}</td>
+            <td class="arrival-cell" data-id="${res.id}">${res.arrival_date ?? ""}</td>
+            <td class="departure-cell" data-id="${res.id}">${res.departure_date ?? ""}</td>
+            <td>${res.status ?? ""}</td>
+        `;
+
+        tr.addEventListener("click", (e) => {
+
+            if(e.target.closest("input, .edit-input")){
+
+                return;
+
+            }
+
+            window.location.href = `reservation-detail.html?id=${res.id}`;
+
+        });
+
+        tbody.appendChild(tr);
+
+    });
+
+    setupCheckbox();
+
+}

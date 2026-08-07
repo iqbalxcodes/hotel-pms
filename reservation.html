@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reservation Detail</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="detail-topbar">
+        <button onclick="window.location.href='index.html'">← Back</button>
+        <h2>Reservation Detail</h2>
+    </div>
+
+    <div class="detail-grid">
+
+        <!-- Main Guest -->
+        <div class="detail-card">
+            <h3>Main Guest</h3>
+
+            <label>First Name</label>
+            <div class="value" id="det_first_name">-</div>
+
+            <label>Last Name</label>
+            <div class="value" id="det_last_name">-</div>
+
+            <div class="field-row">
+                <div>
+                    <label>Loyalty</label>
+                    <div class="value" id="det_loyalty">-</div>
+                </div>
+                <div>
+                    <label>Salutation</label>
+                    <div class="value" id="det_salutation">-</div>
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div>
+                    <label>Language</label>
+                    <div class="value" id="det_language">-</div>
+                </div>
+                <div>
+                    <label>Country</label>
+                    <div class="value" id="det_country">-</div>
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div>
+                    <label>Contact</label>
+                    <div class="value" id="det_contact">-</div>
+                </div>
+                <div>
+                    <label>Company</label>
+                    <div class="value" id="det_company">-</div>
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div>
+                    <label>Booker Name</label>
+                    <div class="value" id="det_booker_name">-</div>
+                </div>
+                <div>
+                    <label>Travel Agent</label>
+                    <div class="value" id="det_travel_agent">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stay Details -->
+        <div class="detail-card">
+            <h3>Stay Details</h3>
+
+            <div class="field-row">
+                <div>
+                    <label>Arrival</label>
+                    <div class="value" id="det_arrival">-</div>
+                </div>
+                <div>
+                    <label>Res. Number</label>
+                    <div class="value" id="det_confirmation_no">-</div>
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div>
+                    <label>Departure</label>
+                    <div class="value" id="det_departure">-</div>
+                </div>
+                <div>
+                    <label>External</label>
+                    <div class="value" id="det_external_no">-</div>
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div>
+                    <label>Nights</label>
+                    <div class="value" id="det_nights">-</div>
+                </div>
+                <div>
+                    <label>Room Number</label>
+                    <div class="value" id="det_room_number">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rate & Statistics -->
+        <div class="detail-card">
+            <h3>Rate &amp; Statistics</h3>
+
+            <div class="field-row">
+                <div>
+                    <label>Rate</label>
+                    <div class="value" id="det_rate">-</div>
+                </div>
+                <div>
+                    <label>Price</label>
+                    <div class="value" id="det_price">-</div>
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div>
+                    <label>Cancel Policy</label>
+                    <div class="value" id="det_cancel_policy">-</div>
+                </div>
+                <div>
+                    <label>Source</label>
+                    <div class="value" id="det_source">-</div>
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div>
+                    <label>Market Segm.</label>
+                    <div class="value" id="det_market_segment">-</div>
+                </div>
+                <div>
+                    <label>Travel Reason</label>
+                    <div class="value" id="det_travel_reason">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Room & Amenities -->
+        <div class="detail-card">
+            <h3>Room &amp; Amenities</h3>
+
+            <div class="field-row">
+                <div>
+                    <label>Room Type</label>
+                    <div class="value" id="det_room_type">-</div>
+                </div>
+                <div>
+                    <label>Bed Type</label>
+                    <div class="value" id="det_bed_type">-</div>
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div>
+                    <label>Breakfast</label>
+                    <div class="value" id="det_breakfast">-</div>
+                </div>
+                <div>
+                    <label>Dinner</label>
+                    <div class="value" id="det_dinner">-</div>
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div>
+                    <label>Parking</label>
+                    <div class="value" id="det_parking">-</div>
+                </div>
+                <div>
+                    <label>Shuttle</label>
+                    <div class="value" id="det_shuttle">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Billing -->
+        <div class="detail-card">
+            <h3>Billing</h3>
+            <div id="det_billing_items">
+                <div class="value">-</div>
+            </div>
+            <div class="billing-total">
+                <span>Total</span>
+                <span id="det_billing_total">-</span>
+            </div>
+        </div>
+
+        <!-- Secondary Guest -->
+        <div class="detail-card">
+            <h3>Secondary Guest</h3>
+
+            <label>First Name</label>
+            <div class="value" id="det_sg_first_name">-</div>
+
+            <label>Last Name</label>
+            <div class="value" id="det_sg_last_name">-</div>
+        </div>
+
+        <!-- Remarks -->
+        <div class="detail-card detail-card-wide">
+            <h3>Remarks</h3>
+            <div class="value" id="det_remarks" style="min-height:80px; white-space:pre-wrap;">-</div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/reservationDetail.js"></script>
+
+</body>
+</html>
