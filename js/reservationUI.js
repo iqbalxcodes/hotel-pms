@@ -291,26 +291,6 @@ function startClock(){
     
 }
 
-startClock();
-
-function showAddReservation(){
-
-    document
-    .getElementById("addReservationPanel")
-    .style.display = "block";
-
-
-    document
-    .getElementById("cancelAddBtn")
-    .style.display = "inline-block";
-
-
-    document
-    .getElementById("addReservationBtn")
-    .style.display = "none";
-
-}
-
 function hideAddReservation(){
 
     document
@@ -424,10 +404,11 @@ function showBilling(){
 
 function updateDropdownText(counts){
 
+
     const select =
-        document.getElementById(
-            "modeSelect"
-        );
+        document.getElementById("modeSelect");
+
+        if(!select) return;
 
 
     select.options[0].text =
@@ -539,3 +520,8 @@ function showConfirm(message, onConfirm, onCancel){
 function showDevMessage(feature){
     showMessage(`${feature} is still in development`, "info");
 }
+
+document.addEventListener(
+    "DOMContentLoaded",
+    startClock
+);

@@ -88,7 +88,8 @@ async function loadReservations(){
 // ======================================================
 
 function renderReservations(reservations){
-
+    
+    console.log("RENDER CALLED", reservations);
     const tbody = document.getElementById("reservationTable");
     tbody.innerHTML = "";
 
