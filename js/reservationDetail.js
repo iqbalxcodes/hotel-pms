@@ -509,23 +509,15 @@ async function saveEditMode(){
 
     }
 
-
-    if(error){
+if(error){
 
         console.error(error);
-        alert("Gagal menyimpan perubahan");
+        alert("Gagal menyimpan perubahan: " + error.message);
         return;
 
     }
 
-    if(error){
-
-        console.error(error);
-        alert("Gagal menyimpan perubahan");
-        return;
-
-    }
-
+    await loadReservationDetail(false);
     await loadReservationDetail(false);
 
     isEditMode = false;
