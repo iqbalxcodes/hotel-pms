@@ -3,18 +3,6 @@
 // ======================================================
 
 let activeSortColumn = null;
-
-const sortMap = {
-
-    reservation: "confirmation_no",
-    guest: "guest_name",
-    room: "room_number",
-    arrival: "arrival_date",
-    departure: "departure_date",
-    status: "status"
-
-};
-
 let sortDirection = {};
 
 
@@ -51,11 +39,6 @@ async function refreshTable(){
 
     renderReservations(data);
 
-    resetHeader("guest");
-    resetHeader("room");
-    resetHeader("arrival");
-    resetHeader("departure");
-
     updateToolbar();
     updateFilterCount();
 
@@ -84,34 +67,54 @@ async function loadReservations(){
 
 
 // ======================================================
-// Render Rows
+// Render Rows (kolom dinamis sesuai tableColumns state)
 // ======================================================
 
 function renderReservations(reservations){
-    
-    console.log("RENDER CALLED", reservations);
+
     const tbody = document.getElementById("reservationTable");
     tbody.innerHTML = "";
+
+    const state = getTableState();
 
     reservations.forEach(res => {
 
         const tr = document.createElement("tr");
 
-        tr.innerHTML = `
+        let cellsHtml = `
             <td>
                 <input type="checkbox" class="reservation-checkbox" data-id="${res.id}">
             </td>
-            <td>${res.confirmation_no}</td>
-            <td class="guest-cell" data-id="${res.id}">${res.guest_name ?? ""}</td>
-            <td class="room-cell" data-id="${res.id}">${res.room_number ?? ""}</td>
-            <td class="arrival-cell" data-id="${res.id}">${res.arrival_date ?? ""}</td>
-            <td class="departure-cell" data-id="${res.id}">${res.departure_date ?? ""}</td>
-            <td>${res.status ?? ""}</td>
         `;
+
+        state.visibleOrder.forEach(key => {
+
+            const colDef = COLUMN_MAP[key];
+            if(!colDef) return;
+
+            if(key === "status"){
+
+                const statusKey = (res.status || "").toLowerCase();
+
+                cellsHtml += `
+                    <td>
+                        <span class="status-badge status-${statusKey}">${res.status ?? ""}</span>
+                    </td>
+                `;
+
+            } else {
+
+                cellsHtml += `<td>${formatColumnValue(key, res)}</td>`;
+
+            }
+
+        });
+
+        tr.innerHTML = cellsHtml;
 
         tr.addEventListener("click", (e) => {
 
-            if(e.target.closest("input, .edit-input")){
+            if(e.target.closest("input")){
 
                 return;
 
@@ -139,6 +142,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (typeof simulateReservationStatus === "function") {
         await simulateReservationStatus();
     }
+
+    renderTableHeader();
 
     updateToolbar();
     renderUserArea();
@@ -275,14 +280,14 @@ async function performStatusUpdate(status, selected){
 
 
 // ======================================================
-// Sort
+// Sort — column key = nama kolom database secara langsung
 // ======================================================
 
 async function sortTable(column){
 
-    const dbColumn = sortMap[column];
+    const colDef = COLUMN_MAP[column];
 
-    if(!dbColumn){
+    if(!colDef || colDef.sortable === false){
         return;
     }
 
@@ -363,12 +368,3 @@ async function exportReservations(){
     showMessage("Export completed", "success");
 
 }
-
-document.addEventListener(
-    "DOMContentLoaded",
-    async () => {
-
-        await refreshTable();
-
-    }
-);

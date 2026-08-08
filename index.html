@@ -89,6 +89,8 @@
                     Add Reservation
                 </button>
 
+                <button id="modifyTableBtn" onclick="toggleModifyMode()">Modify Table</button>
+
                 <button id="cancelAddBtn" onclick="hideAddReservation()" style="display:none;">
                     Cancel
                 </button>
@@ -121,45 +123,55 @@
 
         <!-- Tag Table Bersih Tanpa border="1" -->
          <div class="table-scroll">
-
-             <table>
-                 <thead>
-                     <tr>
-                         <th>
-                             <input type="checkbox" id="selectAll" onchange="toggleAllCheckbox(this)">
-                         </th>
-     
-                         <th onclick="sortTable('reservation')">Reservation Number ↕</th>
-     
-                         <th id="guestHeader" onclick="sortTable('guest')">
-                             Guest ↕
-                             <button onclick="event.stopPropagation(); enableEdit('guest')">✏️</button>
-                         </th>
-     
-                         <th id="roomHeader" onclick="sortTable('room')">
-                             Room ↕
-                             <button onclick="event.stopPropagation(); enableEdit('room')">✏️</button>
-                         </th>
-     
-                         <th id="arrivalHeader" onclick="sortTable('arrival')">
-                             Arrival ↕
-                             <button onclick="event.stopPropagation(); enableEdit('arrival','date')">✏️</button>
-                         </th>
-     
-                         <th id="departureHeader" onclick="sortTable('departure')">
-                             Departure ↕
-                             <button onclick="event.stopPropagation(); enableEdit('departure','date')">✏️</button>
-                         </th>
-     
-                         <th onclick="sortTable('status')">Status ↕</th>
-                     </tr>
-                 </thead>
-     
-                 <tbody id="reservationTable"></tbody>
-             </table>
+                <table>     
+                    <tbody id="reservationTable"></tbody>
+                </table>
          </div>
 
     </div>
+
+    </div>
+
+    <div id="modifyTablePopup" class="modify-table-popup" style="display:none;">
+
+        <div class="modify-popup-section">
+            <label>Preset Title</label>
+            <div class="modify-preset-row">
+                <input type="text" id="presetTitleInput" placeholder="Nama preset (awali - untuk hapus)">
+                <button onclick="applyColumnChanges()">Apply</button>
+                <button onclick="savePresetFromInput()">Save</button>
+            </div>
+
+            <div class="modify-preset-existing">
+                <label>Load Preset</label>
+                <select id="presetSelect" onchange="loadSelectedPreset(this.value)">
+                    <option value="">-- Select Preset --</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="modify-popup-columns">
+
+            <div class="modify-popup-list-col">
+                <label>Column Showing</label>
+                <ul id="columnShowingList" class="column-list"></ul>
+            </div>
+
+            <div class="modify-popup-list-col">
+                <label>Column Hide</label>
+                <ul id="columnHidingList" class="column-list"></ul>
+            </div>
+
+        </div>
+
+        <div class="modify-popup-footer">
+            <button onclick="closeModifyPopup()">Close</button>
+        </div>
+
+    </div>
+
+    <div id="statusBar">
+        <div id="userArea"></div>
 
     <div id="statusBar">
         <div id="userArea"></div>
@@ -174,6 +186,8 @@
 
     <script src="js/guestData.js"></script>
     <script src="js/roomData.js"></script>
+    <script src="js/tableConfig.js"></script>
+    <script src="js/tableColumns.js"></script>  
 
     <script src="js/reservationUI.js"></script>
 

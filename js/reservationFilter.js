@@ -437,27 +437,20 @@ function buildDataQuery(){
 
     if(typeof activeSortColumn !== "undefined" && activeSortColumn){
 
-        const dbColumn = sortMap[activeSortColumn];
-
-        if(dbColumn){
-
-            query =
-                query.order(dbColumn, {
-                    ascending: sortDirection[activeSortColumn] === "asc"
-                });
+            query = query.order(activeSortColumn, {
+                ascending: sortDirection[activeSortColumn] === "asc"
+            });
 
         }
 
-    }
+        if(rowsPerPage !== "all"){
 
-    if(rowsPerPage !== "all"){
+            const from = (currentPage - 1) * rowsPerPage;
+            const to = from + rowsPerPage - 1;
 
-        const from = (currentPage - 1) * rowsPerPage;
-        const to = from + rowsPerPage - 1;
+            query = query.range(from, to);
 
-        query = query.range(from, to);
-
-    }
+        }
 
     return query;
 
@@ -475,16 +468,9 @@ function buildExportQuery(){
 
     if(typeof activeSortColumn !== "undefined" && activeSortColumn){
 
-        const dbColumn = sortMap[activeSortColumn];
-
-        if(dbColumn){
-
-            query =
-                query.order(dbColumn, {
-                    ascending: sortDirection[activeSortColumn] === "asc"
-                });
-
-        }
+        query = query.order(activeSortColumn, {
+            ascending: sortDirection[activeSortColumn] === "asc"
+        });
 
     }
 
