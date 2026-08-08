@@ -278,11 +278,17 @@ async function handleLogout(){
 
 
 // ------------------------------------------------------
-// Visibility gating
+// Access gating — bukan di-hide, tapi di-disable + pudar +
+// lock badge + tooltip ("kenapa gak bisa diklik").
 //
-// - class="auth-required"                -> hanya tampil kalau login
+// - class="auth-required"                -> perlu login
 // - class="auth-required" data-roles="admin,manager"
-//                                          -> hanya tampil kalau role cocok
+//                                          -> perlu role tsb
+//
+// Catatan: ini murni UX. Keamanan sesungguhnya ada di RLS
+// policy Supabase (server-side), jadi meskipun elemen ini
+// dipaksa di-enable lewat DevTools, request ke DB tetap
+// akan ditolak kalau user belum login/role gak sesuai.
 // ------------------------------------------------------
 
 function applyAuthVisibility(){
@@ -292,11 +298,18 @@ function applyAuthVisibility(){
         const rolesAttr = el.dataset.roles;
 
         let allowed;
+        let reason = "Login diperlukan untuk aksi ini";
 
         if(rolesAttr){
 
             const roles = rolesAttr.split(",").map(r => r.trim());
             allowed = hasRole(...roles);
+
+            if(!allowed && isLoggedIn()){
+
+                reason = `Hanya untuk role: ${roles.join(", ")}`;
+
+            }
 
         }
         else{
@@ -305,9 +318,54 @@ function applyAuthVisibility(){
 
         }
 
-        el.style.display = allowed ? "" : "none";
+        setLockedState(el, !allowed, reason);
 
     });
+
+}
+
+function setLockedState(el, locked, reason){
+
+    const isFormControl =
+        el.tagName === "BUTTON" ||
+        el.tagName === "INPUT" ||
+        el.tagName === "SELECT" ||
+        el.tagName === "TEXTAREA";
+
+    if(locked){
+
+        el.classList.add("auth-locked");
+        el.title = `🔒 ${reason}`;
+
+        if(isFormControl){
+
+            el.disabled = true;
+
+        }
+        else{
+
+            el.setAttribute("aria-disabled", "true");
+
+        }
+
+    }
+    else{
+
+        el.classList.remove("auth-locked");
+        el.removeAttribute("title");
+
+        if(isFormControl){
+
+            el.disabled = false;
+
+        }
+        else{
+
+            el.removeAttribute("aria-disabled");
+
+        }
+
+    }
 
 }
 
