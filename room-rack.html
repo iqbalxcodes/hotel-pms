@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel PMS — Room Rack</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/roomRack.css">
+</head>
+<body>
+
+    <h1>Hotel PMS</h1>
+
+    <!-- Container Utama Bertipe Kartu / Detail-Card (sama seperti reservation & room list) -->
+    <div class="table-container detail-card rack-page">
+
+        <div class="reservation-header">
+
+            <!-- LEFT -->
+            <div class="header-title">
+                <h3>Room Plan</h3>
+            </div>
+
+            <!-- CENTER -->
+            <div class="header-menu">
+                <button onclick="rackChangeDate(-1)">◀</button>
+
+                <button onclick="rackJumpTo('yesterday')">Yesterday</button>
+                <button onclick="rackJumpTo('today')">Today</button>
+                <button onclick="rackJumpTo('tomorrow')">Tomorrow</button>
+
+                <input type="date" id="rackDateInput" onchange="rackChangeSelectedDate(this.value)">
+
+                <button onclick="rackChangeDate(1)">▶</button>
+
+                <div class="rack-view-toggle">
+                    <button class="rack-view-btn" data-mode="3" onclick="rackSetViewMode('3')">3D</button>
+                    <button class="rack-view-btn" data-mode="7" onclick="rackSetViewMode('7')">7D</button>
+                    <button class="rack-view-btn" data-mode="14" onclick="rackSetViewMode('14')">14D</button>
+                    <button class="rack-view-btn" data-mode="auto" onclick="rackSetViewMode('auto')">Auto</button>
+                </div>
+            </div>
+
+            <!-- RIGHT -->
+            <div class="header-clock">
+                <span id="clock"></span>
+            </div>
+
+        </div>
+
+        <div id="toolbar">
+
+            <!-- DEFAULT TOOLBAR -->
+            <div id="normalToolbar">
+                <a class="icon-btn" href="room.html">📋 Room List</a>
+                <a class="icon-btn" href="reservation.html">🗓 Reservations</a>
+
+                <button onclick="rackToggleAllGroups()">Expand / Collapse All</button>
+            </div>
+
+            <!-- SELECT TOOLBAR: quick housekeeping status change (same actions as room.html) -->
+            <div id="selectionToolbar" style="display:none;">
+
+                <span id="selectedCount">0 selected</span>
+
+                <button onclick="rackSetRoomStatus('DIRTY')">DIRTY</button>
+                <button onclick="rackSetRoomStatus('CLEAN')">CLEAN</button>
+                <button onclick="rackSetRoomStatus('INSPECTED')">INSPECTED</button>
+                <button onclick="rackSetRoomStatus('OUT_OF_SERVICE')">OUT OF SERVICE</button>
+                <button onclick="rackSetRoomStatus('BLOCKED')">BLOCKED</button>
+
+            </div>
+
+        </div>
+
+        <div class="rack-scroll" id="rackScroll">
+            <div id="rackHeaderRow" class="rack-header-row"></div>
+            <div id="rackBody"></div>
+        </div>
+
+    </div>
+
+    <div id="statusBar">
+        <div id="userArea"></div>
+        <div id="contextArea"></div>
+        <div id="paginationInfo"></div>
+        <div id="paginationNav"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script src="js/supabase.js"></script>
+    <script src="js/roomRack.js"></script>
+
+</body>
+</html>

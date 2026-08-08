@@ -1,0 +1,370 @@
+/* ======================================================
+   ROOM RACK — layout variables
+   ====================================================== */
+
+:root {
+    --rack-label-width: 172px;
+    --rack-col-width: 96px; /* overwritten inline by JS per breakpoint */
+}
+
+.rack-page {
+    overflow: hidden;
+}
+
+.rack-page .header-menu input[type="date"] {
+    padding: 3px 6px;
+}
+
+.rack-view-toggle {
+    display: flex;
+    gap: 4px;
+    margin-left: 8px;
+    padding-left: 8px;
+    border-left: 1px solid #ddd;
+}
+
+.rack-view-btn {
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 4px;
+    padding: 3px 9px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.rack-view-btn:hover {
+    background: #f0f0f0;
+}
+
+.rack-view-btn.active {
+    background: #1565c0;
+    color: #fff;
+    border-color: #1565c0;
+}
+
+
+/* ======================================================
+   SCROLL CONTAINER — both axes scroll here, sticky header
+   row and sticky room-label column are relative to this
+   ====================================================== */
+
+.rack-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    position: relative;
+    border: 1px solid #eee;
+    border-radius: 6px;
+}
+
+
+/* ======================================================
+   HEADER ROW (dates)
+   ====================================================== */
+
+.rack-header-row {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: #fafafa;
+    border-bottom: 1px solid #ddd;
+    width: max-content;
+}
+
+.rack-header-label {
+    position: sticky;
+    left: 0;
+    z-index: 4;
+    width: var(--rack-label-width);
+    flex: none;
+    background: #fafafa;
+    border-right: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+}
+
+.rack-header-cell {
+    flex: none;
+    width: var(--rack-col-width);
+    box-sizing: border-box;
+    text-align: center;
+    padding: 6px 2px;
+    border-right: 1px solid #eee;
+}
+
+.rack-header-cell .rack-header-dow {
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.rack-header-cell .rack-header-date {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+}
+
+.rack-header-cell.is-weekend {
+    background: rgba(0, 0, 0, 0.035);
+}
+
+.rack-header-cell.is-today {
+    background: #fff3e0;
+}
+
+.rack-header-cell.is-today .rack-header-date {
+    color: #e65100;
+}
+
+
+/* ======================================================
+   GROUP HEADER (room_type)
+   ====================================================== */
+
+.rack-group-title {
+    position: sticky;
+    left: 0;
+    width: fit-content;
+    min-width: 100%;
+    box-sizing: border-box;
+    background: #f0f4f8;
+    border-bottom: 1px solid #ddd;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: #37474f;
+    cursor: pointer;
+    user-select: none;
+}
+
+.rack-group-title .rack-group-caret {
+    display: inline-block;
+    margin-right: 6px;
+    transition: transform 0.15s ease;
+}
+
+.rack-group.collapsed .rack-group-caret {
+    transform: rotate(-90deg);
+}
+
+.rack-group.collapsed .rack-row {
+    display: none;
+}
+
+
+/* ======================================================
+   ROOM ROW
+   ====================================================== */
+
+.rack-row {
+    display: flex;
+    position: relative;
+    border-bottom: 1px solid #eee;
+    min-height: 54px;
+    width: max-content;
+}
+
+.rack-room-label {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    width: var(--rack-label-width);
+    flex: none;
+    background: #fff;
+    border-right: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    box-sizing: border-box;
+}
+
+.rack-room-number {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.rack-status-dot {
+    font-size: 10px;
+    line-height: 1;
+}
+
+.rack-status-dot.status-available,
+.rack-status-dot.status-clean { color: #2e7d32; }
+.rack-status-dot.status-dirty { color: #e65100; }
+.rack-status-dot.status-inspected { color: #1565c0; }
+.rack-status-dot.status-out_of_service { color: #ad1457; }
+.rack-status-dot.status-blocked { color: #616161; }
+
+.rack-conflict-flag {
+    font-size: 12px;
+    cursor: help;
+}
+
+
+/* ======================================================
+   TIMELINE (day cells + reservation bars)
+   ====================================================== */
+
+.rack-timeline {
+    position: relative;
+    flex: none;
+    display: flex;
+}
+
+.rack-cell {
+    flex: none;
+    width: var(--rack-col-width);
+    box-sizing: border-box;
+    border-right: 1px solid #f0f0f0;
+    background: #fff;
+}
+
+.rack-cell.status-available,
+.rack-cell.status-clean { background: #eef8ef; }
+.rack-cell.status-dirty { background: #fff6ea; }
+.rack-cell.status-inspected { background: #eaf4fc; }
+.rack-cell.status-out_of_service { background: #fbecf1; }
+.rack-cell.status-blocked { background: #f1f1f1; }
+
+.rack-cell.is-weekend {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.035), rgba(0, 0, 0, 0.035));
+}
+
+.rack-bars-layer {
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+}
+
+.reservation-bar {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    box-sizing: border-box;
+    border-radius: 5px;
+    padding: 3px 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.25;
+    cursor: pointer;
+    pointer-events: all;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.reservation-bar .bar-guest {
+    font-weight: 600;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reservation-bar .bar-meta {
+    display: block;
+    font-size: 11px;
+    opacity: 0.9;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reservation-bar.cut-left { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.reservation-bar.cut-right { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+
+.reservation-bar.status-pending { background: #f9a825; }
+.reservation-bar.status-confirmed { background: #43a047; }
+.reservation-bar.status-checked_in { background: #1e88e5; }
+.reservation-bar.status-checked_out { background: #9e9e9e; }
+
+.reservation-bar.has-conflict {
+    outline: 2px solid #c62828;
+    outline-offset: -2px;
+}
+
+.reservation-bar {
+    cursor: grab;
+}
+
+.reservation-bar.locked {
+    cursor: pointer;
+    opacity: 0.85;
+}
+
+.reservation-bar:active {
+    cursor: grabbing;
+}
+
+
+/* ======================================================
+   DRAG & DROP — resize handles, ghost, target row
+   ====================================================== */
+
+.bar-resize-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    cursor: ew-resize;
+    z-index: 2;
+}
+
+.bar-resize-handle.left { left: 0; }
+.bar-resize-handle.right { right: 0; }
+
+.bar-resize-handle:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.rack-drag-ghost {
+    opacity: 0.85;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 999;
+}
+
+.rack-row.drag-target-row {
+    background: rgba(21, 101, 192, 0.08);
+    outline: 2px dashed #1565c0;
+    outline-offset: -2px;
+}
+
+.rack-row.drag-target-row .rack-room-label {
+    background: rgba(21, 101, 192, 0.08);
+}
+
+.rack-today-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(198, 40, 40, 0.55);
+    z-index: 1;
+    pointer-events: none;
+}
+
+
+/* ======================================================
+   RESPONSIVE
+   ====================================================== */
+
+@media (max-width: 700px) {
+
+    :root {
+        --rack-label-width: 128px;
+    }
+
+    .rack-page .header-menu {
+        flex-wrap: wrap;
+    }
+
+}
