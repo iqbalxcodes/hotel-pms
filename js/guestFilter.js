@@ -9,6 +9,7 @@
 let currentPage = 1;
 let rowsPerPage = 25; // number or "all"
 let totalCount = 0;
+let userSetRowsPerPage = false; // true kalau user sudah set manual lewat input
 
 let activeSearchKeyword = "";
 let activeSortColumn = null;
@@ -247,6 +248,14 @@ function debounce(fn, delay){
 }
 
 async function adjustRowsPerPageAndRefresh(){
+
+    // Kalau user sudah pilih jumlah baris sendiri, jangan
+    // ditimpa lagi sama auto-fit saat resize window.
+    if(userSetRowsPerPage){
+
+        return;
+
+    }
 
     const newRowsPerPage =
         calculateRowsPerPage();

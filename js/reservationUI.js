@@ -446,30 +446,110 @@ function renderPaginationBar(){
 
     const totalPages = getTotalPages();
 
-    info.innerText =
+    renderPaginationInfoDisplay(info);
+
+    info.onmouseenter = () => renderPaginationInfoEditor(info);
+    info.onmouseleave = () => renderPaginationInfoDisplay(info);
+
+    nav.innerHTML = "";
+
+    // Kalau cuma 1 halaman, tombol Prev/Next gak perlu ditampilkan
+    if(totalPages > 1){
+
+        const prevBtn = document.createElement("button");
+        prevBtn.innerText = "‹ Prev";
+        prevBtn.disabled = currentPage <= 1;
+        prevBtn.onclick = async () => {
+            currentPage--;
+            await refreshTable();
+        };
+        nav.appendChild(prevBtn);
+
+        const nextBtn = document.createElement("button");
+        nextBtn.innerText = "Next ›";
+        nextBtn.disabled = currentPage >= totalPages;
+        nextBtn.onclick = async () => {
+            currentPage++;
+            await refreshTable();
+        };
+        nav.appendChild(nextBtn);
+
+    }
+
+}
+
+function renderPaginationInfoDisplay(info){
+
+    const totalPages = getTotalPages();
+
+    info.innerHTML =
         totalCount > 0
         ? `${totalCount} reservations · Page ${currentPage}/${totalPages}`
         : "No reservations";
 
-    nav.innerHTML = "";
+}
 
-    const prevBtn = document.createElement("button");
-    prevBtn.innerText = "‹ Prev";
-    prevBtn.disabled = currentPage <= 1;
-    prevBtn.onclick = async () => {
-        currentPage--;
-        await refreshTable();
-    };
-    nav.appendChild(prevBtn);
+function renderPaginationInfoEditor(info){
 
-    const nextBtn = document.createElement("button");
-    nextBtn.innerText = "Next ›";
-    nextBtn.disabled = currentPage >= totalPages;
-    nextBtn.onclick = async () => {
-        currentPage++;
-        await refreshTable();
-    };
-    nav.appendChild(nextBtn);
+    if(totalCount === 0){
+
+        return;
+
+    }
+
+    const currentValue =
+        rowsPerPage === "all" ? totalCount : rowsPerPage;
+
+    info.innerHTML = `
+        <span class="rows-per-page-popover" onclick="event.stopPropagation()">
+            Reservations per Page:
+            <input
+                type="number"
+                id="rowsPerPageInput"
+                min="1"
+                value="${currentValue}">
+            <button id="rowsPerPageApplyBtn">Apply</button>
+        </span>
+    `;
+
+    const input = document.getElementById("rowsPerPageInput");
+    const applyBtn = document.getElementById("rowsPerPageApplyBtn");
+
+    applyBtn.onclick = () => applyCustomRowsPerPage();
+
+    input.addEventListener("keydown", (e) => {
+
+        if(e.key === "Enter"){
+
+            applyCustomRowsPerPage();
+
+        }
+
+    });
+
+    input.focus();
+    input.select();
+
+}
+
+async function applyCustomRowsPerPage(){
+
+    const input = document.getElementById("rowsPerPageInput");
+
+    const value = parseInt(input.value, 10);
+
+    if(!value || value < 1){
+
+        showMessage("Jumlah baris harus angka lebih dari 0", "error");
+        return;
+
+    }
+
+    rowsPerPage = value;
+    userSetRowsPerPage = true;
+    currentPage = 1;
+
+    await refreshTable();
 
 }
 
