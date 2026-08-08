@@ -980,8 +980,32 @@ h1 {
 /* ======================================================
    RESERVATION STATUS BADGE (header, replaces old edit btn)
    ====================================================== */
+.status-pending {
+    background: #fff8e1;
+    color: #f57f17;
+}
 
-.status-reserved     { background: #fff3e0; color: #e65100; }
-.status-checked_in   { background: #e3f2fd; color: #1565c0; }
-.status-checked_out  { background: #eeeeee; color: #424242; }
-.status-cancelled    { background: #fce4ec; color: #ad1457; }
+.status-reserved {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-checked_in {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.status-checked_out {
+    background: #eeeeee;
+    color: #616161;
+}
+
+.status-cancelled {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.status-no_show {
+    background: #f3e5f5;
+    color: #6a1b9a;
+}

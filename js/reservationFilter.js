@@ -241,6 +241,18 @@ function applyModeFilter(query, mode, scope, date){
 
             break;
 
+            case "noshow":
+
+            query = query.eq("status", "NO_SHOW");
+
+            if(scope === "today"){
+
+                query = query.eq("arrival_date", date);
+
+            }
+
+            break;
+
     }
 
     return query;
@@ -339,7 +351,8 @@ async function updateFilterCount(){
         "departure",
         "inhouse",
         "pending",
-        "cancelled"
+        "cancelled",
+        "noshow"
     ];
 
     for(const key of modes){

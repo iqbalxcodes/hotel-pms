@@ -430,6 +430,9 @@ function updateDropdownText(counts){
     select.options[4].text =
         `Cancelled (${counts.cancelled})`;
 
+    select.options[5].text =
+        `No Show (${counts.noshow})`;
+
 }
 
 function renderPaginationBar(){
