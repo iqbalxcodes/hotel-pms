@@ -146,7 +146,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderTableHeader();
 
     updateToolbar();
-    renderUserArea();
+
+    if (typeof renderUserArea === "function") {
+        renderUserArea();
+    }
 
     rowsPerPage = calculateRowsPerPage();
 
