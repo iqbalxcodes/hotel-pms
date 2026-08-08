@@ -186,73 +186,174 @@ h1 {
 
 
 /* ======================================================
-   ELEMENTS & DETAIL PAGE COMPONENTS
+   DETAIL GRID — base layout (layar normal, ~701–1399px)
    ====================================================== */
-
-.detail-topbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-}
-
 
 .detail-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:
+        "guest      stay       billing1"
+        "secondary  amenities  billing1"
+        "remarks    rate       billing1";
 }
 
+.card-guest      { grid-area: guest; }
+.card-stay       { grid-area: stay; }
+.card-secondary  { grid-area: secondary; }
+.card-amenities  { grid-area: amenities; }
+.card-remarks    { grid-area: remarks; }
+.card-rate       { grid-area: rate; }
 
-.detail-card-wide {
-    grid-column: span 2;
-}
-
+.card-billing1   { grid-area: billing1; }
+.card-billing2   { grid-area: billing2; display: none; }
+.card-billing3   { grid-area: billing3; display: none; }
 
 .detail-card-tall {
-    grid-row: span 2;
-
     display: flex;
     flex-direction: column;
     justify-content: space-between;
 }
 
-
-.field-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-
-.detail-card label {
-    display: block;
-
-    font-size: 12px;
-    color: #777;
-
-    margin-top: 8px;
-}
-
-
-.detail-card .value {
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-
-
-.billing-total {
+.billing-placeholder {
+    flex: 1;
     display: flex;
-    justify-content: space-between;
-
-    border-top: 1px solid #ddd;
-
-    margin-top: auto;
-    padding-top: 12px;
-
-    font-weight: bold;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 13px;
 }
 
+
+/* ======================================================
+   FOLIO MODE — toggle di layar normal (tombol ←/→)
+   billing1 pindah ke kolom 1, billing2 & billing3 muncul
+   ====================================================== */
+
+.detail-grid.folio-mode {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:
+        "billing1 billing2 billing3"
+        "billing1 billing2 billing3"
+        "billing1 billing2 billing3";
+}
+
+.folio-mode .card-guest,
+.folio-mode .card-stay,
+.folio-mode .card-secondary,
+.folio-mode .card-amenities,
+.folio-mode .card-remarks,
+.folio-mode .card-rate {
+    display: none;
+}
+
+.folio-mode .card-billing2,
+.folio-mode .card-billing3 {
+    display: flex;
+}
+
+.detail-card h3 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.folio-toggle-btn {
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 8px;
+    line-height: 1;
+}
+
+.folio-toggle-btn:hover { background: #f0f0f0; }
+
+/* default: hanya tombol buka (←) di billing1 yang tampak */
+.folio-toggle-btn { display: none; }
+.card-billing1 .folio-toggle-btn { display: inline-block; }
+
+/* saat folio-mode aktif: tombol tutup (→) di billing3 muncul,
+   tombol buka di billing1 disembunyikan */
+.folio-mode .card-billing3 .folio-toggle-btn { display: inline-block; }
+.folio-mode .card-billing1 .folio-toggle-btn { display: none; }
+
+
+/* ======================================================
+   LAYAR BESAR (≥1400px) — billing2 otomatis tampil
+   ====================================================== */
+
+@media (min-width: 1400px) {
+
+    .detail-grid {
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-areas:
+            "guest      stay       billing1  billing2"
+            "secondary  amenities  billing1  billing2"
+            "remarks    rate       billing1  billing2";
+    }
+
+    .card-billing2 { display: flex; }
+
+    /* di sini sudah otomatis, toggle nggak diperlukan */
+    .folio-toggle-btn { display: none !important; }
+
+}
+
+
+/* ======================================================
+   LAYAR EXTRA BESAR (≥1700px) — billing3 ikut tampil
+   ====================================================== */
+
+@media (min-width: 1700px) {
+
+    .detail-grid {
+        grid-template-columns: repeat(5, 1fr);
+        grid-template-areas:
+            "guest      stay       billing1  billing2  billing3"
+            "secondary  amenities  billing1  billing2  billing3"
+            "remarks    rate       billing1  billing2  billing3";
+    }
+
+    .card-billing3 { display: flex; }
+
+}
+
+
+/* ======================================================
+   LAYAR KECIL (≤700px) — 1 kolom, billing paling bawah
+   ====================================================== */
+
+@media (max-width: 700px) {
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "guest"
+            "stay"
+            "secondary"
+            "amenities"
+            "remarks"
+            "rate"
+            "billing1";
+    }
+
+    .card-billing2,
+    .card-billing3 {
+        display: none;
+    }
+
+    .folio-toggle-btn { display: none !important; }
+
+    #folioBtn { display: inline-block; }
+
+}
+
+/* tombol Folio di toolbar bawah: default disembunyikan,
+   hanya tampak di layar kecil (lihat media query di atas) */
+#folioBtn { display: none; }
 
 /* ======================================================
    DETAIL TOPBAR ACTIONS

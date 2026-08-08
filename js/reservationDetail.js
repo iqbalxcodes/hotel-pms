@@ -929,5 +929,68 @@ document.addEventListener("DOMContentLoaded", () => {
 
     startClock();
     loadReservationDetail(true);
+    setupFolioObserver();
 
 });
+
+// ======================================================
+// Folio View Toggle (multi-billing card, layar normal)
+// ======================================================
+
+function toggleFolioMode(){
+
+    const grid = document.querySelector(".detail-grid");
+
+    if(!grid){
+        return;
+    }
+
+    grid.classList.toggle("folio-mode");
+
+}
+
+
+// ======================================================
+// Mobile Folio Scroll Button
+// ======================================================
+
+function scrollToFolio(){
+
+    const billingCard = document.querySelector(".card-billing1");
+
+    if(billingCard){
+
+        billingCard.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    }
+
+}
+
+function setupFolioObserver(){
+
+    const billingCard = document.querySelector(".card-billing1");
+    const folioBtn = document.getElementById("folioBtn");
+    const scrollRoot = document.querySelector(".detail-scroll");
+
+    if(!billingCard || !folioBtn || !scrollRoot){
+        return;
+    }
+
+    const observer = new IntersectionObserver(
+        (entries) => {
+
+            entries.forEach(entry => {
+
+                // "" biar CSS breakpoint yang nentuin tampil/nggaknya,
+                // "none" dipaksa saat billing card lagi kelihatan
+                folioBtn.style.display = entry.isIntersecting ? "none" : "";
+
+            });
+
+        },
+        { root: scrollRoot, threshold: 0.3 }
+    );
+
+    observer.observe(billingCard);
+
+}

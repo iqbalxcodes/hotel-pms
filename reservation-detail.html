@@ -109,102 +109,52 @@
 
             <div class="detail-grid">
 
-                <!-- Kolom 1, Baris 1: Main Guest -->
-                <div class="detail-card" style="grid-column:1; grid-row:1;">
+                <div class="detail-card card-guest">
                     <h3>Main Guest</h3>
-
                     <label>First Name</label>
                     <div class="value" id="det_first_name">-</div>
-
                     <label>Last Name</label>
                     <div class="value" id="det_last_name">-</div>
-
                     <div class="field-row">
-                        <div>
-                            <label>Loyalty</label>
-                            <div class="value" id="det_loyalty">-</div>
-                        </div>
-                        <div>
-                            <label>Salutation</label>
-                            <div class="value" id="det_salutation">-</div>
-                        </div>
+                        <div><label>Loyalty</label><div class="value" id="det_loyalty">-</div></div>
+                        <div><label>Salutation</label><div class="value" id="det_salutation">-</div></div>
                     </div>
-
                     <div class="field-row">
-                        <div>
-                            <label>Language</label>
-                            <div class="value" id="det_language">-</div>
-                        </div>
-                        <div>
-                            <label>Country</label>
-                            <div class="value" id="det_country">-</div>
-                        </div>
+                        <div><label>Language</label><div class="value" id="det_language">-</div></div>
+                        <div><label>Country</label><div class="value" id="det_country">-</div></div>
                     </div>
-
                     <div class="field-row">
-                        <div>
-                            <label>Contact</label>
-                            <div class="value" id="det_contact">-</div>
-                        </div>
-                        <div>
-                            <label>Company</label>
-                            <div class="value" id="det_company">-</div>
-                        </div>
+                        <div><label>Contact</label><div class="value" id="det_contact">-</div></div>
+                        <div><label>Company</label><div class="value" id="det_company">-</div></div>
                     </div>
-
                     <div class="field-row">
-                        <div>
-                            <label>Booker Name</label>
-                            <div class="value" id="det_booker_name">-</div>
-                        </div>
-                        <div>
-                            <label>Travel Agent</label>
-                            <div class="value" id="det_travel_agent">-</div>
-                        </div>
+                        <div><label>Booker Name</label><div class="value" id="det_booker_name">-</div></div>
+                        <div><label>Travel Agent</label><div class="value" id="det_travel_agent">-</div></div>
                     </div>
                 </div>
 
-                <!-- Kolom 2, Baris 1: Stay Details -->
-                <div class="detail-card" style="grid-column:2; grid-row:1;">
+                <div class="detail-card card-stay">
                     <h3>Stay Details</h3>
-
                     <div class="field-row">
-                        <div>
-                            <label>Arrival</label>
-                            <div class="value" id="det_arrival">-</div>
-                        </div>
-                        <div>
-                            <label>Res. Number</label>
-                            <div class="value" id="det_confirmation_no">-</div>
-                        </div>
+                        <div><label>Arrival</label><div class="value" id="det_arrival">-</div></div>
+                        <div><label>Res. Number</label><div class="value" id="det_confirmation_no">-</div></div>
                     </div>
-
                     <div class="field-row">
-                        <div>
-                            <label>Departure</label>
-                            <div class="value" id="det_departure">-</div>
-                        </div>
-                        <div>
-                            <label>External</label>
-                            <div class="value" id="det_external_no">-</div>
-                        </div>
+                        <div><label>Departure</label><div class="value" id="det_departure">-</div></div>
+                        <div><label>External</label><div class="value" id="det_external_no">-</div></div>
                     </div>
-
                     <div class="field-row">
-                        <div>
-                            <label>Nights</label>
-                            <div class="value" id="det_nights">-</div>
-                        </div>
-                        <div>
-                            <label>Room Number</label>
-                            <div class="value" id="det_room_number">-</div>
-                        </div>
+                        <div><label>Nights</label><div class="value" id="det_nights">-</div></div>
+                        <div><label>Room Number</label><div class="value" id="det_room_number">-</div></div>
                     </div>
                 </div>
 
-                <!-- Kolom 3, penuh 3 baris: Billing -->
-                <div class="detail-card detail-card-tall" style="grid-column:3; grid-row:1 / span 3;">
-                    <h3>Billing</h3>
+                <!-- BILLING 1 (default, selalu ada) -->
+                <div class="detail-card detail-card-tall card-billing1">
+                    <h3>
+                        Billing
+                        <button id="folioOpenBtn" class="folio-toggle-btn" onclick="toggleFolioMode()" title="Show all folios">←</button>
+                    </h3>
                     <div id="det_billing_items">
                         <div class="value">-</div>
                     </div>
@@ -214,96 +164,63 @@
                     </div>
                 </div>
 
-                <!-- Kolom 1, Baris 2: Secondary Guest -->
-                <div class="detail-card" style="grid-column:1; grid-row:2;">
-                    <h3>Secondary Guest</h3>
+                <!-- BILLING 2 (folio ke-2, baru shell) -->
+                <div class="detail-card detail-card-tall card-billing2">
+                    <h3>Folio 2</h3>
+                    <div class="billing-placeholder">Belum ada folio</div>
+                </div>
 
+                <!-- BILLING 3 (folio ke-3, baru shell) -->
+                <div class="detail-card detail-card-tall card-billing3">
+                    <h3>
+                        Folio 3
+                        <button id="folioCloseBtn" class="folio-toggle-btn" onclick="toggleFolioMode()" title="Close folio view">→</button>
+                    </h3>
+                    <div class="billing-placeholder">Belum ada folio</div>
+                </div>
+
+                <div class="detail-card card-secondary">
+                    <h3>Secondary Guest</h3>
                     <label>First Name</label>
                     <div class="value" id="det_sg_first_name">-</div>
-
                     <label>Last Name</label>
                     <div class="value" id="det_sg_last_name">-</div>
                 </div>
 
-                <!-- Kolom 2, Baris 2: Room & Amenities -->
-                <div class="detail-card" style="grid-column:2; grid-row:2;">
+                <div class="detail-card card-amenities">
                     <h3>Room &amp; Amenities</h3>
-
                     <div class="field-row">
-                        <div>
-                            <label>Room Type</label>
-                            <div class="value" id="det_room_type">-</div>
-                        </div>
-                        <div>
-                            <label>Bed Type</label>
-                            <div class="value" id="det_bed_type">-</div>
-                        </div>
+                        <div><label>Room Type</label><div class="value" id="det_room_type">-</div></div>
+                        <div><label>Bed Type</label><div class="value" id="det_bed_type">-</div></div>
                     </div>
-
                     <div class="field-row">
-                        <div>
-                            <label>Breakfast</label>
-                            <div class="value" id="det_breakfast">-</div>
-                        </div>
-                        <div>
-                            <label>Dinner</label>
-                            <div class="value" id="det_dinner">-</div>
-                        </div>
+                        <div><label>Breakfast</label><div class="value" id="det_breakfast">-</div></div>
+                        <div><label>Dinner</label><div class="value" id="det_dinner">-</div></div>
                     </div>
-
                     <div class="field-row">
-                        <div>
-                            <label>Parking</label>
-                            <div class="value" id="det_parking">-</div>
-                        </div>
-                        <div>
-                            <label>Shuttle</label>
-                            <div class="value" id="det_shuttle">-</div>
-                        </div>
+                        <div><label>Parking</label><div class="value" id="det_parking">-</div></div>
+                        <div><label>Shuttle</label><div class="value" id="det_shuttle">-</div></div>
                     </div>
                 </div>
 
-                <!-- Kolom 1, Baris 3: Remarks -->
-                <div class="detail-card" style="grid-column:1; grid-row:3;">
+                <div class="detail-card card-remarks">
                     <h3>Remarks</h3>
                     <div class="value" id="det_remarks" style="min-height:80px; white-space:pre-wrap;">-</div>
                 </div>
 
-                <!-- Kolom 2, Baris 3: Rate & Statistics -->
-                <div class="detail-card" style="grid-column:2; grid-row:3;">
+                <div class="detail-card card-rate">
                     <h3>Rate &amp; Statistics</h3>
-
                     <div class="field-row">
-                        <div>
-                            <label>Rate</label>
-                            <div class="value" id="det_rate">-</div>
-                        </div>
-                        <div>
-                            <label>Price</label>
-                            <div class="value" id="det_price">-</div>
-                        </div>
+                        <div><label>Rate</label><div class="value" id="det_rate">-</div></div>
+                        <div><label>Price</label><div class="value" id="det_price">-</div></div>
                     </div>
-
                     <div class="field-row">
-                        <div>
-                            <label>Cancel Policy</label>
-                            <div class="value" id="det_cancel_policy">-</div>
-                        </div>
-                        <div>
-                            <label>Source</label>
-                            <div class="value" id="det_source">-</div>
-                        </div>
+                        <div><label>Cancel Policy</label><div class="value" id="det_cancel_policy">-</div></div>
+                        <div><label>Source</label><div class="value" id="det_source">-</div></div>
                     </div>
-
                     <div class="field-row">
-                        <div>
-                            <label>Market Segm.</label>
-                            <div class="value" id="det_market_segment">-</div>
-                        </div>
-                        <div>
-                            <label>Travel Reason</label>
-                            <div class="value" id="det_travel_reason">-</div>
-                        </div>
+                        <div><label>Market Segm.</label><div class="value" id="det_market_segment">-</div></div>
+                        <div><label>Travel Reason</label><div class="value" id="det_travel_reason">-</div></div>
                     </div>
                 </div>
 
@@ -317,7 +234,8 @@
         <div id="userArea">👤 Iqbal</div>
         <div id="contextArea"></div>
         <div id="paginationInfo"></div>
-        <div id="paginationNav"></div>
+
+        <div><button id="folioBtn" onclick="scrollToFolio()">🧾 Folio</button></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
