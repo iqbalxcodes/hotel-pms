@@ -17,7 +17,6 @@
 
             <!-- LEFT -->
             <div class="header-title">
-                <button onclick="window.location.href='index.html'">← Back</button>
                 <h3>Reservation Detail</h3>
             </div>
 
@@ -33,10 +32,17 @@
         </div>
 
         <!-- ACTION BAR -->
+        <!-- ACTION BAR -->
         <div id="toolbar">
 
             <div id="normalToolbar">
 
+                <!-- BACK -->
+                <button onclick="window.location.href='index.html'">
+                    ← Back
+                </button>
+
+                <!-- RESERVATION STATUS -->
                 <select id="statusFlowSelect" onchange="changeReservationStatus(this.value)">
                     <option value="RESERVED">Pending</option>
                     <option value="CHECKED_IN">Check-In</option>
@@ -46,28 +52,53 @@
 
                 <span class="toolbar-divider"></span>
 
-                <button id="editBtn" class="icon-btn" onclick="enterEditMode()" title="Edit">
+                <!-- EDIT -->
+                <button
+                    id="editBtn"
+                    class="icon-btn"
+                    onclick="enterEditMode()"
+                    title="Edit">
                     ✏️
                 </button>
 
                 <span id="editActions" style="display:none;">
-                    <button id="cancelEditBtn" class="icon-btn" onclick="exitEditMode()" title="Cancel">
+
+                    <button
+                        id="cancelEditBtn"
+                        class="icon-btn"
+                        onclick="exitEditMode()"
+                        title="Cancel">
                         ✕
                     </button>
-                    <button id="confirmEditBtn" class="icon-btn icon-btn-confirm" onclick="saveEditMode()" title="Save">
+
+                    <button
+                        id="confirmEditBtn"
+                        class="icon-btn icon-btn-confirm"
+                        onclick="saveEditMode()"
+                        title="Save">
                         ✓
                     </button>
+
                 </span>
 
                 <span class="toolbar-divider"></span>
 
-                <button onclick="duplicateReservation()">⧉ Duplicate</button>
+                <!-- RESERVATION ACTIONS -->
+                <button onclick="duplicateReservation()">
+                    ⧉ Duplicate
+                </button>
 
-                <button onclick="showDevMessage('Print Registration Form')">🖨 Registration Form</button>
+                <button onclick="showDevMessage('Print Registration Form')">
+                    🖨 Registration Form
+                </button>
 
-                <button onclick="showDevMessage('Print/Send Confirmation')">✉ Confirmation</button>
+                <button onclick="showDevMessage('Print/Send Confirmation')">
+                    ✉ Confirmation
+                </button>
 
-                <button onclick="showDevMessage('Make/Encode Room Card')">🔑 Room Card</button>
+                <button onclick="showDevMessage('Make/Encode Room Card')">
+                    🔑 Room Card
+                </button>
 
             </div>
 

@@ -475,11 +475,11 @@ function renderDetail(res){
     }
 
     const paginationInfo = document.getElementById("paginationInfo");
+    const statusSelect = document.getElementById("statusFlowSelect");
 
-    if(paginationInfo){
+    if(statusSelect){
 
-        paginationInfo.innerText =
-            res.confirmation_no ? `Res. No: ${res.confirmation_no}` : "";
+        statusSelect.disabled = !res.id;
 
     }
 
