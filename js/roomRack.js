@@ -1,9 +1,10 @@
 // ======================================================
 // roomRack.js
 // Room Plan / room rack (Gantt-style timeline).
-// Groups rooms by their room_type (the "category" already
-// stored per room in the rooms table) and lays reservations
-// out as horizontal bars spanning arrival -> departure.
+// Groups rooms by their room_type and lays reservations
+// out as horizontal bars spanning arrival -> departure
+// (i.e. per NIGHT — checkout day is not occupied, so a
+// same-day turnover in one room is not a conflict).
 // ======================================================
 
 const RACK_COLLAPSED_KEY = "hotel_pms_rack_collapsed_v1";
@@ -13,7 +14,8 @@ const RACK_OCCUPYING_STATUSES = ["PENDING", "CONFIRMED", "CHECKED_IN", "CHECKED_
 const DOW_LABELS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MONTH_LABELS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 
-// rackViewMode: "auto" (responsif ikut lebar layar) atau "3" / "7" / "14" (dipaksa manual)
+// rackViewMode: "auto" (responsif, ngisi lebar layar penuh, tidak dibatasi 14 hari)
+// atau "3" / "7" / "14" / "30" (dipaksa manual)
 let rackViewMode = loadRackViewMode();
 
 let rackStartDate = startOfToday();
@@ -82,34 +84,57 @@ function isSameDay(a, b){
 
 
 // ======================================================
-// Responsive day count (3 / 7 / 14) + column width
+// Responsive day count — TIDAK dibatasi ke 14 lagi di mode
+// "auto". Dihitung dari lebar #rackScroll yang sebenarnya,
+// jadi di layar superlebar otomatis muat lebih banyak hari.
 // ======================================================
+
+function getColWidthTierForViewport(viewportWidth){
+
+    if(viewportWidth <= 700) return 130;
+    if(viewportWidth <= 1100) return 96;
+    if(viewportWidth <= 1700) return 76;
+
+    return 60;
+
+}
 
 function getRackDayCount(){
 
-    // Kalau user sudah memilih mode manual (3/7/14), pakai itu.
-    // "auto" -> tentukan otomatis dari lebar layar (mobile/tablet/desktop).
     if(rackViewMode !== "auto"){
 
         return Number(rackViewMode);
 
     }
 
-    const w = window.innerWidth;
+    const scrollEl = document.getElementById("rackScroll");
+    const viewportWidth = scrollEl ? scrollEl.clientWidth : window.innerWidth;
 
-    if(w <= 700) return 3;
-    if(w <= 1100) return 7;
+    const labelWidth = viewportWidth <= 700 ? 128 : 172;
+    const colWidth = getColWidthTierForViewport(viewportWidth);
 
-    return 14;
+    const availableWidth = Math.max(viewportWidth - labelWidth, colWidth);
+
+    return Math.max(3, Math.floor(availableWidth / colWidth));
 
 }
 
 function getRackColWidth(dayCount){
 
-    if(dayCount <= 3) return 130;
-    if(dayCount <= 7) return 96;
+    if(rackViewMode !== "auto"){
 
-    return 68;
+        if(dayCount <= 3) return 130;
+        if(dayCount <= 7) return 96;
+        if(dayCount <= 14) return 76;
+
+        return 60;
+
+    }
+
+    const scrollEl = document.getElementById("rackScroll");
+    const viewportWidth = scrollEl ? scrollEl.clientWidth : window.innerWidth;
+
+    return getColWidthTierForViewport(viewportWidth);
 
 }
 
@@ -165,6 +190,67 @@ function loadCollapsedGroups(){
 function saveCollapsedGroups(){
 
     localStorage.setItem(RACK_COLLAPSED_KEY, JSON.stringify([...rackCollapsed]));
+
+}
+
+
+// ======================================================
+// Auth guard — dipakai untuk semua aksi kritikal (ubah
+// status kamar, pindah/geser reservasi lewat drag & drop).
+// Memakai sistem auth.js yang sama dengan halaman lain.
+// ======================================================
+
+function requireLogin(actionLabel = "melakukan aksi ini"){
+
+    if(typeof isLoggedIn === "function" && isLoggedIn()){
+
+        return true;
+
+    }
+
+    showMessage(`🔒 Login diperlukan untuk ${actionLabel}`, "error");
+
+    return false;
+
+}
+
+
+// ======================================================
+// Conflict check — memastikan tidak ada 2 reservasi yang
+// memakai kamar yang sama di malam yang sama.
+//
+// Dua rentang [arrival1, departure1) & [arrival2, departure2)
+// dianggap bentrok kalau: arrival1 < departure2 AND arrival2 < departure1.
+// Pakai strict inequality supaya turnover di hari yang sama
+// (checkout jam 11, checkin jam 14) TIDAK dianggap bentrok.
+// ======================================================
+
+async function findRoomConflicts(roomNumber, arrivalDateStr, departureDateStr, excludeReservationId){
+
+    let query = supabaseClient
+        .from("reservation")
+        .select("id, guest_name, arrival_date, departure_date, status")
+        .eq("room_number", roomNumber)
+        .in("status", RACK_OCCUPYING_STATUSES)
+        .lt("arrival_date", departureDateStr)
+        .gt("departure_date", arrivalDateStr);
+
+    if(excludeReservationId){
+
+        query = query.neq("id", Number(excludeReservationId));
+
+    }
+
+    const { data, error } = await query;
+
+    if(error){
+
+        console.error(error);
+        return { error };
+
+    }
+
+    return { conflicts: data || [] };
 
 }
 
@@ -318,7 +404,6 @@ function renderRackHeader(days, colWidth){
 
 function buildTimelineCellsHTML(days, colWidth, room){
 
-    const today = startOfToday();
     const statusClass = `status-${(room.status || "").toLowerCase()}`;
 
     let html = "";
@@ -350,6 +435,8 @@ function buildBarsHTML(room, days, colWidth, dayCount, resList, hasConflict){
         const clampStart = arrival < rangeStart ? rangeStart : arrival;
         const clampEnd = departure > rangeEndExclusive ? rangeEndExclusive : departure;
 
+        // spanDays = jumlah MALAM yang ditempati (checkout day tidak
+        // dihitung), bar berhenti persis di batas kolom checkout.
         const spanDays = diffDays(clampEnd, clampStart);
 
         if(spanDays <= 0){
@@ -545,9 +632,11 @@ function rackToggleAllGroups(){
 
 // ======================================================
 // Drag & Drop — pindah kamar (drag bar ke baris lain) dan
-// geser tanggal (tarik ujung kiri/kanan bar). Event di-
-// delegasikan ke #rackBody sekali saja di DOMContentLoaded,
-// jadi tetap jalan meski isi rackBody di-render ulang.
+// geser tanggal (tarik ujung kiri/kanan bar). Preview drag
+// tetap boleh berjalan meski belum login (biar terasa
+// responsif), tapi PENYIMPANAN ke database (rackFinishMove /
+// rackFinishResize) selalu dicek requireLogin() dulu — kalau
+// belum login, muncul alert dan posisi di-revert.
 // ======================================================
 
 function setupRackDragAndDrop(){
@@ -661,7 +750,7 @@ function rackHandleMouseMove(e){
 
     }
 
-    // Resize: geser hanya secara horizontal, snap ke lebar 1 kolom (1 hari)
+    // Resize: geser hanya secara horizontal, snap ke lebar 1 kolom (1 malam)
     const deltaDays = Math.round(dx / rackDragState.colWidth);
     const bar = rackDragState.barEl;
 
@@ -707,6 +796,7 @@ async function rackHandleMouseUp(e){
     }
 
     // Tidak ada gerakan berarti -> anggap sebagai klik biasa, buka detail
+    // (ini tidak butuh login karena cuma membuka halaman, read-only)
     if(!state.moved){
 
         window.location.href = `reservation-detail.html?id=${state.resId}`;
@@ -738,18 +828,50 @@ async function rackFinishMove(state, e){
 
     }
 
+    if(!requireLogin("memindahkan reservasi")){
+
+        await refreshRack();
+        return;
+
+    }
+
+    const { conflicts, error } = await findRoomConflicts(
+        targetRoom,
+        formatDateISO(state.arrival),
+        formatDateISO(state.departure),
+        state.resId
+    );
+
+    if(error){
+
+        showMessage("Gagal memeriksa ketersediaan kamar", "error");
+        await refreshRack();
+        return;
+
+    }
+
+    if(conflicts.length > 0){
+
+        const names = [...new Set(conflicts.map(c => c.guest_name || "reservasi lain"))].join(", ");
+
+        showMessage(`Kamar ${targetRoom} sudah terisi (${names}) pada malam tersebut`, "error");
+        await refreshRack();
+        return;
+
+    }
+
     showConfirm(
         `Pindahkan reservasi ${state.guestName} dari kamar ${state.originRoom} ke kamar ${targetRoom}?`,
         async () => {
 
-            const { error } = await supabaseClient
+            const { error: updateError } = await supabaseClient
                 .from("reservation")
                 .update({ room_number: targetRoom })
                 .eq("id", Number(state.resId));
 
-            if(error){
+            if(updateError){
 
-                console.error(error);
+                console.error(updateError);
                 showMessage("Gagal memindahkan reservasi", "error");
                 await refreshRack();
                 return;
@@ -798,11 +920,43 @@ async function rackFinishResize(state, e){
 
     }
 
+    if(!requireLogin("mengubah tanggal reservasi")){
+
+        await refreshRack();
+        return;
+
+    }
+
+    const { conflicts, error } = await findRoomConflicts(
+        state.originRoom,
+        formatDateISO(newArrival),
+        formatDateISO(newDeparture),
+        state.resId
+    );
+
+    if(error){
+
+        showMessage("Gagal memeriksa ketersediaan kamar", "error");
+        await refreshRack();
+        return;
+
+    }
+
+    if(conflicts.length > 0){
+
+        const names = [...new Set(conflicts.map(c => c.guest_name || "reservasi lain"))].join(", ");
+
+        showMessage(`Kamar ${state.originRoom} sudah terisi (${names}) pada rentang tanggal itu`, "error");
+        await refreshRack();
+        return;
+
+    }
+
     showConfirm(
         `Ubah tanggal reservasi ${state.guestName} menjadi ${formatDateISO(newArrival)} \u2192 ${formatDateISO(newDeparture)}?`,
         async () => {
 
-            const { error } = await supabaseClient
+            const { error: updateError } = await supabaseClient
                 .from("reservation")
                 .update({
                     arrival_date: formatDateISO(newArrival),
@@ -810,9 +964,9 @@ async function rackFinishResize(state, e){
                 })
                 .eq("id", Number(state.resId));
 
-            if(error){
+            if(updateError){
 
-                console.error(error);
+                console.error(updateError);
                 showMessage("Gagal mengubah tanggal reservasi", "error");
                 await refreshRack();
                 return;
@@ -875,6 +1029,12 @@ function hideRackActionBar(){
 }
 
 function rackSetRoomStatus(status){
+
+    if(!requireLogin("mengubah status kamar")){
+
+        return;
+
+    }
 
     const selected = [...document.querySelectorAll(".rack-room-checkbox:checked")];
 
@@ -1018,6 +1178,12 @@ async function refreshRack(){
     renderRackHeader(days, colWidth);
     renderRackBody(groupedRooms, reservationsByRoom, days, colWidth, rackDayCount);
 
+    if(typeof applyAuthVisibility === "function"){
+
+        applyAuthVisibility();
+
+    }
+
 }
 
 function startClock(){
@@ -1123,7 +1289,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     window.addEventListener("resize", debounce(async () => {
 
-        // Kalau mode manual (bukan "auto"), lebar layar tidak mengubah jumlah hari
         const newDayCount = getRackDayCount();
 
         if(newDayCount !== rackDayCount){

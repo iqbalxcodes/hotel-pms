@@ -11,17 +11,14 @@
 
     <h1>Hotel PMS</h1>
 
-    <!-- Container Utama Bertipe Kartu / Detail-Card (sama seperti reservation & room list) -->
     <div class="table-container detail-card rack-page">
 
         <div class="reservation-header">
 
-            <!-- LEFT -->
             <div class="header-title">
                 <h3>Room Plan</h3>
             </div>
 
-            <!-- CENTER -->
             <div class="header-menu">
                 <button onclick="rackChangeDate(-1)">◀</button>
 
@@ -37,11 +34,11 @@
                     <button class="rack-view-btn" data-mode="3" onclick="rackSetViewMode('3')">3D</button>
                     <button class="rack-view-btn" data-mode="7" onclick="rackSetViewMode('7')">7D</button>
                     <button class="rack-view-btn" data-mode="14" onclick="rackSetViewMode('14')">14D</button>
+                    <button class="rack-view-btn" data-mode="30" onclick="rackSetViewMode('30')">30D</button>
                     <button class="rack-view-btn" data-mode="auto" onclick="rackSetViewMode('auto')">Auto</button>
                 </div>
             </div>
 
-            <!-- RIGHT -->
             <div class="header-clock">
                 <span id="clock"></span>
             </div>
@@ -50,7 +47,6 @@
 
         <div id="toolbar">
 
-            <!-- DEFAULT TOOLBAR -->
             <div id="normalToolbar">
                 <a class="icon-btn" href="room.html">📋 Room List</a>
                 <a class="icon-btn" href="reservation.html">🗓 Reservations</a>
@@ -58,16 +54,16 @@
                 <button onclick="rackToggleAllGroups()">Expand / Collapse All</button>
             </div>
 
-            <!-- SELECT TOOLBAR: quick housekeeping status change (same actions as room.html) -->
+            <!-- Kalau belum login, tombol2 ini otomatis di-disable oleh auth.js (class auth-required) -->
             <div id="selectionToolbar" style="display:none;">
 
                 <span id="selectedCount">0 selected</span>
 
-                <button onclick="rackSetRoomStatus('DIRTY')">DIRTY</button>
-                <button onclick="rackSetRoomStatus('CLEAN')">CLEAN</button>
-                <button onclick="rackSetRoomStatus('INSPECTED')">INSPECTED</button>
-                <button onclick="rackSetRoomStatus('OUT_OF_SERVICE')">OUT OF SERVICE</button>
-                <button onclick="rackSetRoomStatus('BLOCKED')">BLOCKED</button>
+                <button class="auth-required" onclick="rackSetRoomStatus('DIRTY')">DIRTY</button>
+                <button class="auth-required" onclick="rackSetRoomStatus('CLEAN')">CLEAN</button>
+                <button class="auth-required" onclick="rackSetRoomStatus('INSPECTED')">INSPECTED</button>
+                <button class="auth-required" onclick="rackSetRoomStatus('OUT_OF_SERVICE')">OUT OF SERVICE</button>
+                <button class="auth-required" onclick="rackSetRoomStatus('BLOCKED')">BLOCKED</button>
 
             </div>
 
@@ -90,6 +86,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/roomRack.js"></script>
 
 </body>
