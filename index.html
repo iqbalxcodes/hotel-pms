@@ -119,7 +119,26 @@
                 <button onclick="updateStatus('CHECKED_OUT')">CHECK-OUT</button>
                 <button onclick="updateStatus('CANCELLED')">CANCEL</button>
 
+                <button onclick="openBulkEditPopover()">✏️ Edit Field</button>
+
             </div>
+
+            <!-- BULK EDIT POPOVER -->
+            <div id="bulkEditPopover" class="bulk-edit-popover" style="display:none;">
+
+                <label>Column</label>
+                <select id="bulkEditColumn" onchange="renderBulkEditValueInput()"></select>
+
+                <label>New Value</label>
+                <div id="bulkEditValueContainer"></div>
+
+                <div class="bulk-edit-popover-footer">
+                    <button onclick="closeBulkEditPopover()">Cancel</button>
+                    <button id="bulkEditApplyBtn" onclick="applyBulkEdit()">Apply</button>
+                </div>
+
+            </div>
+
         </div>
 
         <!-- Tag Table Bersih Tanpa border="1" -->
@@ -200,6 +219,7 @@
     <script src="js/reservationFilter.js"></script>
     <script src="js/reservation.js"></script>
     <script src="js/reservationDetail.js"></script>
+    <script src="js/bulkEdit.js"></script>
 
     <script src="js/generator.js"></script>
 

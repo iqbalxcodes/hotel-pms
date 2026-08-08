@@ -1196,3 +1196,70 @@ h1 {
 .modify-popup-footer button:hover {
     background: #f0f0f0;
 }
+
+
+/* ======================================================
+   BULK EDIT POPOVER (dari tombol "Edit Field" di
+   #selectionToolbar)
+   ====================================================== */
+
+.bulk-edit-popover {
+    position: absolute;
+    top: 90px;
+    left: 24px;
+    z-index: 50;
+    width: 280px;
+    max-width: 90vw;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+    padding: 14px 16px;
+}
+
+.bulk-edit-popover label {
+    display: block;
+    font-size: 12px;
+    color: #777;
+    margin-bottom: 4px;
+    margin-top: 10px;
+}
+
+.bulk-edit-popover label:first-child {
+    margin-top: 0;
+}
+
+.bulk-edit-popover select,
+.bulk-edit-popover input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px 8px;
+    font-size: 13px;
+}
+
+.bulk-edit-popover-footer {
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.bulk-edit-popover-footer button {
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.bulk-edit-popover-footer button:hover {
+    background: #f0f0f0;
+}
+
+.bulk-edit-popover-footer button:last-child {
+    border-color: #1565c0;
+    color: #1565c0;
+}
