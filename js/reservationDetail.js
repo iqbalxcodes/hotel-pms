@@ -474,9 +474,6 @@ function renderDetail(res){
 
     }
 
-    const paginationInfo = document.getElementById("paginationInfo");
-    const statusSelect = document.getElementById("statusFlowSelect");
-
     if(statusSelect){
 
         statusSelect.disabled = !res.id;
