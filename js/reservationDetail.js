@@ -9,8 +9,6 @@ let isNewReservation = false;
 
 // ------------------------------------------------------
 // Field configuration
-// column: null  -> pseudo field, combined into "group" on save
-// editable:false -> never becomes an input
 // ------------------------------------------------------
 
 const FIELD_CONFIG = [
@@ -54,6 +52,114 @@ const FIELD_CONFIG = [
 
 ];
 
+const STATUS_LABELS = {
+    RESERVED: "Pending",
+    CHECKED_IN: "Checked In",
+    CHECKED_OUT: "Checked Out",
+    CANCELLED: "Cancelled"
+};
+
+
+// ======================================================
+// Status Bar helpers (message / confirm / clock)
+// ======================================================
+
+function escapeHtml(str){
+
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+
+    return div.innerHTML;
+
+}
+
+function showMessage(text, type = "info"){
+
+    const contextArea = document.getElementById("contextArea");
+
+    if(!contextArea){
+        return;
+    }
+
+    contextArea.innerHTML =
+        `<span class="status-msg-${type}">${escapeHtml(text)}</span>`;
+
+    clearTimeout(showMessage._timer);
+
+    showMessage._timer = setTimeout(() => {
+        contextArea.innerHTML = "";
+    }, 4000);
+
+}
+
+function showConfirm(message, onConfirm, onCancel){
+
+    const contextArea = document.getElementById("contextArea");
+
+    if(!contextArea){
+        return;
+    }
+
+    contextArea.innerHTML = `
+        <span class="status-confirm">
+            ${escapeHtml(message)}
+            <button id="confirmYesBtn">Yes</button>
+            <button id="confirmNoBtn">No</button>
+        </span>
+    `;
+
+    document.getElementById("confirmYesBtn").onclick = () => {
+        contextArea.innerHTML = "";
+        onConfirm();
+    };
+
+    document.getElementById("confirmNoBtn").onclick = () => {
+        contextArea.innerHTML = "";
+        if(onCancel){ onCancel(); }
+    };
+
+}
+
+function showDevMessage(feature){
+
+    showMessage(`${feature} is still in development`, "info");
+
+}
+
+function startClock(){
+
+    const clock = document.getElementById("clock");
+
+    if(!clock){
+        return;
+    }
+
+    function updateClock(){
+
+        const now = new Date();
+
+        clock.innerText =
+            now.toLocaleString("de-DE", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit"
+            });
+
+    }
+
+    updateClock();
+
+    setInterval(updateClock, 1000);
+
+}
+
+
+// ======================================================
+// Misc Helpers
+// ======================================================
 
 function getReservationIdFromUrl(){
 
@@ -131,6 +237,99 @@ function setDisplay(id, value){
             : value;
 
     }
+
+}
+
+
+// ======================================================
+// Status Badge + Status Flow Select (header + toolbar)
+// ======================================================
+
+function updateStatusBadge(status){
+
+    const badge = document.getElementById("statusBadge");
+
+    if(!badge){
+        return;
+    }
+
+    const key = (status || "RESERVED").toLowerCase();
+
+    badge.className = `status-badge status-${key}`;
+    badge.innerText = STATUS_LABELS[status] || status || "-";
+
+    const select = document.getElementById("statusFlowSelect");
+
+    if(select){
+
+        select.value = status || "RESERVED";
+
+    }
+
+}
+
+async function changeReservationStatus(newStatus){
+
+    const select = document.getElementById("statusFlowSelect");
+
+    if(!currentReservation || !currentReservation.id){
+
+        showMessage("Simpan reservasi terlebih dahulu sebelum mengubah status", "error");
+
+        if(select){
+            select.value = currentReservation ? (currentReservation.status || "RESERVED") : "RESERVED";
+        }
+
+        return;
+
+    }
+
+    if(newStatus === currentReservation.status){
+
+        return;
+
+    }
+
+    if(newStatus === "CHECKED_OUT"){
+
+        showConfirm(
+            "There is pending to bill, are you sure want to check out?",
+            () => performStatusChange(newStatus),
+            () => { if(select){ select.value = currentReservation.status; } }
+        );
+
+        return;
+
+    }
+
+    await performStatusChange(newStatus);
+
+}
+
+async function performStatusChange(newStatus){
+
+    const { error } =
+        await supabaseClient
+        .from("reservation")
+        .update({ status: newStatus })
+        .eq("id", currentReservation.id);
+
+    if(error){
+
+        console.error(error);
+        showMessage("Failed to update status", "error");
+        return;
+
+    }
+
+    currentReservation.status = newStatus;
+
+    updateStatusBadge(newStatus);
+
+    showMessage(
+        newStatus === "CHECKED_OUT" ? "Checkout completed" : "Status updated",
+        "success"
+    );
 
 }
 
@@ -265,6 +464,25 @@ function renderDetail(res){
 
     renderBilling(res, nights);
 
+    updateStatusBadge(res.status);
+
+    const statusSelect = document.getElementById("statusFlowSelect");
+
+    if(statusSelect){
+
+        statusSelect.disabled = !res.id;
+
+    }
+
+    const paginationInfo = document.getElementById("paginationInfo");
+
+    if(paginationInfo){
+
+        paginationInfo.innerText =
+            res.confirmation_no ? `Res. No: ${res.confirmation_no}` : "";
+
+    }
+
 }
 
 
@@ -349,13 +567,11 @@ function enterEditMode(){
             inputHtml = `<input type="number" step="${field.step || "1"}" class="inline-edit-input" value="${rawValue}">`;
 
         }
-
         else if(field.type === "boolean"){
 
             inputHtml = `<input type="checkbox" class="inline-edit-input" ${rawValue ? "checked" : ""}>`;
 
         }
-
         else{
 
             inputHtml = `<input type="text" class="inline-edit-input" value="${String(rawValue).replace(/"/g, "&quot;")}">`;
@@ -422,13 +638,12 @@ async function saveEditMode(){
 
     });
 
-    // basic sanity check on dates
     const newArrival = rawValues["det_arrival"];
     const newDeparture = rawValues["det_departure"];
 
     if(newArrival && newDeparture && new Date(newDeparture) < new Date(newArrival)){
 
-        alert("Departure date tidak boleh sebelum arrival date");
+        showMessage("Departure date tidak boleh sebelum arrival date", "error");
         return;
 
     }
@@ -438,12 +653,10 @@ async function saveEditMode(){
     FIELD_CONFIG.forEach(field => {
 
         if(field.group){
-            // combine first/last, ditangani terpisah di bawah
             return;
         }
 
         if(!field.column){
-            // pseudo-field murni tampilan (mis. det_nights), tidak disimpan
             return;
         }
 
@@ -467,12 +680,12 @@ async function saveEditMode(){
     });
 
     if(isNewReservation){
+
         payload.confirmation_no = currentReservation.confirmation_no;
         payload.status = currentReservation.status || "RESERVED";
+
     }
 
-
-    // combine guest_name
     const guestFirst = rawValues["det_first_name"] ?? "";
     const guestLast = rawValues["det_last_name"] ?? "";
 
@@ -481,7 +694,6 @@ async function saveEditMode(){
         .filter(part => part && part.trim() !== "")
         .join(" ");
 
-    // combine secondary_guest_name
     const sgFirst = rawValues["det_sg_first_name"] ?? "";
     const sgLast = rawValues["det_sg_last_name"] ?? "";
 
@@ -494,7 +706,7 @@ async function saveEditMode(){
 
     if(isNewReservation){
 
-        const { error: insertError } =
+        const { data: insertedData, error: insertError } =
             await supabaseClient
             .from("reservation")
             .insert(payload)
@@ -503,31 +715,39 @@ async function saveEditMode(){
 
         error = insertError;
 
-        if (!error && insertedData) {
+        if(!error && insertedData){
+
+            currentReservation = insertedData;
             isNewReservation = false;
-            const newUrl = `reservationDetail.html?id=${insertedData.id}`;
+
+            const newUrl = `reservation-detail.html?id=${insertedData.id}`;
 
             window.history.replaceState(null, "", newUrl);
-        }else{
 
-            const { error: updateError } =
-                await supabaseClient
-                .from("reservation")
-                .update(payload)
-                .eq("id", currentReservation.id);
-
-            error = updateError;
         }
+
+    }
+    else{
+
+        const { error: updateError } =
+            await supabaseClient
+            .from("reservation")
+            .update(payload)
+            .eq("id", currentReservation.id);
+
+        error = updateError;
 
     }
 
     if(error){
 
-            console.error(error);
-            alert("Gagal menyimpan perubahan: " + error.message);
-            return;
+        console.error(error);
+        showMessage("Gagal menyimpan perubahan: " + error.message, "error");
+        return;
 
-        }
+    }
+
+    showMessage("Reservation saved", "success");
 
     await loadReservationDetail(false);
 
@@ -535,6 +755,56 @@ async function saveEditMode(){
 
     document.getElementById("editBtn").style.display = "inline-block";
     document.getElementById("editActions").style.display = "none";
+
+}
+
+
+// ======================================================
+// Duplicate Reservation
+// ======================================================
+
+async function duplicateReservation(){
+
+    if(!currentReservation || !currentReservation.id){
+
+        showMessage("Tidak ada reservasi untuk diduplikasi", "error");
+        return;
+
+    }
+
+    showConfirm(
+        "Duplicate this reservation?",
+        async () => {
+
+            const clone = { ...currentReservation };
+
+            delete clone.id;
+
+            clone.confirmation_no = generateReservationNumber();
+            clone.status = "RESERVED";
+
+            const { data, error } =
+                await supabaseClient
+                .from("reservation")
+                .insert(clone)
+                .select()
+                .single();
+
+            if(error){
+
+                console.error(error);
+                showMessage("Failed to duplicate reservation", "error");
+                return;
+
+            }
+
+            showMessage("Reservation duplicated", "success");
+
+            window.location.href = `reservation-detail.html?id=${data.id}`;
+
+        },
+        () => showMessage("Duplicate cancelled", "info")
+    );
 
 }
 
@@ -551,7 +821,6 @@ document.addEventListener("keydown", (e) => {
 
     }
 
-    // allow newline in textarea with Shift+Enter
     if(e.target.tagName === "TEXTAREA" && e.shiftKey){
 
         return;
@@ -580,22 +849,10 @@ document.addEventListener("keydown", (e) => {
 
 async function loadReservationDetail(redirectOnMissingId = true){
 
-    const params =
-        new URLSearchParams(
-            window.location.search
-        );
+    const params = new URLSearchParams(window.location.search);
 
-
-    const isNew =
-        params.get("new");
-
-
-    const id =
-        params.get("id");
-
-
-    console.log("NEW MODE:", isNew);
-    console.log("ID:", id);
+    const isNew = params.get("new");
+    const id = params.get("id");
 
 
     // ================================
@@ -606,18 +863,11 @@ async function loadReservationDetail(redirectOnMissingId = true){
 
         isNewReservation = true;
 
+        currentReservation = createEmptyReservation();
 
-        currentReservation =
-            createEmptyReservation();
-
-
-        renderDetail(
-            currentReservation
-        );
-
+        renderDetail(currentReservation);
 
         enterEditMode();
-
 
         return;
 
@@ -630,16 +880,10 @@ async function loadReservationDetail(redirectOnMissingId = true){
 
     if(!id){
 
-        if(isNew === "true"){
-            return;
-        }
-
         console.warn("No reservation id");
-
         return;
 
     }
-
 
     const { data: res, error } =
         await supabaseClient
@@ -648,19 +892,13 @@ async function loadReservationDetail(redirectOnMissingId = true){
         .eq("id", id)
         .single();
 
-
     if(error || !res){
 
         console.error(error);
-
-        alert(
-            "Gagal memuat detail reservasi"
-        );
-
+        showMessage("Gagal memuat detail reservasi", "error");
         return;
 
     }
-
 
     currentReservation = res;
 
@@ -668,20 +906,14 @@ async function loadReservationDetail(redirectOnMissingId = true){
 
 }
 
+
 // ======================================================
 // Reservation Number Generator
 // ======================================================
 
 function generateReservationNumber(){
 
-    const confirmation =
-        "HT" +
-        Math.floor(
-            1000000000 +
-            Math.random() * 9000000000
-        );
-
-    return confirmation;
+    return "HT" + Math.floor(1000000000 + Math.random() * 9000000000);
 
 }
 
@@ -690,22 +922,21 @@ function createEmptyReservation(){
     return {
 
         id: null,
-
-        confirmation_no:
-            generateReservationNumber(),
-
+        confirmation_no: generateReservationNumber(),
         guest_name: "",
         secondary_guest_name: "",
-
         arrival_date: null,
         departure_date: null,
-
         room_number: "",
-
         status: "RESERVED"
 
     };
 
 }
 
-document.addEventListener("DOMContentLoaded", () => loadReservationDetail(true));
+document.addEventListener("DOMContentLoaded", () => {
+
+    startClock();
+    loadReservationDetail(true);
+
+});

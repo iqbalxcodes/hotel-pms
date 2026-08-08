@@ -791,3 +791,47 @@ h1 {
 .status-inspected     { background: #e3f2fd; color: #1565c0; }
 .status-out_of_service{ background: #fce4ec; color: #ad1457; }
 .status-blocked        { background: #eeeeee; color: #424242; }
+
+/* ======================================================
+   DETAIL PAGE — SCROLLABLE GRID (only this scrolls)
+   ====================================================== */
+
+.detail-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.detail-grid {
+    height: 100%;
+    grid-auto-rows: minmax(0, 1fr);
+}
+
+
+/* ======================================================
+   TOOLBAR SPACING (applies to all pages using #toolbar)
+   ====================================================== */
+
+#normalToolbar,
+#selectionToolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 20px;
+    background: #ddd;
+}
+
+
+/* ======================================================
+   RESERVATION STATUS BADGE (header, replaces old edit btn)
+   ====================================================== */
+
+.status-reserved     { background: #fff3e0; color: #e65100; }
+.status-checked_in   { background: #e3f2fd; color: #1565c0; }
+.status-checked_out  { background: #eeeeee; color: #424242; }
+.status-cancelled    { background: #fce4ec; color: #ad1457; }

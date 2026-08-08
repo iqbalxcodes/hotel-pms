@@ -2,231 +2,291 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reservation Detail</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="detail-topbar">
-        <button onclick="window.location.href='index.html'">← Back</button>
-        <h2>Reservation Detail</h2>
+    <h1>Hotel PMS</h1>
 
-        <div class="topbar-actions">
-            <button id="editBtn" class="icon-btn" onclick="enterEditMode()" title="Edit">
-                ✏️
-            </button>
+    <!-- Container Utama Bertipe Kartu / Detail-Card (sama seperti reservation list) -->
+    <div class="table-container detail-card">
 
-            <span id="editActions" style="display:none;">
-                <button id="cancelEditBtn" class="icon-btn" onclick="exitEditMode()" title="Cancel">
-                    ✕
-                </button>
-                <button id="confirmEditBtn" class="icon-btn icon-btn-confirm" onclick="saveEditMode()" title="Save">
-                    ✓
-                </button>
-            </span>
+        <div class="reservation-header">
+
+            <!-- LEFT -->
+            <div class="header-title">
+                <button onclick="window.location.href='index.html'">← Back</button>
+                <h3>Reservation Detail</h3>
+            </div>
+
+            <!-- CENTER (kosong, mengikuti pola halaman lain) -->
+            <div class="header-menu"></div>
+
+            <!-- RIGHT: posisi bekas tombol pensil -> jadi status reservation -->
+            <div class="header-clock">
+                <span id="statusBadge" class="status-badge">-</span>
+                <span id="clock"></span>
+            </div>
+
         </div>
+
+        <!-- ACTION BAR -->
+        <div id="toolbar">
+
+            <div id="normalToolbar">
+
+                <select id="statusFlowSelect" onchange="changeReservationStatus(this.value)">
+                    <option value="RESERVED">Pending</option>
+                    <option value="CHECKED_IN">Check-In</option>
+                    <option value="CHECKED_OUT">Check-Out</option>
+                    <option value="CANCELLED">Cancel</option>
+                </select>
+
+                <span class="toolbar-divider"></span>
+
+                <button id="editBtn" class="icon-btn" onclick="enterEditMode()" title="Edit">
+                    ✏️
+                </button>
+
+                <span id="editActions" style="display:none;">
+                    <button id="cancelEditBtn" class="icon-btn" onclick="exitEditMode()" title="Cancel">
+                        ✕
+                    </button>
+                    <button id="confirmEditBtn" class="icon-btn icon-btn-confirm" onclick="saveEditMode()" title="Save">
+                        ✓
+                    </button>
+                </span>
+
+                <span class="toolbar-divider"></span>
+
+                <button onclick="duplicateReservation()">⧉ Duplicate</button>
+
+                <button onclick="showDevMessage('Print Registration Form')">🖨 Registration Form</button>
+
+                <button onclick="showDevMessage('Print/Send Confirmation')">✉ Confirmation</button>
+
+                <button onclick="showDevMessage('Make/Encode Room Card')">🔑 Room Card</button>
+
+            </div>
+
+        </div>
+
+        <!-- SCROLLABLE DETAIL GRID -->
+        <div class="detail-scroll">
+
+            <div class="detail-grid">
+
+                <!-- Kolom 1, Baris 1: Main Guest -->
+                <div class="detail-card" style="grid-column:1; grid-row:1;">
+                    <h3>Main Guest</h3>
+
+                    <label>First Name</label>
+                    <div class="value" id="det_first_name">-</div>
+
+                    <label>Last Name</label>
+                    <div class="value" id="det_last_name">-</div>
+
+                    <div class="field-row">
+                        <div>
+                            <label>Loyalty</label>
+                            <div class="value" id="det_loyalty">-</div>
+                        </div>
+                        <div>
+                            <label>Salutation</label>
+                            <div class="value" id="det_salutation">-</div>
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div>
+                            <label>Language</label>
+                            <div class="value" id="det_language">-</div>
+                        </div>
+                        <div>
+                            <label>Country</label>
+                            <div class="value" id="det_country">-</div>
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div>
+                            <label>Contact</label>
+                            <div class="value" id="det_contact">-</div>
+                        </div>
+                        <div>
+                            <label>Company</label>
+                            <div class="value" id="det_company">-</div>
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div>
+                            <label>Booker Name</label>
+                            <div class="value" id="det_booker_name">-</div>
+                        </div>
+                        <div>
+                            <label>Travel Agent</label>
+                            <div class="value" id="det_travel_agent">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kolom 2, Baris 1: Stay Details -->
+                <div class="detail-card" style="grid-column:2; grid-row:1;">
+                    <h3>Stay Details</h3>
+
+                    <div class="field-row">
+                        <div>
+                            <label>Arrival</label>
+                            <div class="value" id="det_arrival">-</div>
+                        </div>
+                        <div>
+                            <label>Res. Number</label>
+                            <div class="value" id="det_confirmation_no">-</div>
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div>
+                            <label>Departure</label>
+                            <div class="value" id="det_departure">-</div>
+                        </div>
+                        <div>
+                            <label>External</label>
+                            <div class="value" id="det_external_no">-</div>
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div>
+                            <label>Nights</label>
+                            <div class="value" id="det_nights">-</div>
+                        </div>
+                        <div>
+                            <label>Room Number</label>
+                            <div class="value" id="det_room_number">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kolom 3, penuh 3 baris: Billing -->
+                <div class="detail-card detail-card-tall" style="grid-column:3; grid-row:1 / span 3;">
+                    <h3>Billing</h3>
+                    <div id="det_billing_items">
+                        <div class="value">-</div>
+                    </div>
+                    <div class="billing-total">
+                        <span>Total</span>
+                        <span id="det_billing_total">-</span>
+                    </div>
+                </div>
+
+                <!-- Kolom 1, Baris 2: Secondary Guest -->
+                <div class="detail-card" style="grid-column:1; grid-row:2;">
+                    <h3>Secondary Guest</h3>
+
+                    <label>First Name</label>
+                    <div class="value" id="det_sg_first_name">-</div>
+
+                    <label>Last Name</label>
+                    <div class="value" id="det_sg_last_name">-</div>
+                </div>
+
+                <!-- Kolom 2, Baris 2: Room & Amenities -->
+                <div class="detail-card" style="grid-column:2; grid-row:2;">
+                    <h3>Room &amp; Amenities</h3>
+
+                    <div class="field-row">
+                        <div>
+                            <label>Room Type</label>
+                            <div class="value" id="det_room_type">-</div>
+                        </div>
+                        <div>
+                            <label>Bed Type</label>
+                            <div class="value" id="det_bed_type">-</div>
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div>
+                            <label>Breakfast</label>
+                            <div class="value" id="det_breakfast">-</div>
+                        </div>
+                        <div>
+                            <label>Dinner</label>
+                            <div class="value" id="det_dinner">-</div>
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div>
+                            <label>Parking</label>
+                            <div class="value" id="det_parking">-</div>
+                        </div>
+                        <div>
+                            <label>Shuttle</label>
+                            <div class="value" id="det_shuttle">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kolom 1, Baris 3: Remarks -->
+                <div class="detail-card" style="grid-column:1; grid-row:3;">
+                    <h3>Remarks</h3>
+                    <div class="value" id="det_remarks" style="min-height:80px; white-space:pre-wrap;">-</div>
+                </div>
+
+                <!-- Kolom 2, Baris 3: Rate & Statistics -->
+                <div class="detail-card" style="grid-column:2; grid-row:3;">
+                    <h3>Rate &amp; Statistics</h3>
+
+                    <div class="field-row">
+                        <div>
+                            <label>Rate</label>
+                            <div class="value" id="det_rate">-</div>
+                        </div>
+                        <div>
+                            <label>Price</label>
+                            <div class="value" id="det_price">-</div>
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div>
+                            <label>Cancel Policy</label>
+                            <div class="value" id="det_cancel_policy">-</div>
+                        </div>
+                        <div>
+                            <label>Source</label>
+                            <div class="value" id="det_source">-</div>
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div>
+                            <label>Market Segm.</label>
+                            <div class="value" id="det_market_segment">-</div>
+                        </div>
+                        <div>
+                            <label>Travel Reason</label>
+                            <div class="value" id="det_travel_reason">-</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
 
-    <div class="detail-grid">
-
-        <!-- BARIS 1, KOLOM 1: Main Guest -->
-        <div class="detail-card">
-            <h3>Main Guest</h3>
-
-            <label>First Name</label>
-            <div class="value" id="det_first_name">-</div>
-
-            <label>Last Name</label>
-            <div class="value" id="det_last_name">-</div>
-
-            <div class="field-row">
-                <div>
-                    <label>Loyalty</label>
-                    <div class="value" id="det_loyalty">-</div>
-                </div>
-                <div>
-                    <label>Salutation</label>
-                    <div class="value" id="det_salutation">-</div>
-                </div>
-            </div>
-
-            <div class="field-row">
-                <div>
-                    <label>Language</label>
-                    <div class="value" id="det_language">-</div>
-                </div>
-                <div>
-                    <label>Country</label>
-                    <div class="value" id="det_country">-</div>
-                </div>
-            </div>
-
-            <div class="field-row">
-                <div>
-                    <label>Contact</label>
-                    <div class="value" id="det_contact">-</div>
-                </div>
-                <div>
-                    <label>Company</label>
-                    <div class="value" id="det_company">-</div>
-                </div>
-            </div>
-
-            <div class="field-row">
-                <div>
-                    <label>Booker Name</label>
-                    <div class="value" id="det_booker_name">-</div>
-                </div>
-                <div>
-                    <label>Travel Agent</label>
-                    <div class="value" id="det_travel_agent">-</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- BARIS 1, KOLOM 2: Stay Details -->
-        <div class="detail-card">
-            <h3>Stay Details</h3>
-
-            <div class="field-row">
-                <div>
-                    <label>Arrival</label>
-                    <div class="value" id="det_arrival">-</div>
-                </div>
-                <div>
-                    <label>Res. Number</label>
-                    <div class="value" id="det_confirmation_no">-</div>
-                </div>
-            </div>
-
-            <div class="field-row">
-                <div>
-                    <label>Departure</label>
-                    <div class="value" id="det_departure">-</div>
-                </div>
-                <div>
-                    <label>External</label>
-                    <div class="value" id="det_external_no">-</div>
-                </div>
-            </div>
-
-            <div class="field-row">
-                <div>
-                    <label>Nights</label>
-                    <div class="value" id="det_nights">-</div>
-                </div>
-                <div>
-                    <label>Room Number</label>
-                    <div class="value" id="det_room_number">-</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- BARIS 1, KOLOM 3: Rate & Statistics -->
-        <div class="detail-card">
-            <h3>Rate &amp; Statistics</h3>
-
-            <div class="field-row">
-                <div>
-                    <label>Rate</label>
-                    <div class="value" id="det_rate">-</div>
-                </div>
-                <div>
-                    <label>Price</label>
-                    <div class="value" id="det_price">-</div>
-                </div>
-            </div>
-
-            <div class="field-row">
-                <div>
-                    <label>Cancel Policy</label>
-                    <div class="value" id="det_cancel_policy">-</div>
-                </div>
-                <div>
-                    <label>Source</label>
-                    <div class="value" id="det_source">-</div>
-                </div>
-            </div>
-
-            <div class="field-row">
-                <div>
-                    <label>Market Segm.</label>
-                    <div class="value" id="det_market_segment">-</div>
-                </div>
-                <div>
-                    <label>Travel Reason</label>
-                    <div class="value" id="det_travel_reason">-</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- BARIS 2, KOLOM 1: Secondary Guest -->
-        <div class="detail-card">
-            <h3>Secondary Guest</h3>
-
-            <label>First Name</label>
-            <div class="value" id="det_sg_first_name">-</div>
-
-            <label>Last Name</label>
-            <div class="value" id="det_sg_last_name">-</div>
-        </div>
-
-        <!-- BARIS 2, KOLOM 2: Room & Amenities -->
-        <div class="detail-card">
-            <h3>Room &amp; Amenities</h3>
-
-            <div class="field-row">
-                <div>
-                    <label>Room Type</label>
-                    <div class="value" id="det_room_type">-</div>
-                </div>
-                <div>
-                    <label>Bed Type</label>
-                    <div class="value" id="det_bed_type">-</div>
-                </div>
-            </div>
-
-            <div class="field-row">
-                <div>
-                    <label>Breakfast</label>
-                    <div class="value" id="det_breakfast">-</div>
-                </div>
-                <div>
-                    <label>Dinner</label>
-                    <div class="value" id="det_dinner">-</div>
-                </div>
-            </div>
-
-            <div class="field-row">
-                <div>
-                    <label>Parking</label>
-                    <div class="value" id="det_parking">-</div>
-                </div>
-                <div>
-                    <label>Shuttle</label>
-                    <div class="value" id="det_shuttle">-</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- BARIS 2 & 3, KOLOM 3: Billing (Memanjang ke bawah) -->
-        <div class="detail-card detail-card-tall">
-            <h3>Billing</h3>
-            <div id="det_billing_items">
-                <div class="value">-</div>
-            </div>
-            <div class="billing-total">
-                <span>Total</span>
-                <span id="det_billing_total">-</span>
-            </div>
-        </div>
-
-        <!-- BARIS 3, KOLOM 1 & 2: Remarks -->
-        <div class="detail-card detail-card-wide">
-            <h3>Remarks</h3>
-            <div class="value" id="det_remarks" style="min-height:80px; white-space:pre-wrap;">-</div>
-        </div>
-
+    <div id="statusBar">
+        <div id="userArea">👤 Iqbal</div>
+        <div id="contextArea"></div>
+        <div id="paginationInfo"></div>
+        <div id="paginationNav"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
