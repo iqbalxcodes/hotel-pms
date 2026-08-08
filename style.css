@@ -207,8 +207,13 @@ h1 {
 .card-rate       { grid-area: rate; }
 
 .card-billing1   { grid-area: billing1; }
-.card-billing2   { grid-area: billing2; display: none; }
-.card-billing3   { grid-area: billing3; display: none; }
+.card-billing2   { grid-area: billing2; }
+.card-billing3   { grid-area: billing3; }
+
+.detail-grid .card-billing2,
+.detail-grid .card-billing3 {
+    display: none;
+}
 
 .detail-card-tall {
     display: flex;
@@ -295,7 +300,7 @@ h1 {
             "remarks    rate       billing1  billing2";
     }
 
-    .card-billing2 { display: flex; }
+    .detail-grid .card-billing2 { display: flex; }
 
     /* di sini sudah otomatis, toggle nggak diperlukan */
     .folio-toggle-btn { display: none !important; }
@@ -317,10 +322,9 @@ h1 {
             "remarks    rate       billing1  billing2  billing3";
     }
 
-    .card-billing3 { display: flex; }
+    .detail-grid .card-billing3 { display: flex; }
 
 }
-
 
 /* ======================================================
    LAYAR KECIL (≤700px) — 1 kolom, billing paling bawah
