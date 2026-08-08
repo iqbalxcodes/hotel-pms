@@ -474,12 +474,6 @@ function renderDetail(res){
 
     }
 
-    if(statusSelect){
-
-        statusSelect.disabled = !res.id;
-
-    }
-
 }
 
 
