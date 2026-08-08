@@ -44,10 +44,12 @@
 
                 <!-- RESERVATION STATUS -->
                 <select id="statusFlowSelect" onchange="changeReservationStatus(this.value)">
-                    <option value="RESERVED">Pending</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="CONFIRMED">Confirmed</option>
                     <option value="CHECKED_IN">Check-In</option>
                     <option value="CHECKED_OUT">Check-Out</option>
                     <option value="CANCELLED">Cancel</option>
+                    <option value="NO_SHOW">No Show</option>
                 </select>
 
                 <span class="toolbar-divider"></span>

@@ -168,37 +168,42 @@ function applyModeFilter(query, mode, scope, date){
 
     switch(mode){
 
-        case "arrival":
+    case "arrival":
 
-            if(scope === "today"){
+        // Arrival = reservasi yang masih menunggu kedatangan (belum check-in)
+        query = query.eq("status", "CONFIRMED");
 
-                query = query.eq("arrival_date", date);
+        if(scope === "today"){
 
-            }
-            else{
+            query = query.eq("arrival_date", date);
 
-                query = query.order("arrival_date");
+        }
+        else{
 
-            }
+            query = query.order("arrival_date");
 
-            break;
+        }
+
+        break;
 
 
-        case "departure":
+    case "departure":
 
-            if(scope === "today"){
+        // Departure = tamu yang sedang menginap dan akan checkout
+        query = query.eq("status", "CHECKED_IN");
 
-                query = query.eq("departure_date", date);
+        if(scope === "today"){
 
-            }
-            else{
+            query = query.eq("departure_date", date);
 
-                query = query.order("departure_date");
+        }
+        else{
 
-            }
+            query = query.order("departure_date");
 
-            break;
+        }
 
+        break;
 
         case "inhouse":
 
@@ -216,17 +221,17 @@ function applyModeFilter(query, mode, scope, date){
             break;
 
 
-        case "pending":
+    case "pending":
 
-            query = query.eq("status", "RESERVED");
+        query = query.eq("status", "PENDING");
 
-            if(scope === "today"){
+        if(scope === "today"){
 
-                query = query.eq("arrival_date", date);
+            query = query.eq("arrival_date", date);
 
-            }
+        }
 
-            break;
+        break;
 
 
         case "cancelled":

@@ -53,10 +53,12 @@ const FIELD_CONFIG = [
 ];
 
 const STATUS_LABELS = {
-    RESERVED: "Pending",
+    PENDING: "Pending",
+    CONFIRMED: "Confirmed",
     CHECKED_IN: "Checked In",
     CHECKED_OUT: "Checked Out",
-    CANCELLED: "Cancelled"
+    CANCELLED: "Cancelled",
+    NO_SHOW: "No Show"
 };
 
 
@@ -919,7 +921,7 @@ function createEmptyReservation(){
         arrival_date: null,
         departure_date: null,
         room_number: "",
-        status: "RESERVED"
+        status: "CONFIRMED"
 
     };
 
