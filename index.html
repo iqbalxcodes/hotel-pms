@@ -13,7 +13,7 @@
     <div id="addReservationPanel" style="display: none;">
         <h2>Add Reservation</h2>
 
-        <button onclick="generateRandomReservations()">
+        <button onclick="generateRandomReservations()" class="auth-required">
             Generate Test Reservation
         </button>
 
@@ -116,11 +116,11 @@
 
                 <span id="selectedCount">0 selected</span>
 
-                <button onclick="updateStatus('CHECKED_IN')">CHECK-IN</button>
-                <button onclick="updateStatus('CHECKED_OUT')">CHECK-OUT</button>
-                <button onclick="updateStatus('CANCELLED')">CANCEL</button>
+                <button onclick="updateStatus('CHECKED_IN')" class="auth-required">CHECK-IN</button>
+                <button onclick="updateStatus('CHECKED_OUT')" class="auth-required">CHECK-OUT</button>
+                <button onclick="updateStatus('CANCELLED')" class="auth-required" data-roles="admin,manager">CANCEL</button>
 
-                <button onclick="openBulkEditPopover()">✏️ Edit Field</button>
+                <button onclick="openBulkEditPopover()" class="auth-required">✏️ Edit Field</button>
 
             </div>
 
@@ -209,7 +209,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script src="js/supabase.js"></script>
-
+    <script src="js/auth.js"></script>
     <script src="js/guestData.js"></script>
     <script src="js/roomData.js"></script>
     <script src="js/tableConfig.js"></script>

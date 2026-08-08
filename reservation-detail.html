@@ -57,7 +57,7 @@
                 <!-- EDIT -->
                 <button
                     id="editBtn"
-                    class="icon-btn"
+                    class="icon-btn auth-required"
                     onclick="enterEditMode()"
                     title="Edit">
                     ✏️
@@ -86,7 +86,7 @@
                 <span class="toolbar-divider"></span>
 
                 <!-- RESERVATION ACTIONS -->
-                <button onclick="duplicateReservation()">
+                <button onclick="duplicateReservation()" class="auth-required">
                     ⧉ Duplicate
                 </button>
 
@@ -233,7 +233,7 @@
     </div>
 
     <div id="statusBar">
-        <div id="userArea">👤 Iqbal</div>
+        <div id="userArea"></div>
         <div id="contextArea"></div>
         <div id="paginationInfo"></div>
 
