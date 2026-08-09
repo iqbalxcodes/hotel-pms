@@ -3,127 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hotel PMS — Rooms</title>
+    <title>Hotel PMS — Room Management</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/roomManagement.css">
 </head>
 <body>
 
     <h1>Hotel PMS</h1>
 
-    <div id="addRoomPanel" style="display: none;">
-        <h2>Add Room</h2>
-
-        <form id="roomForm">
-            <input type="text" id="r_room_number" placeholder="Room Number" required>
-
-            <input type="text" id="r_room_type" placeholder="Room Type" required>
-
-            <select id="r_status">
-                <option value="AVAILABLE">AVAILABLE</option>
-                <option value="CLEAN">CLEAN</option>
-                <option value="DIRTY">DIRTY</option>
-                <option value="INSPECTED">INSPECTED</option>
-                <option value="OUT_OF_SERVICE">OUT OF SERVICE</option>
-                <option value="BLOCKED">BLOCKED</option>
-            </select>
-
-            <input type="text" id="r_notes" placeholder="Notes">
-
-            <button type="submit">Save Room</button>
-        </form>
+    <div class="rack-tabs">
+        <a class="rack-tab" href="room-rack.html">Room Rack</a>
+        <a class="rack-tab" href="index.html">Reservation List</a>
+        <div class="rack-tab active">Room Management</div>
+        <a class="rack-tab" href="guest.html">Guest List</a>
+        <a class="rack-tab" href="#" onclick="showDevMessage && showDevMessage('Cashiering'); return false;">Cashiering</a>
     </div>
 
-    <!-- Container Utama Bertipe Kartu / Detail-Card (sama seperti reservation & client list) -->
-    <div class="table-container detail-card">
+    <!-- Container Utama Bertipe Kartu / Detail-Card (sama seperti halaman lain) -->
+    <div class="table-container detail-card rm-page">
 
         <div class="reservation-header">
 
-            <!-- LEFT -->
             <div class="header-title">
-                <h3>Room List</h3>
+                <h3>Room Management</h3>
             </div>
 
-            <!-- CENTER (kosong — room tidak punya date scope/mode) -->
             <div class="header-menu"></div>
 
-            <!-- RIGHT -->
             <div class="header-clock">
                 <span id="clock"></span>
             </div>
 
         </div>
 
-        <div id="toolbar">
+        <div class="rm-grid" id="rmGrid" data-view="list">
 
-            <!-- DEFAULT TOOLBAR -->
-            <div id="normalToolbar">
-                <button id="addRoomBtn" onclick="showAddRoom()">+</button>
+            <!-- ============================================== -->
+            <!-- COLUMN 1 — Overview / Fundsachen / Blocked-OOO -->
+            <!-- ============================================== -->
 
-                <button id="cancelAddRoomBtn" onclick="hideAddRoom()" style="display:none;">
-                    Cancel
-                </button>
+            <div class="rm-overview">
 
-                <button onclick="showSearch()">🔍</button>
-
-                <div id="searchContainer" style="display:none;">
-                    <input id="searchInput" type="text" placeholder="Search room number / type / notes" onkeyup="searchRoom()">
-                    <button onclick="hideSearch()">✕</button>
+                <div class="rm-card">
+                    <h4>Room Overview</h4>
+                    <div class="rm-stat-grid" id="rmOverviewStats"></div>
                 </div>
 
-                <button onclick="exportRooms()">Export</button>
+                <div class="rm-card">
+                    <h4>Fundsachen <span id="rmFundsachenCount" class="rm-subcard-count"></span></h4>
+                    <div class="rm-mini-list" id="rmFundsachenList"></div>
+                </div>
+
+                <div class="rm-card">
+                    <h4>Blocked / Out of Order</h4>
+                    <div class="rm-mini-list" id="rmBlockedList"></div>
+                </div>
 
             </div>
 
-            <!-- SELECT TOOLBAR: dipakai untuk menandai status housekeeping -->
-            <div id="selectionToolbar" style="display:none;">
+            <!-- ============================================== -->
+            <!-- COLUMN 2 — Room List -->
+            <!-- ============================================== -->
 
-                <span id="selectedCount">0 selected</span>
+            <div class="rm-list">
 
-                <button onclick="setRoomStatus('DIRTY')">DIRTY</button>
-                <button onclick="setRoomStatus('CLEAN')">CLEAN</button>
-                <button onclick="setRoomStatus('INSPECTED')">INSPECTED</button>
-                <button onclick="setRoomStatus('OUT_OF_SERVICE')">OUT OF SERVICE</button>
-                <button onclick="setRoomStatus('BLOCKED')">BLOCKED</button>
+                <div class="rm-list-toolbar" id="rmNormalToolbar">
+                    <input type="text" id="rmSearchInput" placeholder="Search room number / type / notes">
+                </div>
+
+                <div class="rm-list-toolbar" id="rmSelectionToolbar" style="display:none;">
+
+                    <span id="rmSelectedCount">0 selected</span>
+
+                    <button id="rmDirtyBtn">DIRTY</button>
+                    <button id="rmCleanBtn">CLEAN</button>
+                    <button id="rmInspectedBtn">INSPECTED</button>
+                    <button id="rmOooBtn">OUT OF SERVICE</button>
+                    <button id="rmBlockedBtn">BLOCKED</button>
+
+                </div>
+
+                <div class="rm-list-scroll">
+                    <div id="rmRoomListBody"></div>
+                </div>
 
             </div>
-        </div>
 
-        <div class="table-scroll">
+            <!-- ============================================== -->
+            <!-- COLUMN 3 — Activity timeline (default) / Room Detail -->
+            <!-- ============================================== -->
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>
-                            <input type="checkbox" id="selectAll" onchange="toggleAllCheckbox(this)">
-                        </th>
-
-                        <th onclick="sortTable('room_number')">Room Number ↕</th>
-
-                        <th id="room_typeHeader" onclick="sortTable('room_type')">
-                            Room Type ↕
-                            <button onclick="event.stopPropagation(); enableEdit('room_type','text')">✏️</button>
-                        </th>
-
-                        <th onclick="sortTable('status')">Status ↕</th>
-
-                        <th id="notesHeader" onclick="sortTable('notes')">
-                            Notes ↕
-                            <button onclick="event.stopPropagation(); enableEdit('notes','text')">✏️</button>
-                        </th>
-
-                        <th onclick="sortTable('updated_at')">Updated ↕</th>
-                    </tr>
-                </thead>
-
-                <tbody id="roomTable"></tbody>
-            </table>
+            <div class="rm-detail">
+                <div class="rm-detail-scroll" id="rmDetailPane"></div>
+            </div>
 
         </div>
 
     </div>
 
     <div id="statusBar">
-        <div id="userArea">👤 Iqbal</div>
+        <div id="userArea"></div>
         <div id="contextArea"></div>
         <div id="paginationInfo"></div>
         <div id="paginationNav"></div>
@@ -132,11 +111,10 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script src="js/supabase.js"></script>
-    <script src="js/export.js"></script>
 
-    <script src="js/roomFilter.js"></script>
-    <script src="js/roomUI.js"></script>
-    <script src="js/room.js"></script>
+    <script src="js/roomManagementData.js"></script>
+    <script src="js/roomManagementUI.js"></script>
+    <script src="js/roomManagement.js"></script>
 
 </body>
 </html>

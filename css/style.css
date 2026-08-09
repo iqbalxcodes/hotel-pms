@@ -25,6 +25,50 @@ h1 {
     margin: 0 16px;
 }
 
+/* ======================================================
+   SHARED PAGE TABS (dipakai di semua list page)
+   ====================================================== */
+
+.rack-tabs {
+    display: flex;
+    gap: 3px;
+    padding: 0 4px;
+    margin: 0 24px;
+    flex: none;
+}
+
+.rack-tab {
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 8px 8px 0 0;
+    background: #eceff1;
+    color: #78848c;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid #dde2e5;
+    border-bottom: none;
+}
+
+.rack-tab:hover {
+    background: #e2e7ea;
+    color: #444;
+}
+
+.rack-tab.active {
+    background: #fff;
+    color: #222;
+    font-weight: 600;
+    border-color: #ccc;
+    position: relative;
+    top: 1px;
+}
+
+@media (max-width: 700px) {
+    .rack-tabs { margin: 0 8px; }
+}
+@media (max-width: 420px) {
+    .rack-tabs { margin: 0 4px; }
+}
 
 /* ======================================================
    GLOBAL & CONTAINER STYLES

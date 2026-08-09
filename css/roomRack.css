@@ -44,46 +44,6 @@
 
 
 /* ======================================================
-   TABS (mirip browser tab) — pengganti link Room List /
-   Reservations lama
-   ====================================================== */
-
-.rack-tabs {
-    display: flex;
-    gap: 3px;
-    padding: 0 4px;
-    margin: 0 24px;     /* left/right 24px, atas-bawah 0 supaya nempel card */
-    flex: none;
-}
-
-.rack-tab {
-    padding: 6px 14px;
-    font-size: 12px;
-    border-radius: 8px 8px 0 0;
-    background: #eceff1;
-    color: #78848c;
-    text-decoration: none;
-    cursor: pointer;
-    border: 1px solid #dde2e5;
-    border-bottom: none;
-}
-
-.rack-tab:hover {
-    background: #e2e7ea;
-    color: #444;
-}
-
-.rack-tab.active {
-    background: #fff;
-    color: #222;
-    font-weight: 600;
-    border-color: #ccc;
-    position: relative;
-    top: 1px;
-}
-
-
-/* ======================================================
    SCROLL CONTAINER — both axes scroll here, sticky header
    row and sticky room-label column are relative to this
    ====================================================== */
