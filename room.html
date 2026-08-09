@@ -11,13 +11,7 @@
 
     <h1>Hotel PMS</h1>
 
-    <div class="rack-tabs">
-        <a class="rack-tab" href="room-rack.html">Room Rack</a>
-        <a class="rack-tab" href="index.html">Reservation List</a>
-        <div class="rack-tab active">Room Management</div>
-        <a class="rack-tab" href="guest.html">Guest List</a>
-        <a class="rack-tab" href="#" onclick="showDevMessage && showDevMessage('Cashiering'); return false;">Cashiering</a>
-    </div>
+    <div id="pageNavigation" data-page="room-management"></div>
 
     <!-- Container Utama Bertipe Kartu / Detail-Card (sama seperti halaman lain) -->
     <div class="table-container detail-card rm-page">
@@ -109,7 +103,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+    <script src="js/navigation.js"></script>
     <script src="js/supabase.js"></script>
 
     <script src="js/roomManagementData.js"></script>
