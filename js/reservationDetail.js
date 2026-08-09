@@ -294,8 +294,20 @@ async function changeReservationStatus(newStatus){
 
     if(newStatus === "CHECKED_OUT"){
 
+        // Guard folio: kalau ada outstanding balance, warn dulu.
+        // folioHasOutstandingBalance() cuma tersedia setelah folio.js
+        // ter-load dan openFolio() sudah dipanggil minimal sekali.
+        const hasOutstanding =
+            typeof folioHasOutstandingBalance === "function"
+            && folioHasOutstandingBalance();
+
+        const confirmMessage =
+            hasOutstanding
+            ? "Folio masih outstanding balance, tetap checkout?"
+            : "There is pending to bill, are you sure want to check out?";
+
         showConfirm(
-            "There is pending to bill, are you sure want to check out?",
+            confirmMessage,
             () => performStatusChange(newStatus),
             () => { if(select){ select.value = currentReservation.status; } }
         );
@@ -337,59 +349,40 @@ async function performStatusChange(newStatus){
 
 
 // ======================================================
-// Billing (read-only for now)
+// Folio (module reusable — lihat folio.js / folioUI.js /
+// folioService.js). Folio 1 selalu dibuka otomatis; Folio
+// 2 & 3 baru dibuat/dibuka saat user klik toggle folio-mode,
+// supaya tidak otomatis bikin folio kosong tiap reservasi
+// di-load.
 // ======================================================
 
-function renderBilling(res, nights){
+let folio2And3Loaded = false;
 
-    const container =
-        document.getElementById("det_billing_items");
+function mountPrimaryFolio(reservationId){
 
-    const totalEl =
-        document.getElementById("det_billing_total");
+    openFolio({
+        containerId: "folioMount1",
+        reservationId: reservationId,
+        backAction: "toggleFolioMode()"
+    });
 
-    if(Array.isArray(res.billing_items) && res.billing_items.length > 0){
+}
 
-        container.innerHTML = res.billing_items
-            .map(item => `
-                <div class="field-row">
-                    <span>${item.label}</span>
-                    <span>${formatCurrency(item.amount)}</span>
-                </div>
-            `)
-            .join("");
+async function mountSecondaryFolios(reservationId){
 
-        const total =
-            res.billing_items.reduce(
-                (sum, item) => sum + Number(item.amount || 0),
-                0
-            );
-
-        totalEl.innerText = formatCurrency(total);
-
+    if(folio2And3Loaded){
         return;
-
     }
 
-    if(res.price){
+    folio2And3Loaded = true;
 
-        const roomTotal = Number(res.price) * nights;
+    const folios = await FolioService.getFoliosByReservation(reservationId);
 
-        container.innerHTML = `
-            <div class="field-row">
-                <span>${nights}x Room</span>
-                <span>${formatCurrency(res.price)}</span>
-            </div>
-        `;
+    const folio2 = folios.find(f => f.folio_number === 2) || await FolioService.createNextFolio(reservationId);
+    const folio3 = folios.find(f => f.folio_number === 3) || await FolioService.createNextFolio(reservationId);
 
-        totalEl.innerText = formatCurrency(roomTotal);
-
-        return;
-
-    }
-
-    container.innerHTML = `<div class="value">Belum ada data billing</div>`;
-    totalEl.innerText = "-";
+    openFolio({ containerId: "folioMount2", folioId: folio2.id });
+    openFolio({ containerId: "folioMount3", folioId: folio3.id, backAction: "toggleFolioMode()" });
 
 }
 
@@ -464,7 +457,13 @@ function renderDetail(res){
 
     setDisplay("det_remarks", res.remarks);
 
-    renderBilling(res, nights);
+    // Folio hanya di-mount kalau reservasi sudah punya id
+    // (reservasi baru yang belum disimpan belum punya folio).
+    if(res.id){
+
+        mountPrimaryFolio(res.id);
+
+    }
 
     updateStatusBadge(res.status);
 
@@ -820,6 +819,15 @@ document.addEventListener("keydown", (e) => {
 
     }
 
+    // Kalau fokus lagi di dalam Folio card (address/table/add-service),
+    // biarkan Folio module sendiri yang handle Enter-nya, jangan
+    // ke-trigger juga save-mode reservasi.
+    if(e.target.closest(".folio-card")){
+
+        return;
+
+    }
+
     e.preventDefault();
 
     if(isEditMode){
@@ -947,7 +955,18 @@ function toggleFolioMode(){
         return;
     }
 
+    const turningOn = !grid.classList.contains("folio-mode");
+
     grid.classList.toggle("folio-mode");
+
+    // Folio 2 & 3 baru di-load/dibuat pas pertama kali folio-mode
+    // dibuka, biar gak nambah folio kosong ke reservasi yang gak
+    // pernah dicek billing keduanya.
+    if(turningOn && currentReservation && currentReservation.id){
+
+        mountSecondaryFolios(currentReservation.id);
+
+    }
 
 }
 

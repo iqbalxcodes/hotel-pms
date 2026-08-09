@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reservation Detail</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/folio.css">
 </head>
 <body>
 
@@ -32,7 +33,6 @@
         </div>
 
         <!-- ACTION BAR -->
-        <!-- ACTION BAR -->
         <div id="toolbar">
 
             <div id="normalToolbar">
@@ -57,7 +57,7 @@
                 <!-- EDIT -->
                 <button
                     id="editBtn"
-                    class="icon-btn auth-required"
+                    class="icon-btn auth-required require-auth"
                     onclick="enterEditMode()"
                     title="Edit">
                     ✏️
@@ -75,7 +75,7 @@
 
                     <button
                         id="confirmEditBtn"
-                        class="icon-btn icon-btn-confirm"
+                        class="icon-btn icon-btn-confirm require-auth"
                         onclick="saveEditMode()"
                         title="Save">
                         ✓
@@ -86,7 +86,7 @@
                 <span class="toolbar-divider"></span>
 
                 <!-- RESERVATION ACTIONS -->
-                <button onclick="duplicateReservation()" class="auth-required">
+                <button onclick="duplicateReservation()" class="auth-required require-auth">
                     ⧉ Duplicate
                 </button>
 
@@ -152,33 +152,21 @@
                 </div>
 
                 <!-- BILLING 1 (default, selalu ada) -->
-                <div class="detail-card detail-card-tall card-billing1">
-                    <h3>
-                        Billing
-                        <button id="folioOpenBtn" class="folio-toggle-btn" onclick="toggleFolioMode()" title="Show all folios">←</button>
-                    </h3>
-                    <div id="det_billing_items">
-                        <div class="value">-</div>
-                    </div>
-                    <div class="billing-total">
-                        <span>Total</span>
-                        <span id="det_billing_total">-</span>
-                    </div>
+                <!-- diganti jadi mount point Folio module. Tinggi tetap
+                     supaya .folio-table-scroll & .folio-history bisa
+                     scroll sendiri di dalamnya. -->
+                <div class="detail-card detail-card-tall card-billing1" style="padding:0;">
+                    <div id="folioMount1" style="height:100%; min-height:380px;"></div>
                 </div>
 
-                <!-- BILLING 2 (folio ke-2, baru shell) -->
-                <div class="detail-card detail-card-tall card-billing2">
-                    <h3>Folio 2</h3>
-                    <div class="billing-placeholder">Belum ada folio</div>
+                <!-- BILLING 2 (folio ke-2) -->
+                <div class="detail-card detail-card-tall card-billing2" style="padding:0;">
+                    <div id="folioMount2" style="height:100%; min-height:380px;"></div>
                 </div>
 
-                <!-- BILLING 3 (folio ke-3, baru shell) -->
-                <div class="detail-card detail-card-tall card-billing3">
-                    <h3>
-                        Folio 3
-                        <button id="folioCloseBtn" class="folio-toggle-btn" onclick="toggleFolioMode()" title="Close folio view">→</button>
-                    </h3>
-                    <div class="billing-placeholder">Belum ada folio</div>
+                <!-- BILLING 3 (folio ke-3) -->
+                <div class="detail-card detail-card-tall card-billing3" style="padding:0;">
+                    <div id="folioMount3" style="height:100%; min-height:380px;"></div>
                 </div>
 
                 <div class="detail-card card-secondary">
@@ -242,6 +230,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase.js"></script>
+    <script src="js/folioService.js"></script>
+    <script src="js/folio.js"></script>
+    <script src="js/folioUI.js"></script>
     <script src="js/reservationDetail.js"></script>
 
 </body>
