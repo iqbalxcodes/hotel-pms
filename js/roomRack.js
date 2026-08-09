@@ -875,9 +875,34 @@ async function rackHandleMouseUp(e){
 async function rackFinishMove(state, e){
 
     const rowEl = document.elementFromPoint(e.clientX, e.clientY)?.closest(".rack-row");
-    const targetRoom = rowEl ? rowEl.dataset.room : null;
 
-    if(!targetRoom || targetRoom === state.originRoom){
+    // Kalau drop-nya di luar area rack sama sekali, anggap tetap di kamar asal
+    const targetRoom = rowEl ? rowEl.dataset.room : state.originRoom;
+
+    // Geseran horizontal = geser tanggal (snap per setengah hari),
+    // sama seperti logic resize — sebelumnya ini TIDAK PERNAH dihitung
+    // di move, makanya drag yang cuma geser tanggal (tanpa pindah row)
+    // selalu dibuang tanpa disimpan.
+    const dx = e.clientX - state.startX;
+    const deltaHalves = Math.round(dx / state.halfWidth);
+
+    const roomChanged = targetRoom !== state.originRoom;
+    const dateChanged = deltaHalves !== 0;
+
+    // Beneran gak ada perubahan sama sekali -> aman untuk dibuang
+    if(!roomChanged && !dateChanged){
+
+        await refreshRack();
+        return;
+
+    }
+
+    const newStart = state.range.start + deltaHalves;
+    const newEnd = state.range.end + deltaHalves;
+
+    const newDates = RoomAvailability.rangeToDates(newStart, newEnd);
+
+    if(!newDates){
 
         await refreshRack();
         return;
@@ -892,7 +917,7 @@ async function rackFinishMove(state, e){
     }
 
     const { conflicts, error } = await RoomAvailability.findConflicts(
-        supabaseClient, targetRoom, state.arrival, state.departure, state.resId
+        supabaseClient, targetRoom, newDates.arrival, newDates.departure, state.resId
     );
 
     if(error){
@@ -913,13 +938,22 @@ async function rackFinishMove(state, e){
 
     }
 
+    const roomLabel = roomChanged ? ` ke kamar ${targetRoom}` : "";
+    const dateLabel = dateChanged
+        ? ` (${newDates.arrival === newDates.departure ? newDates.arrival + " — day use" : newDates.arrival + " \u2192 " + newDates.departure})`
+        : "";
+
     showConfirm(
-        `Pindahkan reservasi ${state.guestName} dari kamar ${state.originRoom} ke kamar ${targetRoom}?`,
+        `Update reservasi ${state.guestName}${roomLabel}${dateLabel}?`,
         async () => {
 
             const { error: updateError } = await supabaseClient
                 .from("reservation")
-                .update({ room_number: targetRoom })
+                .update({
+                    room_number: targetRoom,
+                    arrival_date: newDates.arrival,
+                    departure_date: newDates.departure
+                })
                 .eq("id", Number(state.resId));
 
             if(updateError){
@@ -931,7 +965,7 @@ async function rackFinishMove(state, e){
 
             }
 
-            showMessage(`Reservasi dipindahkan ke kamar ${targetRoom}`, "success");
+            showMessage("Reservasi diperbarui", "success");
             await refreshRack();
 
         },
