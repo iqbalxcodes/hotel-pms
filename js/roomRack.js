@@ -1190,12 +1190,40 @@ function centerRackOnDate(date){
 
 function rackChangeSelectedDate(value){
 
-    const parsed = parseDateOnly(value);
+    // Native <input type="date"> suka nembak event "change" DI
+    // TENGAH-TENGAH user ngetik tahun (bug lama Chrome) — misal
+    // baru ketik 2 digit tahun udah fire change dengan value kayak
+    // "0002-08-09" atau "0020-08-09" sebelum tahunnya lengkap 4
+    // digit. Makanya di-debounce dulu, dan tahun yang gak masuk
+    // akal (di luar rentang wajar) ditolak & inputnya di-revert
+    // ke tanggal terakhir yang valid.
 
-    if(!parsed) return;
+    clearTimeout(rackChangeSelectedDate._timer);
 
-    centerRackOnDate(parsed);
-    refreshRack();
+    rackChangeSelectedDate._timer = setTimeout(() => {
+
+        const parsed = parseDateOnly(value);
+
+        if(!parsed){
+
+            updateRackDateInput();
+            return;
+
+        }
+
+        const year = parsed.getFullYear();
+
+        if(year < 1970 || year > 2100){
+
+            updateRackDateInput();
+            return;
+
+        }
+
+        centerRackOnDate(parsed);
+        refreshRack();
+
+    }, 500);
 
 }
 
