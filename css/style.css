@@ -61,6 +61,7 @@ h1 {
     border-color: #ccc;
     position: relative;
     top: 1px;
+    z-index: 2;
 }
 
 @media (max-width: 700px) {
@@ -84,6 +85,8 @@ h1 {
     flex-direction: column;
 
     margin: 8px 24px;
+    position: relative;
+    z-index: 1;
 }
 
 #toolbar {
