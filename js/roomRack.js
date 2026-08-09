@@ -1,21 +1,23 @@
 // ======================================================
 // roomRack.js
 // Room Plan / room rack (Gantt-style timeline).
-// Groups rooms by their room_type and lays reservations
-// out as horizontal bars spanning arrival -> departure
-// (i.e. per NIGHT — checkout day is not occupied, so a
-// same-day turnover in one room is not a conflict).
+// Setiap hari punya 2 slot: Vormittag (AM) & Nachmittag (PM).
+// - Nginap normal: PM hari datang -> AM hari pulang.
+// - Day guest: AM -> PM di hari yang sama (arrival == departure).
+// Konflik & konversi rentang tanggal ditangani oleh
+// RoomAvailability (js/roomAvailability.js — wajib di-load
+// SEBELUM file ini).
 // ======================================================
 
 const RACK_COLLAPSED_KEY = "hotel_pms_rack_collapsed_v1";
 const RACK_VIEW_MODE_KEY = "hotel_pms_rack_view_mode_v1";
-const RACK_OCCUPYING_STATUSES = ["PENDING", "CONFIRMED", "CHECKED_IN", "CHECKED_OUT"];
+const RACK_OCCUPYING_STATUSES = RoomAvailability.OCCUPYING_STATUSES;
 
 const DOW_LABELS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MONTH_LABELS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 
-// rackViewMode: "auto" (responsif, ngisi lebar layar penuh, tidak dibatasi 14 hari)
-// atau "3" / "7" / "14" / "30" (dipaksa manual)
+// rackViewMode: "auto" (responsif, ngisi lebar layar penuh, tidak
+// dibatasi 14 hari) atau "3" / "7" / "14" / "30" (dipaksa manual)
 let rackViewMode = loadRackViewMode();
 
 let rackStartDate = startOfToday();
@@ -85,8 +87,7 @@ function isSameDay(a, b){
 
 // ======================================================
 // Responsive day count — TIDAK dibatasi ke 14 lagi di mode
-// "auto". Dihitung dari lebar #rackScroll yang sebenarnya,
-// jadi di layar superlebar otomatis muat lebih banyak hari.
+// "auto". Dihitung dari lebar #rackScroll yang sebenarnya.
 // ======================================================
 
 function getColWidthTierForViewport(viewportWidth){
@@ -195,9 +196,7 @@ function saveCollapsedGroups(){
 
 
 // ======================================================
-// Auth guard — dipakai untuk semua aksi kritikal (ubah
-// status kamar, pindah/geser reservasi lewat drag & drop).
-// Memakai sistem auth.js yang sama dengan halaman lain.
+// Auth guard
 // ======================================================
 
 function requireLogin(actionLabel = "melakukan aksi ini"){
@@ -211,46 +210,6 @@ function requireLogin(actionLabel = "melakukan aksi ini"){
     showMessage(`🔒 Login diperlukan untuk ${actionLabel}`, "error");
 
     return false;
-
-}
-
-
-// ======================================================
-// Conflict check — memastikan tidak ada 2 reservasi yang
-// memakai kamar yang sama di malam yang sama.
-//
-// Dua rentang [arrival1, departure1) & [arrival2, departure2)
-// dianggap bentrok kalau: arrival1 < departure2 AND arrival2 < departure1.
-// Pakai strict inequality supaya turnover di hari yang sama
-// (checkout jam 11, checkin jam 14) TIDAK dianggap bentrok.
-// ======================================================
-
-async function findRoomConflicts(roomNumber, arrivalDateStr, departureDateStr, excludeReservationId){
-
-    let query = supabaseClient
-        .from("reservation")
-        .select("id, guest_name, arrival_date, departure_date, status")
-        .eq("room_number", roomNumber)
-        .in("status", RACK_OCCUPYING_STATUSES)
-        .lt("arrival_date", departureDateStr)
-        .gt("departure_date", arrivalDateStr);
-
-    if(excludeReservationId){
-
-        query = query.neq("id", Number(excludeReservationId));
-
-    }
-
-    const { data, error } = await query;
-
-    if(error){
-
-        console.error(error);
-        return { error };
-
-    }
-
-    return { conflicts: data || [] };
 
 }
 
@@ -352,16 +311,22 @@ function groupReservationsByRoom(reservations){
 
 }
 
+// Satu kamar hanya boleh diisi satu reservasi per slot setengah-hari.
+// Dicek pairwise pakai rentang setengah-hari, bukan cuma tanggal.
 function roomHasConflict(resList){
 
-    for(let i = 0; i < resList.length - 1; i++){
+    for(let i = 0; i < resList.length; i++){
 
-        const currentDeparture = parseDateOnly(resList[i].departure_date);
-        const nextArrival = parseDateOnly(resList[i + 1].arrival_date);
+        for(let j = i + 1; j < resList.length; j++){
 
-        if(nextArrival < currentDeparture){
+            const a = RoomAvailability.getOccupiedRange(resList[i].arrival_date, resList[i].departure_date);
+            const b = RoomAvailability.getOccupiedRange(resList[j].arrival_date, resList[j].departure_date);
 
-            return true;
+            if(RoomAvailability.rangesOverlap(a, b)){
+
+                return true;
+
+            }
 
         }
 
@@ -376,12 +341,17 @@ function roomHasConflict(resList){
 // Rendering
 // ======================================================
 
-function renderRackHeader(days, colWidth){
+function renderRackHeader(days, dayWidth){
 
     const today = startOfToday();
     const row = document.getElementById("rackHeaderRow");
 
-    let html = `<div class="rack-header-label">ROOM</div>`;
+    let html = `
+        <div class="rack-header-label">
+            <button class="rack-nav-btn" onclick="rackChangeDate(-1)" title="Sebelumnya">\u25c0</button>
+            <span>ROOM</span>
+        </div>
+    `;
 
     days.forEach(d => {
 
@@ -390,21 +360,29 @@ function renderRackHeader(days, colWidth){
 
         html += `
             <div class="rack-header-cell ${isToday ? "is-today" : ""} ${isWeekend ? "is-weekend" : ""}"
-                 style="width:${colWidth}px">
+                 style="width:${dayWidth}px">
                 <div class="rack-header-dow">${DOW_LABELS[d.getDay()]}</div>
                 <div class="rack-header-date">${String(d.getDate()).padStart(2, "0")} ${MONTH_LABELS[d.getMonth()]}</div>
+                <div class="rack-header-halves"><span>AM</span><span>PM</span></div>
             </div>
         `;
 
     });
 
+    html += `
+        <div class="rack-header-end">
+            <button class="rack-nav-btn" onclick="rackChangeDate(1)" title="Berikutnya">\u25b6</button>
+        </div>
+    `;
+
     row.innerHTML = html;
 
 }
 
-function buildTimelineCellsHTML(days, colWidth, room){
+function buildTimelineCellsHTML(days, dayWidth, room){
 
     const statusClass = `status-${(room.status || "").toLowerCase()}`;
+    const halfWidth = dayWidth / 2;
 
     let html = "";
 
@@ -412,7 +390,12 @@ function buildTimelineCellsHTML(days, colWidth, room){
 
         const isWeekend = d.getDay() === 0 || d.getDay() === 6;
 
-        html += `<div class="rack-cell ${statusClass} ${isWeekend ? "is-weekend" : ""}" style="width:${colWidth}px"></div>`;
+        html += `
+            <div class="rack-cell ${statusClass} ${isWeekend ? "is-weekend" : ""}" style="width:${dayWidth}px">
+                <div class="rack-half-cell am" style="width:${halfWidth}px"></div>
+                <div class="rack-half-cell pm" style="width:${halfWidth}px"></div>
+            </div>
+        `;
 
     });
 
@@ -420,40 +403,47 @@ function buildTimelineCellsHTML(days, colWidth, room){
 
 }
 
-function buildBarsHTML(room, days, colWidth, dayCount, resList, hasConflict){
+function buildBarsHTML(room, days, dayWidth, dayCount, resList, hasConflict){
 
-    const rangeStart = days[0];
-    const rangeEndExclusive = addDays(days[dayCount - 1], 1);
+    const halfWidth = dayWidth / 2;
+
+    const rangeStartHalf = RoomAvailability.getOccupiedRange(
+        formatDateISO(days[0]), formatDateISO(days[0])
+    ).start;
+
+    const lastDayIso = formatDateISO(days[dayCount - 1]);
+    const rangeEndHalfExclusive = RoomAvailability.getOccupiedRange(lastDayIso, lastDayIso).end;
 
     let html = "";
 
     resList.forEach(res => {
 
+        const range = RoomAvailability.getOccupiedRange(res.arrival_date, res.departure_date);
+
+        if(!range) return;
+
+        const clampStart = Math.max(range.start, rangeStartHalf);
+        const clampEnd = Math.min(range.end, rangeEndHalfExclusive);
+
+        if(clampEnd <= clampStart) return;
+
+        const offsetHalves = clampStart - rangeStartHalf;
+        const spanHalves = clampEnd - clampStart;
+
+        // Margin kiri/kanan kecil biar reservasi bersebelahan tetap
+        // kelihatan sebagai 2 blok terpisah.
+        const left = offsetHalves * halfWidth + 3;
+        const width = spanHalves * halfWidth - 6;
+
+        const cutLeft = range.start < rangeStartHalf;
+        const cutRight = range.end > rangeEndHalfExclusive;
+
+        const statusKey = (res.status || "").toLowerCase();
         const arrival = parseDateOnly(res.arrival_date);
         const departure = parseDateOnly(res.departure_date);
 
-        const clampStart = arrival < rangeStart ? rangeStart : arrival;
-        const clampEnd = departure > rangeEndExclusive ? rangeEndExclusive : departure;
-
-        // spanDays = jumlah MALAM yang ditempati (checkout day tidak
-        // dihitung), bar berhenti persis di batas kolom checkout.
-        const spanDays = diffDays(clampEnd, clampStart);
-
-        if(spanDays <= 0){
-            return;
-        }
-
-        const offsetDays = diffDays(clampStart, rangeStart);
-
-        const left = offsetDays * colWidth + 2;
-        const width = spanDays * colWidth - 4;
-
-        const cutLeft = arrival < rangeStart;
-        const cutRight = departure > rangeEndExclusive;
-
-        const statusKey = (res.status || "").toLowerCase();
-
         const meta = [
+            range.dayUse ? "Day use" : null,
             res.adults ? `${res.adults} AD` : null,
             `${formatShortDate(arrival)}\u2013${formatShortDate(departure)}`
         ].filter(Boolean).join(" \u00b7 ");
@@ -462,7 +452,7 @@ function buildBarsHTML(room, days, colWidth, dayCount, resList, hasConflict){
         const locked = res.status === "CHECKED_OUT";
 
         html += `
-            <div class="reservation-bar status-${statusKey} ${cutLeft ? "cut-left" : ""} ${cutRight ? "cut-right" : ""} ${hasConflict ? "has-conflict" : ""} ${locked ? "locked" : ""}"
+            <div class="reservation-bar status-${statusKey} ${cutLeft ? "cut-left" : ""} ${cutRight ? "cut-right" : ""} ${hasConflict ? "has-conflict" : ""} ${locked ? "locked" : ""} ${range.dayUse ? "day-use" : ""}"
                  style="left:${left}px; width:${width}px;"
                  title="${escapeAttr(res.guest_name || "")} \u00b7 ${res.status}"
                  data-res-id="${res.id}"
@@ -499,7 +489,7 @@ function escapeAttr(str){
 
 }
 
-function buildTodayLineHTML(days, colWidth, dayCount){
+function buildTodayLineHTML(days, dayWidth, dayCount){
 
     const today = startOfToday();
     const rangeStart = days[0];
@@ -511,13 +501,13 @@ function buildTodayLineHTML(days, colWidth, dayCount){
 
     }
 
-    const offset = diffDays(today, rangeStart) * colWidth;
+    const offset = diffDays(today, rangeStart) * dayWidth;
 
     return `<div class="rack-today-line" style="left:${offset}px;"></div>`;
 
 }
 
-function renderRackBody(groupedRooms, reservationsByRoom, days, colWidth, dayCount){
+function renderRackBody(groupedRooms, reservationsByRoom, days, dayWidth, dayCount){
 
     const body = document.getElementById("rackBody");
 
@@ -551,11 +541,11 @@ function renderRackBody(groupedRooms, reservationsByRoom, days, colWidth, dayCou
                         <span class="rack-status-dot status-${statusKey}" title="${escapeAttr(room.status || "")}">\u25cf</span>
                     </div>
 
-                    <div class="rack-timeline" style="width:${colWidth * dayCount}px;">
-                        ${buildTimelineCellsHTML(days, colWidth, room)}
-                        ${buildTodayLineHTML(days, colWidth, dayCount)}
-                        <div class="rack-bars-layer" style="width:${colWidth * dayCount}px;">
-                            ${buildBarsHTML(room, days, colWidth, dayCount, resList, hasConflict)}
+                    <div class="rack-timeline" style="width:${dayWidth * dayCount}px;">
+                        ${buildTimelineCellsHTML(days, dayWidth, room)}
+                        ${buildTodayLineHTML(days, dayWidth, dayCount)}
+                        <div class="rack-bars-layer" style="width:${dayWidth * dayCount}px;">
+                            ${buildBarsHTML(room, days, dayWidth, dayCount, resList, hasConflict)}
                         </div>
                     </div>
 
@@ -631,12 +621,16 @@ function rackToggleAllGroups(){
 
 
 // ======================================================
-// Drag & Drop — pindah kamar (drag bar ke baris lain) dan
-// geser tanggal (tarik ujung kiri/kanan bar). Preview drag
-// tetap boleh berjalan meski belum login (biar terasa
-// responsif), tapi PENYIMPANAN ke database (rackFinishMove /
-// rackFinishResize) selalu dicek requireLogin() dulu — kalau
-// belum login, muncul alert dan posisi di-revert.
+// Drag & Drop
+// - "move": ghost mengikuti kursor, TINGGI ghost di-set eksplisit
+//   dari getBoundingClientRect() supaya tidak melebar ke bawah
+//   layar (bug lama: height:100% resolve ke tinggi viewport saat
+//   posisi fixed di document.body).
+// - "resize-left" / "resize-right": snap per SETENGAH hari, hasil
+//   akhir dikonversi balik ke arrival/departure lewat
+//   RoomAvailability.rangeToDates().
+// - Penyimpanan (rackFinishMove / rackFinishResize) selalu dicek
+//   requireLogin() dulu — kalau belum login, alert + posisi revert.
 // ======================================================
 
 function setupRackDragAndDrop(){
@@ -664,7 +658,12 @@ function rackHandleMouseDown(e){
         ? (handle.classList.contains("left") ? "resize-left" : "resize-right")
         : "move";
 
-    const colWidth = getRackColWidth(rackDayCount);
+    const dayWidth = getRackColWidth(rackDayCount);
+    const halfWidth = dayWidth / 2;
+
+    const arrivalStr = bar.dataset.arrival;
+    const departureStr = bar.dataset.departure;
+    const range = RoomAvailability.getOccupiedRange(arrivalStr, departureStr);
 
     rackDragState = {
 
@@ -672,20 +671,24 @@ function rackHandleMouseDown(e){
         resId: bar.dataset.resId,
         originRoom: bar.dataset.room,
         guestName: bar.dataset.guest,
-        arrival: parseDateOnly(bar.dataset.arrival),
-        departure: parseDateOnly(bar.dataset.departure),
+        arrival: arrivalStr,
+        departure: departureStr,
+        range: { ...range },
         startX: e.clientX,
         startY: e.clientY,
         barEl: bar,
         originLeft: parseFloat(bar.style.left),
         originWidth: parseFloat(bar.style.width),
-        colWidth,
+        dayWidth,
+        halfWidth,
         moved: false,
         ghostEl: null
 
     };
 
     if(type === "move"){
+
+        const barRect = bar.getBoundingClientRect();
 
         const ghost = bar.cloneNode(true);
 
@@ -694,6 +697,9 @@ function rackHandleMouseDown(e){
         ghost.style.left = "0px";
         ghost.style.top = "0px";
         ghost.style.width = rackDragState.originWidth + "px";
+        // FIX: tinggi eksplisit, jangan andalkan height:100% (bikin
+        // ghost melebar sampai ujung bawah layar saat position:fixed)
+        ghost.style.height = barRect.height + "px";
         ghost.style.pointerEvents = "none";
 
         document.body.appendChild(ghost);
@@ -750,25 +756,25 @@ function rackHandleMouseMove(e){
 
     }
 
-    // Resize: geser hanya secara horizontal, snap ke lebar 1 kolom (1 malam)
-    const deltaDays = Math.round(dx / rackDragState.colWidth);
+    // Resize: snap ke setengah hari (kolom AM/PM)
+    const deltaHalves = Math.round(dx / rackDragState.halfWidth);
     const bar = rackDragState.barEl;
 
     if(rackDragState.type === "resize-left"){
 
-        const newLeft = rackDragState.originLeft + deltaDays * rackDragState.colWidth;
-        const newWidth = rackDragState.originWidth - deltaDays * rackDragState.colWidth;
+        const newLeft = rackDragState.originLeft + deltaHalves * rackDragState.halfWidth;
+        const newWidth = rackDragState.originWidth - deltaHalves * rackDragState.halfWidth;
 
-        if(newWidth < rackDragState.colWidth - 4) return;
+        if(newWidth < rackDragState.halfWidth - 4) return;
 
         bar.style.left = newLeft + "px";
         bar.style.width = newWidth + "px";
 
     } else {
 
-        const newWidth = rackDragState.originWidth + deltaDays * rackDragState.colWidth;
+        const newWidth = rackDragState.originWidth + deltaHalves * rackDragState.halfWidth;
 
-        if(newWidth < rackDragState.colWidth - 4) return;
+        if(newWidth < rackDragState.halfWidth - 4) return;
 
         bar.style.width = newWidth + "px";
 
@@ -796,7 +802,6 @@ async function rackHandleMouseUp(e){
     }
 
     // Tidak ada gerakan berarti -> anggap sebagai klik biasa, buka detail
-    // (ini tidak butuh login karena cuma membuka halaman, read-only)
     if(!state.moved){
 
         window.location.href = `reservation-detail.html?id=${state.resId}`;
@@ -835,11 +840,8 @@ async function rackFinishMove(state, e){
 
     }
 
-    const { conflicts, error } = await findRoomConflicts(
-        targetRoom,
-        formatDateISO(state.arrival),
-        formatDateISO(state.departure),
-        state.resId
+    const { conflicts, error } = await RoomAvailability.findConflicts(
+        supabaseClient, targetRoom, state.arrival, state.departure, state.resId
     );
 
     if(error){
@@ -854,7 +856,7 @@ async function rackFinishMove(state, e){
 
         const names = [...new Set(conflicts.map(c => c.guest_name || "reservasi lain"))].join(", ");
 
-        showMessage(`Kamar ${targetRoom} sudah terisi (${names}) pada malam tersebut`, "error");
+        showMessage(`Kamar ${targetRoom} sudah terisi (${names}) pada rentang tersebut`, "error");
         await refreshRack();
         return;
 
@@ -890,31 +892,40 @@ async function rackFinishMove(state, e){
 async function rackFinishResize(state, e){
 
     const dx = e.clientX - state.startX;
-    const deltaDays = Math.round(dx / state.colWidth);
+    const deltaHalves = Math.round(dx / state.halfWidth);
 
-    if(deltaDays === 0){
+    if(deltaHalves === 0){
 
         await refreshRack();
         return;
 
     }
 
-    let newArrival = state.arrival;
-    let newDeparture = state.departure;
+    let newStart = state.range.start;
+    let newEnd = state.range.end;
 
     if(state.type === "resize-left"){
 
-        newArrival = addDays(state.arrival, deltaDays);
+        newStart = state.range.start + deltaHalves;
 
     } else {
 
-        newDeparture = addDays(state.departure, deltaDays);
+        newEnd = state.range.end + deltaHalves;
 
     }
 
-    if(newDeparture <= newArrival){
+    if(newEnd - newStart < 2){
 
-        showMessage("Departure date tidak boleh sebelum/sama dengan arrival date", "error");
+        showMessage("Durasi reservasi minimal setengah hari (day use)", "error");
+        await refreshRack();
+        return;
+
+    }
+
+    const newDates = RoomAvailability.rangeToDates(newStart, newEnd);
+
+    if(!newDates){
+
         await refreshRack();
         return;
 
@@ -927,11 +938,8 @@ async function rackFinishResize(state, e){
 
     }
 
-    const { conflicts, error } = await findRoomConflicts(
-        state.originRoom,
-        formatDateISO(newArrival),
-        formatDateISO(newDeparture),
-        state.resId
+    const { conflicts, error } = await RoomAvailability.findConflicts(
+        supabaseClient, state.originRoom, newDates.arrival, newDates.departure, state.resId
     );
 
     if(error){
@@ -952,15 +960,19 @@ async function rackFinishResize(state, e){
 
     }
 
+    const label = newDates.arrival === newDates.departure
+        ? `${newDates.arrival} (day use)`
+        : `${newDates.arrival} \u2192 ${newDates.departure}`;
+
     showConfirm(
-        `Ubah tanggal reservasi ${state.guestName} menjadi ${formatDateISO(newArrival)} \u2192 ${formatDateISO(newDeparture)}?`,
+        `Ubah tanggal reservasi ${state.guestName} menjadi ${label}?`,
         async () => {
 
             const { error: updateError } = await supabaseClient
                 .from("reservation")
                 .update({
-                    arrival_date: formatDateISO(newArrival),
-                    departure_date: formatDateISO(newDeparture)
+                    arrival_date: newDates.arrival,
+                    departure_date: newDates.departure
                 })
                 .eq("id", Number(state.resId));
 
@@ -1091,7 +1103,9 @@ async function performRackRoomStatusUpdate(status, selected){
 
 
 // ======================================================
-// Date navigation
+// Date navigation — ◀▶ cuma geser window 1 hari. Date picker
+// me-RECENTER window supaya tanggal yang dipilih selalu ada
+// di tengah rentang yang sedang ditampilkan.
 // ======================================================
 
 function rackChangeDate(stepDays){
@@ -1103,20 +1117,14 @@ function rackChangeDate(stepDays){
 
 }
 
-function rackJumpTo(target){
+function centerRackOnDate(date){
 
-    const today = startOfToday();
+    const dayCount = getRackDayCount();
+    const before = Math.floor((dayCount - 1) / 2);
 
-    if(target === "yesterday"){
-        rackStartDate = addDays(today, -1);
-    } else if(target === "tomorrow"){
-        rackStartDate = addDays(today, 1);
-    } else {
-        rackStartDate = today;
-    }
+    rackStartDate = addDays(date, -before);
 
     updateRackDateInput();
-    refreshRack();
 
 }
 
@@ -1126,8 +1134,7 @@ function rackChangeSelectedDate(value){
 
     if(!parsed) return;
 
-    rackStartDate = parsed;
-
+    centerRackOnDate(parsed);
     refreshRack();
 
 }
@@ -1153,9 +1160,9 @@ async function refreshRack(){
 
     rackDayCount = getRackDayCount();
 
-    const colWidth = getRackColWidth(rackDayCount);
+    const dayWidth = getRackColWidth(rackDayCount);
 
-    document.documentElement.style.setProperty("--rack-col-width", `${colWidth}px`);
+    document.documentElement.style.setProperty("--rack-col-width", `${dayWidth}px`);
 
     const days = [];
 
@@ -1175,8 +1182,8 @@ async function refreshRack(){
     const groupedRooms = groupRoomsByType(rooms);
     const reservationsByRoom = groupReservationsByRoom(reservations);
 
-    renderRackHeader(days, colWidth);
-    renderRackBody(groupedRooms, reservationsByRoom, days, colWidth, rackDayCount);
+    renderRackHeader(days, dayWidth);
+    renderRackBody(groupedRooms, reservationsByRoom, days, dayWidth, rackDayCount);
 
     if(typeof applyAuthVisibility === "function"){
 
@@ -1261,6 +1268,12 @@ function showConfirm(message, onConfirm, onCancel){
 
 }
 
+function showDevMessage(feature){
+
+    showMessage(`${feature} is still in development`, "info");
+
+}
+
 function debounce(fn, delay){
 
     let timer;
@@ -1277,9 +1290,10 @@ function debounce(fn, delay){
 document.addEventListener("DOMContentLoaded", async () => {
 
     startClock();
-    updateRackDateInput();
     updateRackViewModeButtons();
     setupRackDragAndDrop();
+
+    centerRackOnDate(startOfToday());
 
     try {
         await refreshRack();

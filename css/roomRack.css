@@ -44,6 +44,46 @@
 
 
 /* ======================================================
+   TABS (mirip browser tab) — pengganti link Room List /
+   Reservations lama
+   ====================================================== */
+
+.rack-tabs {
+    display: flex;
+    gap: 3px;
+    padding: 0 4px;
+    margin: 0 0 10px;
+    flex: none;
+}
+
+.rack-tab {
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 8px 8px 0 0;
+    background: #eceff1;
+    color: #78848c;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid #dde2e5;
+    border-bottom: none;
+}
+
+.rack-tab:hover {
+    background: #e2e7ea;
+    color: #444;
+}
+
+.rack-tab.active {
+    background: #fff;
+    color: #222;
+    font-weight: 600;
+    border-color: #ccc;
+    position: relative;
+    top: 1px;
+}
+
+
+/* ======================================================
    SCROLL CONTAINER — both axes scroll here, sticky header
    row and sticky room-label column are relative to this
    ====================================================== */
@@ -59,7 +99,8 @@
 
 
 /* ======================================================
-   HEADER ROW (dates)
+   HEADER ROW (dates) — ◀ nempel di label ROOM (sticky
+   kiri), ▶ nempel di ujung (sticky kanan)
    ====================================================== */
 
 .rack-header-row {
@@ -82,10 +123,40 @@
     border-right: 1px solid #ddd;
     display: flex;
     align-items: center;
+    gap: 6px;
     padding: 8px;
     font-size: 12px;
     font-weight: 600;
     color: #555;
+    box-sizing: border-box;
+}
+
+.rack-header-end {
+    position: sticky;
+    right: 0;
+    z-index: 4;
+    flex: none;
+    background: #fafafa;
+    border-left: 1px solid #ddd;
+    display: flex;
+    align-items: center;
+    padding: 0 6px;
+}
+
+.rack-nav-btn {
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+    flex: none;
+}
+
+.rack-nav-btn:hover {
+    background: #f0f0f0;
 }
 
 .rack-header-cell {
@@ -107,6 +178,16 @@
     font-size: 13px;
     font-weight: 600;
     color: #333;
+}
+
+.rack-header-halves {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: #aaa;
+    padding: 0 4px;
+    margin-top: 2px;
+    letter-spacing: 0.03em;
 }
 
 .rack-header-cell.is-weekend {
@@ -209,7 +290,7 @@
 
 
 /* ======================================================
-   TIMELINE (day cells + reservation bars)
+   TIMELINE (day cells split into AM/PM half-cells + bars)
    ====================================================== */
 
 .rack-timeline {
@@ -222,8 +303,18 @@
     flex: none;
     width: var(--rack-col-width);
     box-sizing: border-box;
+    display: flex;
     border-right: 1px solid #f0f0f0;
     background: #fff;
+}
+
+.rack-half-cell {
+    box-sizing: border-box;
+    height: 100%;
+}
+
+.rack-half-cell.am {
+    border-right: 1px dashed rgba(0, 0, 0, 0.08);
 }
 
 .rack-cell.status-available,
@@ -286,6 +377,10 @@
 .reservation-bar.status-confirmed { background: #43a047; }
 .reservation-bar.status-checked_in { background: #1e88e5; }
 .reservation-bar.status-checked_out { background: #9e9e9e; }
+
+.reservation-bar.day-use {
+    border: 1px dashed rgba(255, 255, 255, 0.65);
+}
 
 .reservation-bar.has-conflict {
     outline: 2px solid #c62828;

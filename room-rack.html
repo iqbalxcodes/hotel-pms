@@ -16,19 +16,11 @@
         <div class="reservation-header">
 
             <div class="header-title">
-                <h3>Room Plan</h3>
+                <button class="icon-btn" onclick="history.back()" title="Kembali">← Back</button>
             </div>
 
             <div class="header-menu">
-                <button onclick="rackChangeDate(-1)">◀</button>
-
-                <button onclick="rackJumpTo('yesterday')">Yesterday</button>
-                <button onclick="rackJumpTo('today')">Today</button>
-                <button onclick="rackJumpTo('tomorrow')">Tomorrow</button>
-
                 <input type="date" id="rackDateInput" onchange="rackChangeSelectedDate(this.value)">
-
-                <button onclick="rackChangeDate(1)">▶</button>
 
                 <div class="rack-view-toggle">
                     <button class="rack-view-btn" data-mode="3" onclick="rackSetViewMode('3')">3D</button>
@@ -45,12 +37,17 @@
 
         </div>
 
+        <div class="rack-tabs">
+            <div class="rack-tab active">Room Rack</div>
+            <a class="rack-tab" href="index.html">Reservation List</a>
+            <a class="rack-tab" href="room.html">Room List</a>
+            <a class="rack-tab" href="guest.html">Guest List</a>
+            <a class="rack-tab" href="#" onclick="showDevMessage('Cashiering'); return false;">Cashiering</a>
+        </div>
+
         <div id="toolbar">
 
             <div id="normalToolbar">
-                <a class="icon-btn" href="room.html">📋 Room List</a>
-                <a class="icon-btn" href="reservation.html">🗓 Reservations</a>
-
                 <button onclick="rackToggleAllGroups()">Expand / Collapse All</button>
             </div>
 
@@ -87,7 +84,9 @@
 
     <script src="js/supabase.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/roomAvailability.js"></script>
     <script src="js/roomRack.js"></script>
+    <script src="js/developmentStatusSimulator.js"></script>
 
 </body>
 </html>
