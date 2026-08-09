@@ -1,5 +1,5 @@
 // ======================================================
-// SHARED NAVIGATION
+// GLOBAL PMS NAVIGATION
 // ======================================================
 
 const PMS_NAVIGATION = [
@@ -40,21 +40,31 @@ function renderNavigation() {
     const currentPage = container.dataset.page;
 
     const nav = document.createElement("div");
+
     nav.className = "rack-tabs";
 
     PMS_NAVIGATION.forEach(item => {
 
-        const isActive = item.page === currentPage;
+        const tab = document.createElement("a");
+
+        tab.className = "rack-tab";
+
+        if (item.page === currentPage) {
+            tab.classList.add("active");
+        }
+
+        tab.textContent = item.label;
+
+        // ==================================================
+        // DEVELOPMENT / NOT YET IMPLEMENTED
+        // ==================================================
 
         if (item.development) {
 
-            const tab = document.createElement("a");
-
-            tab.className = `rack-tab${isActive ? " active" : ""}`;
             tab.href = "#";
-            tab.textContent = item.label;
 
             tab.addEventListener("click", function (event) {
+
                 event.preventDefault();
 
                 if (typeof showDevMessage === "function") {
@@ -62,23 +72,30 @@ function renderNavigation() {
                 } else {
                     alert(`${item.label} is currently under development.`);
                 }
+
             });
 
-            nav.appendChild(tab);
-
-        } else {
-
-            const tab = document.createElement("a");
-
-            tab.className = `rack-tab${isActive ? " active" : ""}`;
-            tab.href = item.href;
-            tab.textContent = item.label;
-
-            nav.appendChild(tab);
         }
+
+        // ==================================================
+        // NORMAL PAGE
+        // ==================================================
+
+        else {
+
+            tab.href = item.href;
+
+        }
+
+        nav.appendChild(tab);
     });
 
     container.replaceWith(nav);
 }
+
+
+// ======================================================
+// INITIALIZE
+// ======================================================
 
 document.addEventListener("DOMContentLoaded", renderNavigation);
