@@ -3,7 +3,22 @@
 // Rendering murni untuk modul Folio. Tidak melakukan query
 // Supabase — hanya menggambar berdasarkan FolioState dan
 // memanggil balik fungsi aksi dari folio.js lewat onclick.
+//
+// PENTING: modul ini reusable lintas halaman, jadi TIDAK
+// boleh bergantung diam-diam ke helper milik halaman lain
+// (mis. escapeHtmlSimple dari tableColumns.js yang cuma
+// ada di index.html). Semua helper yang dibutuhkan
+// didefinisikan sendiri di file ini.
 // ======================================================
+
+function escapeHtmlSimple(str) {
+
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+
+    return div.innerHTML;
+
+}
 
 const FolioUI = {
 
