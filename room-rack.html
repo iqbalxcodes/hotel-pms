@@ -8,9 +8,16 @@
     <link rel="stylesheet" href="css/roomRack.css">
 </head>
 <body>
-
+    
     <h1>Hotel PMS</h1>
-
+    
+    <div class="rack-tabs">
+        <div class="rack-tab active">Room Rack</div>
+        <a class="rack-tab" href="index.html">Reservation List</a>
+        <a class="rack-tab" href="room.html">Room List</a>
+        <a class="rack-tab" href="guest.html">Guest List</a>
+        <a class="rack-tab" href="#" onclick="showDevMessage('Cashiering'); return false;">Cashiering</a>
+    </div>
     <div class="table-container detail-card rack-page">
 
         <div class="reservation-header">
@@ -37,13 +44,6 @@
 
         </div>
 
-        <div class="rack-tabs">
-            <div class="rack-tab active">Room Rack</div>
-            <a class="rack-tab" href="index.html">Reservation List</a>
-            <a class="rack-tab" href="room.html">Room List</a>
-            <a class="rack-tab" href="guest.html">Guest List</a>
-            <a class="rack-tab" href="#" onclick="showDevMessage('Cashiering'); return false;">Cashiering</a>
-        </div>
 
         <div id="toolbar">
 

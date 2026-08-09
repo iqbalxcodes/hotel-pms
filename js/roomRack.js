@@ -21,6 +21,7 @@ const MONTH_LABELS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT
 let rackViewMode = loadRackViewMode();
 
 let rackStartDate = startOfToday();
+let rackSelectedDate = startOfToday();
 let rackDayCount = getRackDayCount();
 let rackCollapsed = loadCollapsedGroups();
 
@@ -348,8 +349,8 @@ function renderRackHeader(days, dayWidth){
 
     let html = `
         <div class="rack-header-label">
-            <button class="rack-nav-btn" onclick="rackChangeDate(-1)" title="Sebelumnya">\u25c0</button>
             <span>ROOM</span>
+            <button class="rack-nav-btn rack-nav-prev" onclick="rackChangeDate(-1)" title="Sebelumnya">\u25c0</button>
         </div>
     `;
 
@@ -402,36 +403,27 @@ function buildTimelineCellsHTML(days, dayWidth, room){
     return html;
 
 }
-
-function buildBarsHTML(room, days, dayWidth, dayCount, resList, hasConflict){
-
+function buildBarsHTML(room, days, dayWidth, dayCount, resList, hasConflict, laneOf, laneCount){
     const halfWidth = dayWidth / 2;
+    const laneHeightPct = 100 / laneCount;
 
-    const rangeStartHalf = RoomAvailability.getOccupiedRange(
-        formatDateISO(days[0]), formatDateISO(days[0])
-    ).start;
-
+    const rangeStartHalf = RoomAvailability.getOccupiedRange(formatDateISO(days[0]), formatDateISO(days[0])).start;
     const lastDayIso = formatDateISO(days[dayCount - 1]);
     const rangeEndHalfExclusive = RoomAvailability.getOccupiedRange(lastDayIso, lastDayIso).end;
 
     let html = "";
 
     resList.forEach(res => {
-
         const range = RoomAvailability.getOccupiedRange(res.arrival_date, res.departure_date);
-
         if(!range) return;
 
         const clampStart = Math.max(range.start, rangeStartHalf);
         const clampEnd = Math.min(range.end, rangeEndHalfExclusive);
-
         if(clampEnd <= clampStart) return;
 
         const offsetHalves = clampStart - rangeStartHalf;
         const spanHalves = clampEnd - clampStart;
 
-        // Margin kiri/kanan kecil biar reservasi bersebelahan tetap
-        // kelihatan sebagai 2 blok terpisah.
         const left = offsetHalves * halfWidth + 3;
         const width = spanHalves * halfWidth - 6;
 
@@ -448,12 +440,15 @@ function buildBarsHTML(room, days, dayWidth, dayCount, resList, hasConflict){
             `${formatShortDate(arrival)}\u2013${formatShortDate(departure)}`
         ].filter(Boolean).join(" \u00b7 ");
 
-        // Reservasi yang sudah CHECKED_OUT dikunci — tidak bisa digeser/dipindah lagi
         const locked = res.status === "CHECKED_OUT";
+
+        // --- BARU: hitung posisi lane ---
+        const laneIndex = laneOf.get(res.id) ?? 0;
+        const top = laneIndex * laneHeightPct;
 
         html += `
             <div class="reservation-bar status-${statusKey} ${cutLeft ? "cut-left" : ""} ${cutRight ? "cut-right" : ""} ${hasConflict ? "has-conflict" : ""} ${locked ? "locked" : ""} ${range.dayUse ? "day-use" : ""}"
-                 style="left:${left}px; width:${width}px;"
+                 style="left:${left}px; width:${width}px; top:calc(${top}% + 2px); height:calc(${laneHeightPct}% - 4px);"
                  title="${escapeAttr(res.guest_name || "")} \u00b7 ${res.status}"
                  data-res-id="${res.id}"
                  data-room="${escapeAttr(room.room_number)}"
@@ -467,11 +462,9 @@ function buildBarsHTML(room, days, dayWidth, dayCount, resList, hasConflict){
                 ${!locked && !cutRight ? `<div class="bar-resize-handle right"></div>` : ""}
             </div>
         `;
-
     });
 
     return html;
-
 }
 
 function formatShortDate(d){
@@ -526,32 +519,30 @@ function renderRackBody(groupedRooms, reservationsByRoom, days, dayWidth, dayCou
         `;
 
         rooms.forEach(room => {
-
             const resList = reservationsByRoom.get(room.room_number) || [];
             const hasConflict = roomHasConflict(resList);
             const statusKey = (room.status || "").toLowerCase();
 
-            html += `
-                <div class="rack-row" data-room="${escapeAttr(room.room_number)}">
+            const { laneOf, laneCount } = computeLanes(resList);
+            const rowMinHeight = Math.max(54, laneCount * 40 + 14);
 
+            html += `
+                <div class="rack-row" data-room="${escapeAttr(room.room_number)}" style="min-height:${rowMinHeight}px;">
                     <div class="rack-room-label">
                         <input type="checkbox" class="rack-room-checkbox" data-id="${escapeAttr(room.room_number)}">
                         ${hasConflict ? `<span class="rack-conflict-flag" title="Double booking">\u26a0</span>` : ""}
                         <span class="rack-room-number">${escapeAttr(room.room_number)}</span>
                         <span class="rack-status-dot status-${statusKey}" title="${escapeAttr(room.status || "")}">\u25cf</span>
                     </div>
-
                     <div class="rack-timeline" style="width:${dayWidth * dayCount}px;">
                         ${buildTimelineCellsHTML(days, dayWidth, room)}
                         ${buildTodayLineHTML(days, dayWidth, dayCount)}
                         <div class="rack-bars-layer" style="width:${dayWidth * dayCount}px;">
-                            ${buildBarsHTML(room, days, dayWidth, dayCount, resList, hasConflict)}
+                            ${buildBarsHTML(room, days, dayWidth, dayCount, resList, hasConflict, laneOf, laneCount)}
                         </div>
                     </div>
-
                 </div>
             `;
-
         });
 
         html += `</div>`;
@@ -1108,26 +1099,6 @@ async function performRackRoomStatusUpdate(status, selected){
 // di tengah rentang yang sedang ditampilkan.
 // ======================================================
 
-function rackChangeDate(stepDays){
-
-    rackStartDate = addDays(rackStartDate, stepDays);
-
-    updateRackDateInput();
-    refreshRack();
-
-}
-
-function centerRackOnDate(date){
-
-    const dayCount = getRackDayCount();
-    const before = Math.floor((dayCount - 1) / 2);
-
-    rackStartDate = addDays(date, -before);
-
-    updateRackDateInput();
-
-}
-
 function rackChangeSelectedDate(value){
 
     const parsed = parseDateOnly(value);
@@ -1138,19 +1109,6 @@ function rackChangeSelectedDate(value){
     refreshRack();
 
 }
-
-function updateRackDateInput(){
-
-    const input = document.getElementById("rackDateInput");
-
-    if(input){
-
-        input.value = formatDateISO(rackStartDate);
-
-    }
-
-}
-
 
 // ======================================================
 // Refresh / Init
@@ -1301,16 +1259,64 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error("refreshRack failed:", err);
     }
 
-    window.addEventListener("resize", debounce(async () => {
-
-        const newDayCount = getRackDayCount();
-
-        if(newDayCount !== rackDayCount){
-
-            await refreshRack();
-
-        }
-
-    }, 300));
+window.addEventListener("resize", debounce(async () => {
+    const newDayCount = getRackDayCount();
+    if(newDayCount !== rackDayCount){
+        centerRackOnDate(rackSelectedDate);
+        await refreshRack();
+    }
+}, 300));
 
 });
+
+// tambahkan state baru
+let rackSelectedDate = startOfToday();
+
+function updateRackDateInput(){
+    const input = document.getElementById("rackDateInput");
+    if(input){
+        input.value = formatDateISO(rackSelectedDate); // was: rackStartDate
+    }
+}
+
+function centerRackOnDate(date){
+    rackSelectedDate = date; // <-- simpan tanggal aslinya
+
+    const dayCount = getRackDayCount();
+    const before = Math.floor((dayCount - 1) / 2);
+
+    rackStartDate = addDays(date, -before);
+
+    updateRackDateInput();
+}
+
+function rackChangeDate(stepDays){
+    rackStartDate = addDays(rackStartDate, stepDays);
+    rackSelectedDate = rackStartDate; // biar tetap konsisten dipakai tombol ◀▶
+
+    updateRackDateInput();
+    refreshRack();
+}
+
+function computeLanes(resList){
+    const withRange = resList
+        .map(res => ({ res, range: RoomAvailability.getOccupiedRange(res.arrival_date, res.departure_date) }))
+        .filter(item => item.range)
+        .sort((a, b) => a.range.start - b.range.start);
+
+    const laneEnds = [];
+    const laneOf = new Map();
+
+    withRange.forEach(({ res, range }) => {
+        let lane = laneEnds.findIndex(end => range.start >= end);
+        if(lane === -1){
+            lane = laneEnds.length;
+            laneEnds.push(range.end);
+        } else {
+            laneEnds[lane] = range.end;
+        }
+        laneOf.set(res.id, lane);
+    });
+
+    return { laneOf, laneCount: Math.max(1, laneEnds.length) };
+}

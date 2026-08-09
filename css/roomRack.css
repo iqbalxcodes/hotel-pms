@@ -52,7 +52,7 @@
     display: flex;
     gap: 3px;
     padding: 0 4px;
-    margin: 0 0 10px;
+    margin: 0 24px;     /* left/right 24px, atas-bawah 0 supaya nempel card */
     flex: none;
 }
 
@@ -129,6 +129,7 @@
     font-weight: 600;
     color: #555;
     box-sizing: border-box;
+    justify-content: space-between;
 }
 
 .rack-header-end {
@@ -153,6 +154,10 @@
     line-height: 1;
     cursor: pointer;
     flex: none;
+}
+
+.rack-nav-prev {
+    margin-right: 6px; /* jarak dikit dari kolom tanggal pertama */
 }
 
 .rack-nav-btn:hover {
@@ -462,4 +467,15 @@
         flex-wrap: wrap;
     }
 
+}
+
+.table-container.rack-page {
+    margin-top: 0;
+}
+
+@media (max-width: 700px) {
+    .rack-tabs { margin: 0 8px; }
+}
+@media (max-width: 420px) {
+    .rack-tabs { margin: 0 4px; }
 }
