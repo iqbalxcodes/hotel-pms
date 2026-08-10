@@ -10,6 +10,8 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%;
+    min-width: 0;
     box-sizing: border-box;
     overflow: hidden;
 }
@@ -31,12 +33,23 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    flex-wrap: wrap;
 }
 
 .folio-title {
     font-weight: 600;
     font-size: 14px;
     margin-right: 2px;
+}
+
+.folio-closed-badge {
+    font-size: 10px;
+    font-weight: 600;
+    color: #616161;
+    background: #eeeeee;
+    border-radius: 3px;
+    padding: 1px 6px;
+    margin-right: 4px;
 }
 
 .folio-icon-btn {
@@ -95,6 +108,9 @@
     color: #222;
 }
 
+/* Row 1 (edit mode): dropdown Guest/Company/Agency/Mr/Mrs [50%]
+   + ID [50%]. Row 2: Name full width. Row-row lain (street,
+   postcode/city, region/country) tetap seperti semula. */
 .folio-address-edit .folio-field-row {
     display: flex;
     gap: 8px;
@@ -104,6 +120,7 @@
 .folio-address-edit input,
 .folio-address-edit select {
     flex: 1;
+    min-width: 0;
     border: 1px solid #999;
     border-radius: 4px;
     padding: 4px 6px;
@@ -122,6 +139,7 @@
     margin: 0 10px;
     flex: 1 1 auto;
     min-height: 0;
+    min-width: 0;
 }
 
 .folio-table {
@@ -230,7 +248,7 @@
 }
 
 /* --------------------------------------------------
-   Footer (normal / selection / move / split / discount)
+   Footer (normal / selection / move / split / discount / closed)
    -------------------------------------------------- */
 
 .folio-footer {
@@ -311,6 +329,57 @@
 .folio-footer-action .folio-inline-input {
     width: auto;
     min-width: 70px;
+}
+
+/* --------------------------------------------------
+   Payment View (menggantikan body card saat Take Payment
+   diklik — Invoice No / Date / Cashiered By / Method / Amount)
+   -------------------------------------------------- */
+
+.folio-payment-card {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.folio-payment-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.folio-payment-row label {
+    flex: 0 0 120px;
+    font-size: 12px;
+    color: #666;
+}
+
+.folio-payment-row .folio-inline-input {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 13px;
+}
+
+.folio-payment-note {
+    font-size: 12px;
+    color: #e65100;
+    background: #fff3e0;
+    border: 1px solid #ffe0b2;
+    border-radius: 4px;
+    padding: 6px 8px;
+}
+
+.folio-payment-actions {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 6px;
+    border-top: 1px solid #eee;
 }
 
 /* --------------------------------------------------

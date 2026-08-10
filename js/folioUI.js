@@ -27,10 +27,20 @@ const FolioUI = {
         const container = document.getElementById(state.containerId);
         if (!container) return;
 
+        let bodyHtml;
+
+        if (state.mode === "history") {
+            bodyHtml = this.renderHistory(state);
+        } else if (state.mode === "payment") {
+            bodyHtml = this.renderPaymentView(state);
+        } else {
+            bodyHtml = this.renderBody(state);
+        }
+
         container.innerHTML = `
             <div class="folio-card">
                 ${this.renderHeader(state)}
-                ${state.mode === "history" ? this.renderHistory(state) : this.renderBody(state)}
+                ${bodyHtml}
             </div>
         `;
 
@@ -42,27 +52,51 @@ const FolioUI = {
 
     renderHeader(state) {
 
+        const isPayment = state.mode === "payment";
+        const isEdit = state.mode === "edit";
+        const isHistory = state.mode === "history";
+        const isClosed = !!(state.folio && state.folio.is_closed);
+
+        if (isPayment) {
+
+            return `
+                <div class="folio-header">
+                    <div class="folio-header-left">
+                        <span class="folio-title">Take Payment</span>
+                    </div>
+                    <button class="folio-icon-btn" title="Cancel" onclick="folioCancelPayment()">✕</button>
+                </div>
+            `;
+
+        }
+
         const label = state.folio
             ? (state.folio.name || `Folio ${state.folio.folio_number}`)
             : "Folio";
 
-        const isEdit = state.mode === "edit";
-        const isHistory = state.mode === "history";
+        let editControls;
 
-        const editControls = isEdit
-            ? `
+        if (isEdit) {
+
+            editControls = `
                 <button class="folio-icon-btn folio-icon-confirm require-auth" title="Save" onclick="folioSaveEdit()">✓</button>
                 <button class="folio-icon-btn" title="Cancel" onclick="folioCancelEdit()">✕</button>
-              `
-            : `
-                <button class="folio-icon-btn require-auth ${isEdit ? "folio-icon-active" : ""}" title="Edit Folio" onclick="folioEnterEdit()">✎</button>
+            `;
+
+        } else {
+
+            editControls = `
+                ${!isClosed ? `<button class="folio-icon-btn require-auth" title="Edit Folio" onclick="folioEnterEdit()">✎</button>` : ""}
                 <button class="folio-icon-btn ${isHistory ? "folio-icon-active" : ""}" title="Folio Activity" onclick="folioToggleHistory()">◷</button>
-              `;
+            `;
+
+        }
 
         return `
             <div class="folio-header">
                 <div class="folio-header-left">
                     <span class="folio-title">${escapeHtmlSimple(label)}</span>
+                    ${isClosed ? `<span class="folio-closed-badge" title="Folio settled">🔒 Closed</span>` : ""}
                     ${editControls}
                 </div>
                 ${state.backAction ? `<button class="folio-icon-btn" title="Back" onclick="${state.backAction}">←</button>` : ""}
@@ -78,12 +112,12 @@ const FolioUI = {
     renderBody(state) {
 
         const editable = state.mode === "edit";
+        const isClosed = !!(state.folio && state.folio.is_closed);
 
         return `
             ${this.renderAddressCard(state.address, editable)}
             ${this.renderItemsTable(state, editable)}
-            ${editable ? this.renderAddServiceRow() : ""}
-            ${!editable ? this.renderAddServiceRow() : ""}
+            ${!isClosed ? this.renderAddServiceRow() : ""}
             ${this.renderFooter(state)}
         `;
 
@@ -91,6 +125,10 @@ const FolioUI = {
 
     // --------------------------------------------------
     // Invoice Address Card
+    //
+    // Layout edit mode:
+    //   [ dropdown Guest/Company/Agency/Mr/Mrs ] [ ID ]   <- setengah-setengah
+    //   [ Name (full width) ]
     // --------------------------------------------------
 
     renderAddressCard(address, editable) {
@@ -121,17 +159,18 @@ const FolioUI = {
 
         }
 
+        const typeOptions = ["Guest", "Company", "Agency", "Mr", "Mrs"]
+            .map(opt => `<option value="${opt}" ${a.guest_or_company === opt ? "selected" : ""}>${opt}</option>`)
+            .join("");
+
         return `
             <div class="folio-address-card folio-address-edit" id="folioAddressEdit">
                 <div class="folio-field-row">
-                    <select id="fa_guest_or_company">
-                        <option value="Guest" ${a.guest_or_company !== "Company" ? "selected" : ""}>Guest</option>
-                        <option value="Company" ${a.guest_or_company === "Company" ? "selected" : ""}>Company</option>
-                    </select>
-                </div>
-                <div class="folio-field-row">
+                    <select id="fa_guest_or_company">${typeOptions}</select>
                     <input id="fa_customer_id" type="number" placeholder="ID" value="${a.customer_id ?? ""}"
                         onkeydown="if(event.key==='Enter'){event.preventDefault(); folioLookupCustomer();}">
+                </div>
+                <div class="folio-field-row">
                     <input id="fa_name" type="text" placeholder="Name" value="${escapeHtmlSimple(a.name || "")}">
                 </div>
                 <div class="folio-field-row">
@@ -159,7 +198,11 @@ const FolioUI = {
 
     renderItemsTable(state, editable) {
 
-        const rows = state.items.map(item => this.renderItemRow(item, editable, state.selectedIds.has(item.id))).join("");
+        const isClosed = !!(state.folio && state.folio.is_closed);
+
+        const rows = state.items
+            .map(item => this.renderItemRow(item, editable, state.selectedIds.has(item.id), isClosed))
+            .join("");
 
         return `
             <div class="folio-table-scroll">
@@ -191,7 +234,7 @@ const FolioUI = {
 
     },
 
-    renderItemRow(item, editable, selected) {
+    renderItemRow(item, editable, selected, isClosed) {
 
         const endPrice = FolioService.calcEndPrice(item);
 
@@ -199,7 +242,7 @@ const FolioUI = {
 
             return `
                 <tr>
-                    <td><input type="checkbox" ${selected ? "checked" : ""} onchange="folioToggleSelect(${item.id})"></td>
+                    <td><input type="checkbox" ${selected ? "checked" : ""} ${isClosed ? "disabled" : ""} onchange="folioToggleSelect(${item.id})"></td>
                     <td>${item.quantity}</td>
                     <td>${escapeHtmlSimple(item.service_name)}</td>
                     <td>${item.tax_rate}%</td>
@@ -302,16 +345,24 @@ const FolioUI = {
     },
 
     // --------------------------------------------------
-    // Footer: normal | selection | move | split | discount
+    // Footer: normal | selection | move | split | discount | closed
     // --------------------------------------------------
 
     renderFooter(state) {
 
-        const selectedCount = state.selectedIds.size;
+        const isClosed = !!(state.folio && state.folio.is_closed);
 
         if (state.mode === "edit") {
             return "";
         }
+
+        if (isClosed) {
+
+            return this.renderClosedFooter(state);
+
+        }
+
+        const selectedCount = state.selectedIds.size;
 
         if (selectedCount === 0) {
 
@@ -341,6 +392,20 @@ const FolioUI = {
 
     },
 
+    renderClosedFooter(state) {
+
+        const invoiceNo = state.folio.invoice_number || "-";
+
+        return `
+            <div class="folio-footer">
+                <div class="folio-balance folio-balance-settled">
+                    Invoice ${escapeHtmlSimple(invoiceNo)} <span class="folio-balance-status">Settled</span>
+                </div>
+            </div>
+        `;
+
+    },
+
     renderNormalFooter(state) {
 
         const balance = FolioService.calcBalance(state.items, state.payments);
@@ -362,7 +427,7 @@ const FolioUI = {
 
         return `
             <div class="folio-footer">
-                <button class="folio-btn require-auth" onclick="folioTakePayment()">Take Payment</button>
+                <button class="folio-btn require-auth" onclick="folioOpenPaymentView()">Take Payment</button>
                 <div class="folio-balance ${statusClass}">
                     Balance: ${folioFormatCurrency(balance)} <span class="folio-balance-status">${statusLabel}</span>
                 </div>
@@ -447,6 +512,75 @@ const FolioUI = {
         // Default 1-3 (sesuai konsep card-billing1/2/3). Folio yang belum ada
         // otomatis dibuat oleh folioResolveTargetFolio() saat Apply diklik.
         return [1, 2, 3].map(n => `<option value="${n}">Folio ${n}</option>`).join("");
+
+    },
+
+    // --------------------------------------------------
+    // Payment View (menggantikan body folio card saat
+    // mode === "payment", dipicu tombol "Take Payment")
+    // --------------------------------------------------
+
+    renderPaymentView(state) {
+
+        const draft = state.paymentDraft || {};
+
+        return `
+            <div class="folio-payment-card">
+                <div class="folio-payment-row">
+                    <label>Invoice Number</label>
+                    <input id="fp_invoice_number" type="text" class="folio-inline-input" value="${escapeHtmlSimple(draft.invoice_number || "")}" readonly>
+                </div>
+                <div class="folio-payment-row">
+                    <label>Date</label>
+                    <input id="fp_date" type="date" class="folio-inline-input" value="${draft.date || ""}">
+                </div>
+                <div class="folio-payment-row">
+                    <label>Cashiered By</label>
+                    <input id="fp_cashiered_by" type="text" class="folio-inline-input" value="${escapeHtmlSimple(draft.cashiered_by || "")}">
+                </div>
+                <div class="folio-payment-row">
+                    <label>Payment Method</label>
+                    <select id="fp_method" class="folio-inline-input">
+                        <option value="Cash" ${draft.method === "Cash" ? "selected" : ""}>Cash</option>
+                        <option value="Credit Card" ${draft.method === "Credit Card" ? "selected" : ""}>Credit Card</option>
+                        <option value="Debit Card" ${draft.method === "Debit Card" ? "selected" : ""}>Debit Card</option>
+                        <option value="Bank Transfer" ${draft.method === "Bank Transfer" ? "selected" : ""}>Bank Transfer</option>
+                    </select>
+                </div>
+                <div class="folio-payment-row">
+                    <label>Amount</label>
+                    <input id="fp_amount" type="number" step="0.01" class="folio-inline-input" value="${draft.amount || ""}">
+                </div>
+                <div class="folio-payment-note">⚠ Payment terminal API is still under development — this payment will be recorded manually.</div>
+                <div class="folio-payment-actions">
+                    <button class="folio-btn folio-btn-plain" onclick="folioCancelPayment()">Cancel</button>
+                    <button class="folio-btn folio-icon-confirm require-auth" onclick="folioSubmitPayment()">Pay</button>
+                </div>
+            </div>
+        `;
+
+    },
+
+    collectPaymentDraft() {
+
+        return {
+            invoice_number: document.getElementById("fp_invoice_number")?.value || "",
+            date: document.getElementById("fp_date")?.value || "",
+            cashiered_by: document.getElementById("fp_cashiered_by")?.value || "",
+            method: document.getElementById("fp_method")?.value || "Cash",
+            amount: document.getElementById("fp_amount")?.value || "0"
+        };
+
+    },
+
+    generateInvoiceNumber(folio) {
+
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, "0");
+        const base = folio && folio.id ? folio.id : Math.floor(Math.random() * 100000);
+
+        return `INV-${y}${m}-${String(base).padStart(5, "0")}`;
 
     },
 

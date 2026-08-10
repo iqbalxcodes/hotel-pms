@@ -235,6 +235,13 @@ h1 {
 
 /* ======================================================
    DETAIL GRID — base layout (layar normal, ~701–1399px)
+
+   Folio card (billing1) SEKARANG cuma menempati 1 baris grid
+   (sama seperti card lain), bukan span 3 baris lagi -> tinggi
+   defaultnya otomatis mengikuti tinggi baris pertama (guest/
+   stay), konsisten dengan card lain. Baru saat folio-mode
+   di-toggle (tombol ←/→) card billing melebar jadi tinggi
+   penuh (lihat blok .folio-mode di bawah).
    ====================================================== */
 
 .detail-grid {
@@ -243,8 +250,8 @@ h1 {
     grid-template-columns: repeat(3, 1fr);
     grid-template-areas:
         "guest      stay       billing1"
-        "secondary  amenities  billing1"
-        "remarks    rate       billing1";
+        "secondary  amenities  ."
+        "remarks    rate       .";
 }
 
 .card-guest      { grid-area: guest; }
@@ -257,6 +264,18 @@ h1 {
 .card-billing1   { grid-area: billing1; }
 .card-billing2   { grid-area: billing2; }
 .card-billing3   { grid-area: billing3; }
+
+/* Fix grid item overflow: tanpa min-width:0, grid item defaultnya
+   min-width:auto -> kalau isinya lebar (mis. .folio-table yang
+   width:max-content), track kolomnya ikut melar dan bikin lebar
+   card billing1/2/3 beda-beda / gak konsisten dgn card lain saat
+   resize. Dengan min-width:0, card dipaksa ikut lebar kolom grid
+   (1fr) dan kelebihan konten discroll sendiri oleh .folio-table-scroll. */
+.card-billing1,
+.card-billing2,
+.card-billing3 {
+    min-width: 0;
+}
 
 .detail-grid .card-billing2,
 .detail-grid .card-billing3 {
@@ -281,7 +300,10 @@ h1 {
 
 /* ======================================================
    FOLIO MODE — toggle di layar normal (tombol ←/→)
-   billing1 pindah ke kolom 1, billing2 & billing3 muncul
+   billing1 pindah ke kolom 1, billing2 & billing3 muncul,
+   dan ketiganya sengaja dibuat TINGGI (span 3 baris) karena
+   ini mode "fokus billing" yang memang diminta user secara
+   eksplisit lewat toggle.
    ====================================================== */
 
 .detail-grid.folio-mode {
@@ -336,6 +358,9 @@ h1 {
 
 /* ======================================================
    LAYAR BESAR (≥1400px) — billing2 otomatis tampil
+   di baris pertama juga (tinggi tetap konsisten dgn card lain,
+   TIDAK auto-tall lagi; kalau mau tampilan tinggi penuh tetap
+   pakai toggle folio-mode).
    ====================================================== */
 
 @media (min-width: 1400px) {
@@ -344,8 +369,8 @@ h1 {
         grid-template-columns: repeat(4, 1fr);
         grid-template-areas:
             "guest      stay       billing1  billing2"
-            "secondary  amenities  billing1  billing2"
-            "remarks    rate       billing1  billing2";
+            "secondary  amenities  .         ."
+            "remarks    rate       .         .";
     }
 
     .detail-grid .card-billing2 { display: flex; }
@@ -366,8 +391,8 @@ h1 {
         grid-template-columns: repeat(5, 1fr);
         grid-template-areas:
             "guest      stay       billing1  billing2  billing3"
-            "secondary  amenities  billing1  billing2  billing3"
-            "remarks    rate       billing1  billing2  billing3";
+            "secondary  amenities  .         .         ."
+            "remarks    rate       .         .         .";
     }
 
     .detail-grid .card-billing3 { display: flex; }

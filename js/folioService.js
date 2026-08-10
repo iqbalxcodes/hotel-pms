@@ -45,6 +45,12 @@ const FolioService = {
 
         await this.logActivity(created.id, "created", "Folio created");
 
+        // Folio 1 baru dibuat -> harga kamar dari reservation langsung
+        // dimasukkan sebagai item default (kalau ada harganya). Folio 2/3
+        // (dibuat via createNextFolio, mis. dari Move/Split) sengaja TIDAK
+        // ikut kena auto-charge ini.
+        await this.addRoomChargeFromReservation(created.id, reservationId);
+
         return created;
 
     },
@@ -95,6 +101,63 @@ const FolioService = {
 
         if (error) throw error;
         return data;
+
+    },
+
+    // --------------------------------------------------
+    // Room charge (default) — dipanggil sekali saat Folio 1
+    // pertama kali dibuat untuk sebuah reservation.
+    // --------------------------------------------------
+
+    calcNightsFromDates(arrivalDate, departureDate) {
+
+        if (!arrivalDate || !departureDate) return 0;
+
+        const arrival = new Date(arrivalDate);
+        const departure = new Date(departureDate);
+
+        const nights = Math.round((departure - arrival) / (1000 * 60 * 60 * 24));
+
+        return nights > 0 ? nights : 0;
+
+    },
+
+    async addRoomChargeFromReservation(folioId, reservationId) {
+
+        if (!reservationId) return;
+
+        try {
+
+            const { data: res, error } = await supabaseClient
+                .from("reservation")
+                .select("price, room_type, arrival_date, departure_date")
+                .eq("id", reservationId)
+                .maybeSingle();
+
+            if (error) throw error;
+
+            // Kalau reservation belum punya harga (mis. price null/0),
+            // jangan bikin item kosong -> user tetap bisa nambah manual.
+            if (!res || !res.price) return;
+
+            const nights = this.calcNightsFromDates(res.arrival_date, res.departure_date) || 1;
+            const roomCatalog = this.SERVICE_CATALOG.find(s => s.code === "ROOM");
+
+            await this.addItem(folioId, {
+                service_code: "ROOM",
+                service_name: res.room_type ? `Room - ${res.room_type}` : "Room",
+                quantity: nights,
+                unit_price: res.price,
+                tax_rate: roomCatalog ? roomCatalog.tax_rate : 19
+            });
+
+        } catch (e) {
+
+            // Gagal auto-charge room bukan alasan buat gagalin pembuatan
+            // folio -> cukup dicatat, folio tetap kebentuk kosong.
+            console.error("Gagal menambahkan room charge otomatis:", e);
+
+        }
 
     },
 
@@ -362,6 +425,78 @@ const FolioService = {
         const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
 
         return Math.round((totalCharges - totalPaid) * 100) / 100;
+
+    },
+
+    // --------------------------------------------------
+    // Payment terminal (STUB — under development)
+    //
+    // TODO: ganti isi fungsi ini dengan pemanggilan API
+    // terminal pembayaran yang sebenarnya begitu tersedia
+    // (mis. request charge ke device EDC/terminal, lalu
+    // tunggu callback/status approved-nya). Untuk sekarang
+    // fungsi ini hanya menyimulasikan approval supaya alur
+    // UI (Take Payment -> Pay -> folio closed) bisa dites.
+    // --------------------------------------------------
+
+    async chargePaymentTerminal({ folioId, invoiceNumber, amount, method }) {
+
+        console.warn(
+            "[FolioService] Payment terminal API belum terhubung (under development). " +
+            "Menyimulasikan pembayaran sukses untuk", { folioId, invoiceNumber, amount, method }
+        );
+
+        // Simulasi delay request ke terminal
+        await new Promise(resolve => setTimeout(resolve, 400));
+
+        return {
+            success: true,
+            terminal_ref: null,
+            message: "Simulated (terminal API under development)"
+        };
+
+    },
+
+    // Kunci folio setelah pembayaran selesai -> item folio tidak
+    // bisa diedit lagi (abgeschlossen). Butuh kolom di tabel `folio`:
+    // is_closed (bool), invoice_number (text), cashiered_by (text),
+    // closed_at (timestamp).
+    async closeFolioBilling(folioId, { invoice_number, cashiered_by, paid_at_date } = {}) {
+
+        const { data, error } = await supabaseClient
+            .from("folio")
+            .update({
+                is_closed: true,
+                invoice_number: invoice_number || null,
+                cashiered_by: cashiered_by || null,
+                closed_at: new Date().toISOString()
+            })
+            .eq("id", folioId)
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        await this.logActivity(folioId, "closed", `Folio closed (Invoice ${invoice_number || "-"})`, {
+            invoice_number, cashiered_by, paid_at_date
+        });
+
+        return data;
+
+    },
+
+    async getCurrentUserName() {
+
+        try {
+
+            const { data: userData } = await supabaseClient.auth.getUser();
+            return userData?.user?.email || "-";
+
+        } catch (e) {
+
+            return "-";
+
+        }
 
     },
 

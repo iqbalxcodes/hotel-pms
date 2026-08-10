@@ -25,9 +25,10 @@ const FolioState = {
     address: null,
     activity: [],
 
-    mode: "normal",         // normal | edit | history
+    mode: "normal",         // normal | edit | history | payment
     selectedIds: new Set(),
     toolbarAction: null,    // null | move | split | discount
+    paymentDraft: null,     // { invoice_number, date, cashiered_by, method, amount } saat mode === "payment"
 
     loading: false
 };
@@ -47,6 +48,7 @@ async function openFolio({ containerId, reservationId = null, folioId = null, ba
     FolioState.mode = "normal";
     FolioState.selectedIds = new Set();
     FolioState.toolbarAction = null;
+    FolioState.paymentDraft = null;
 
     await folioReload();
 
@@ -100,6 +102,18 @@ async function folioLoadActivity() {
 
 
 // ======================================================
+// Guard: folio yang sudah closed (abgeschlossen, sudah
+// dibayar lunas lewat Take Payment) tidak boleh diedit lagi.
+// ======================================================
+
+function folioIsClosed() {
+
+    return !!(FolioState.folio && FolioState.folio.is_closed);
+
+}
+
+
+// ======================================================
 // Mode: History / Edit (mutually exclusive)
 // ======================================================
 
@@ -120,6 +134,13 @@ async function folioToggleHistory() {
 }
 
 function folioEnterEdit() {
+
+    if (folioIsClosed()) {
+
+        folioShowMessage("Folio sudah settled, tidak bisa diedit lagi", "info");
+        return;
+
+    }
 
     FolioState.mode = "edit";
     FolioState.selectedIds = new Set();
@@ -178,6 +199,8 @@ async function folioSaveEdit() {
 
 function folioToggleSelect(itemId) {
 
+    if (folioIsClosed()) return;
+
     if (FolioState.selectedIds.has(itemId)) {
 
         FolioState.selectedIds.delete(itemId);
@@ -216,6 +239,8 @@ function folioGetSelectedItems() {
 
 function folioShowAction(action) {
 
+    if (folioIsClosed()) return;
+
     FolioState.toolbarAction = action;
     FolioUI.render(FolioState);
 
@@ -229,6 +254,8 @@ function folioCancelAction() {
 }
 
 async function folioConfirmDelete() {
+
+    if (folioIsClosed()) return;
 
     const items = folioGetSelectedItems();
 
@@ -303,6 +330,8 @@ async function folioResolveTargetFolio(reservationInputId, folioSelectId) {
 
 async function folioSubmitMove() {
 
+    if (folioIsClosed()) return;
+
     const items = folioGetSelectedItems();
     if (items.length === 0) return;
 
@@ -335,6 +364,8 @@ async function folioSubmitMove() {
 }
 
 async function folioSubmitSplit() {
+
+    if (folioIsClosed()) return;
 
     const items = folioGetSelectedItems();
     if (items.length === 0) return;
@@ -371,6 +402,8 @@ async function folioSubmitSplit() {
 }
 
 async function folioSubmitDiscount() {
+
+    if (folioIsClosed()) return;
 
     const items = folioGetSelectedItems();
     if (items.length === 0) return;
@@ -432,6 +465,13 @@ function folioSelectServiceSuggestion(code) {
 
 async function folioApplyNewService() {
 
+    if (folioIsClosed()) {
+
+        folioShowMessage("Folio sudah settled, tidak bisa menambah service", "info");
+        return;
+
+    }
+
     const input = document.getElementById("folioServiceInput");
     const name = input.value.trim();
 
@@ -472,9 +512,24 @@ async function folioApplyNewService() {
 
 // ======================================================
 // Payment
+//
+// Take Payment sekarang tidak lagi pakai prompt() browser —
+// klik "Take Payment" mengganti body folio card jadi form
+// payment (Invoice No / Date / Cashiered By / Method /
+// Amount). Klik "Pay" -> panggil FolioService.chargePaymentTerminal()
+// (stub, terminal API masih under development) -> kalau sukses,
+// catat payment dan KUNCI folio (is_closed) supaya item folio
+// tidak bisa diedit lagi.
 // ======================================================
 
-async function folioTakePayment() {
+async function folioOpenPaymentView() {
+
+    if (folioIsClosed()) {
+
+        folioShowMessage("Folio sudah settled", "info");
+        return;
+
+    }
 
     const balance = FolioService.calcBalance(FolioState.items, FolioState.payments);
 
@@ -485,14 +540,36 @@ async function folioTakePayment() {
 
     }
 
-    const amountStr = prompt(
-        `Jumlah pembayaran (Balance saat ini: ${folioFormatCurrency(balance)}):`,
-        Math.abs(balance).toFixed(2)
-    );
+    const cashieredBy = await FolioService.getCurrentUserName();
 
-    if (!amountStr) return;
+    FolioState.paymentDraft = {
+        invoice_number: FolioUI.generateInvoiceNumber(FolioState.folio),
+        date: new Date().toISOString().slice(0, 10),
+        cashiered_by: cashieredBy,
+        method: "Cash",
+        amount: Math.abs(balance).toFixed(2)
+    };
 
-    const amount = Number(amountStr);
+    FolioState.mode = "payment";
+
+    FolioUI.render(FolioState);
+
+}
+
+function folioCancelPayment() {
+
+    FolioState.mode = "normal";
+    FolioState.paymentDraft = null;
+
+    FolioUI.render(FolioState);
+
+}
+
+async function folioSubmitPayment() {
+
+    const draft = FolioUI.collectPaymentDraft();
+
+    const amount = Number(draft.amount);
 
     if (!amount || amount <= 0) {
 
@@ -501,17 +578,50 @@ async function folioTakePayment() {
 
     }
 
+    if (!draft.invoice_number) {
+
+        folioShowMessage("Invoice number tidak valid", "error");
+        return;
+
+    }
+
     try {
 
-        await FolioService.addPayment(FolioState.folioId, amount, "Cash");
-        await folioReload();
+        // Terminal API masih under development -> chargePaymentTerminal()
+        // saat ini cuma stub yang menyimulasikan approval.
+        const terminalResult = await FolioService.chargePaymentTerminal({
+            folioId: FolioState.folioId,
+            invoiceNumber: draft.invoice_number,
+            amount,
+            method: draft.method
+        });
 
-        folioShowMessage("Payment recorded", "success");
+        if (!terminalResult || !terminalResult.success) {
+
+            folioShowMessage("Pembayaran ditolak terminal", "error");
+            return;
+
+        }
+
+        await FolioService.addPayment(FolioState.folioId, amount, draft.method);
+
+        await FolioService.closeFolioBilling(FolioState.folioId, {
+            invoice_number: draft.invoice_number,
+            cashiered_by: draft.cashiered_by,
+            paid_at_date: draft.date
+        });
+
+        FolioState.mode = "normal";
+        FolioState.paymentDraft = null;
+
+        folioShowMessage("Payment successful", "success");
+
+        await folioReload();
 
     } catch (e) {
 
         console.error(e);
-        folioShowMessage("Gagal mencatat pembayaran", "error");
+        folioShowMessage("Gagal memproses pembayaran", "error");
 
     }
 
