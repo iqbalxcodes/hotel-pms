@@ -1,14 +1,9 @@
 // ======================================================
 // folioUI.js
-// Rendering murni untuk modul Folio. Tidak melakukan query
-// Supabase — hanya menggambar berdasarkan FolioState dan
-// memanggil balik fungsi aksi dari folio.js lewat onclick.
-//
-// PENTING: modul ini reusable lintas halaman, jadi TIDAK
-// boleh bergantung diam-diam ke helper milik halaman lain
-// (mis. escapeHtmlSimple dari tableColumns.js yang cuma
-// ada di index.html). Semua helper yang dibutuhkan
-// didefinisikan sendiri di file ini.
+// Rendering murni untuk modul Folio. Semua id DOM lokal
+// (fa_*, fp_*, folioServiceInput, dst) sekarang di-prefix
+// pakai containerId (lewat FolioUI.fid) supaya folio1/2/3
+// yang kebuka bareng gak saling rebutan elemen yang sama.
 // ======================================================
 
 function escapeHtmlSimple(str) {
@@ -21,6 +16,11 @@ function escapeHtmlSimple(str) {
 }
 
 const FolioUI = {
+
+    // id lokal unik per container, mis: fid("folioMount2","fa_name") -> "folioMount2_fa_name"
+    fid(containerId, name) {
+        return `${containerId}_${name}`;
+    },
 
     render(state) {
 
@@ -47,11 +47,12 @@ const FolioUI = {
     },
 
     // --------------------------------------------------
-    // Header: Folio N [✎][◷]                        [←]
+    // Header
     // --------------------------------------------------
 
     renderHeader(state) {
 
+        const c = state.containerId;
         const isPayment = state.mode === "payment";
         const isEdit = state.mode === "edit";
         const isHistory = state.mode === "history";
@@ -64,7 +65,7 @@ const FolioUI = {
                     <div class="folio-header-left">
                         <span class="folio-title">Take Payment</span>
                     </div>
-                    <button class="folio-icon-btn" title="Cancel" onclick="folioCancelPayment()">✕</button>
+                    <button class="folio-icon-btn" title="Cancel" onclick="folioCancelPayment('${c}')">✕</button>
                 </div>
             `;
 
@@ -79,15 +80,15 @@ const FolioUI = {
         if (isEdit) {
 
             editControls = `
-                <button class="folio-icon-btn folio-icon-confirm require-auth" title="Save" onclick="folioSaveEdit()">✓</button>
-                <button class="folio-icon-btn" title="Cancel" onclick="folioCancelEdit()">✕</button>
+                <button class="folio-icon-btn folio-icon-confirm require-auth" title="Save" onclick="folioSaveEdit('${c}')">✓</button>
+                <button class="folio-icon-btn" title="Cancel" onclick="folioCancelEdit('${c}')">✕</button>
             `;
 
         } else {
 
             editControls = `
-                ${!isClosed ? `<button class="folio-icon-btn require-auth" title="Edit Folio" onclick="folioEnterEdit()">✎</button>` : ""}
-                <button class="folio-icon-btn ${isHistory ? "folio-icon-active" : ""}" title="Folio Activity" onclick="folioToggleHistory()">◷</button>
+                ${!isClosed ? `<button class="folio-icon-btn require-auth" title="Edit Folio" onclick="folioEnterEdit('${c}')">✎</button>` : ""}
+                <button class="folio-icon-btn ${isHistory ? "folio-icon-active" : ""}" title="Folio Activity" onclick="folioToggleHistory('${c}')">◷</button>
             `;
 
         }
@@ -106,7 +107,7 @@ const FolioUI = {
     },
 
     // --------------------------------------------------
-    // Body (normal / edit): address card + items table + footer
+    // Body
     // --------------------------------------------------
 
     renderBody(state) {
@@ -115,9 +116,9 @@ const FolioUI = {
         const isClosed = !!(state.folio && state.folio.is_closed);
 
         return `
-            ${this.renderAddressCard(state.address, editable)}
+            ${this.renderAddressCard(state)}
             ${this.renderItemsTable(state, editable)}
-            ${!isClosed ? this.renderAddServiceRow() : ""}
+            ${!isClosed ? this.renderAddServiceRow(state) : ""}
             ${this.renderFooter(state)}
         `;
 
@@ -125,15 +126,13 @@ const FolioUI = {
 
     // --------------------------------------------------
     // Invoice Address Card
-    //
-    // Layout edit mode:
-    //   [ dropdown Guest/Company/Agency/Mr/Mrs ] [ ID ]   <- setengah-setengah
-    //   [ Name (full width) ]
     // --------------------------------------------------
 
-    renderAddressCard(address, editable) {
+    renderAddressCard(state) {
 
-        const a = address || {};
+        const c = state.containerId;
+        const editable = state.mode === "edit";
+        const a = state.address || {};
 
         if (!editable) {
 
@@ -164,28 +163,28 @@ const FolioUI = {
             .join("");
 
         return `
-            <div class="folio-address-card folio-address-edit" id="folioAddressEdit">
+            <div class="folio-address-card folio-address-edit" id="${this.fid(c, "folioAddressEdit")}">
                 <div class="folio-field-row">
-                    <select id="fa_guest_or_company">${typeOptions}</select>
-                    <input id="fa_customer_id" type="number" placeholder="ID" value="${a.customer_id ?? ""}"
-                        onkeydown="if(event.key==='Enter'){event.preventDefault(); folioLookupCustomer();}">
+                    <select id="${this.fid(c, "fa_guest_or_company")}">${typeOptions}</select>
+                    <input id="${this.fid(c, "fa_customer_id")}" type="number" placeholder="ID" value="${a.customer_id ?? ""}"
+                        onkeydown="if(event.key==='Enter'){event.preventDefault(); folioLookupCustomer('${c}');}">
                 </div>
                 <div class="folio-field-row">
-                    <input id="fa_name" type="text" placeholder="Name" value="${escapeHtmlSimple(a.name || "")}">
+                    <input id="${this.fid(c, "fa_name")}" type="text" placeholder="Name" value="${escapeHtmlSimple(a.name || "")}">
                 </div>
                 <div class="folio-field-row">
-                    <input id="fa_additional_data" type="text" placeholder="Add. Data (optional)" value="${escapeHtmlSimple(a.additional_data || "")}">
+                    <input id="${this.fid(c, "fa_additional_data")}" type="text" placeholder="Add. Data (optional)" value="${escapeHtmlSimple(a.additional_data || "")}">
                 </div>
                 <div class="folio-field-row">
-                    <input id="fa_street" type="text" placeholder="Street w number" value="${escapeHtmlSimple(a.street || "")}">
+                    <input id="${this.fid(c, "fa_street")}" type="text" placeholder="Street w number" value="${escapeHtmlSimple(a.street || "")}">
                 </div>
                 <div class="folio-field-row">
-                    <input id="fa_postcode" type="text" placeholder="Postcode" value="${escapeHtmlSimple(a.postcode || "")}">
-                    <input id="fa_city" type="text" placeholder="City" value="${escapeHtmlSimple(a.city || "")}">
+                    <input id="${this.fid(c, "fa_postcode")}" type="text" placeholder="Postcode" value="${escapeHtmlSimple(a.postcode || "")}">
+                    <input id="${this.fid(c, "fa_city")}" type="text" placeholder="City" value="${escapeHtmlSimple(a.city || "")}">
                 </div>
                 <div class="folio-field-row">
-                    <input id="fa_region" type="text" placeholder="Region (optional)" value="${escapeHtmlSimple(a.region || "")}">
-                    <input id="fa_country" type="text" placeholder="Country" value="${escapeHtmlSimple(a.country || "")}">
+                    <input id="${this.fid(c, "fa_region")}" type="text" placeholder="Region (optional)" value="${escapeHtmlSimple(a.region || "")}">
+                    <input id="${this.fid(c, "fa_country")}" type="text" placeholder="Country" value="${escapeHtmlSimple(a.country || "")}">
                 </div>
             </div>
         `;
@@ -201,7 +200,7 @@ const FolioUI = {
         const isClosed = !!(state.folio && state.folio.is_closed);
 
         const rows = state.items
-            .map(item => this.renderItemRow(item, editable, state.selectedIds.has(item.id), isClosed))
+            .map(item => this.renderItemRow(state, item, editable, state.selectedIds.has(item.id), isClosed))
             .join("");
 
         return `
@@ -234,15 +233,16 @@ const FolioUI = {
 
     },
 
-    renderItemRow(item, editable, selected, isClosed) {
+    renderItemRow(state, item, editable, selected, isClosed) {
 
+        const c = state.containerId;
         const endPrice = FolioService.calcEndPrice(item);
 
         if (!editable) {
 
             return `
                 <tr>
-                    <td><input type="checkbox" ${selected ? "checked" : ""} ${isClosed ? "disabled" : ""} onchange="folioToggleSelect(${item.id})"></td>
+                    <td><input type="checkbox" ${selected ? "checked" : ""} ${isClosed ? "disabled" : ""} onchange="folioToggleSelect('${c}', ${item.id})"></td>
                     <td>${item.quantity}</td>
                     <td>${escapeHtmlSimple(item.service_name)}</td>
                     <td>${item.tax_rate}%</td>
@@ -255,7 +255,7 @@ const FolioUI = {
 
         return `
             <tr data-item-id="${item.id}" class="folio-edit-row">
-                <td><input type="checkbox" ${selected ? "checked" : ""} onchange="folioToggleSelect(${item.id})"></td>
+                <td><input type="checkbox" ${selected ? "checked" : ""} onchange="folioToggleSelect('${c}', ${item.id})"></td>
                 <td><input type="number" step="0.01" class="folio-inline-input fi-qty" value="${item.quantity}"></td>
                 <td><input type="text" class="folio-inline-input fi-name" value="${escapeHtmlSimple(item.service_name)}"></td>
                 <td><input type="number" step="0.01" class="folio-inline-input fi-tax" value="${item.tax_rate}"></td>
@@ -266,21 +266,26 @@ const FolioUI = {
 
     },
 
-    collectEditDraft() {
+    // Scoped ke card folio yang bersangkutan (fix: dulu query global
+    // document.querySelectorAll(".folio-edit-row") -> ikut narik row
+    // dari folio lain kalau lagi edit bareng-bareng)
+    collectEditDraft(containerId) {
+
+        const container = document.getElementById(containerId);
 
         const address = {
-            guest_or_company: document.getElementById("fa_guest_or_company")?.value || "Guest",
-            customer_id: document.getElementById("fa_customer_id")?.value || null,
-            name: document.getElementById("fa_name")?.value || "",
-            additional_data: document.getElementById("fa_additional_data")?.value || null,
-            street: document.getElementById("fa_street")?.value || null,
-            postcode: document.getElementById("fa_postcode")?.value || null,
-            city: document.getElementById("fa_city")?.value || null,
-            region: document.getElementById("fa_region")?.value || null,
-            country: document.getElementById("fa_country")?.value || null
+            guest_or_company: document.getElementById(this.fid(containerId, "fa_guest_or_company"))?.value || "Guest",
+            customer_id: document.getElementById(this.fid(containerId, "fa_customer_id"))?.value || null,
+            name: document.getElementById(this.fid(containerId, "fa_name"))?.value || "",
+            additional_data: document.getElementById(this.fid(containerId, "fa_additional_data"))?.value || null,
+            street: document.getElementById(this.fid(containerId, "fa_street"))?.value || null,
+            postcode: document.getElementById(this.fid(containerId, "fa_postcode"))?.value || null,
+            city: document.getElementById(this.fid(containerId, "fa_city"))?.value || null,
+            region: document.getElementById(this.fid(containerId, "fa_region"))?.value || null,
+            country: document.getElementById(this.fid(containerId, "fa_country"))?.value || null
         };
 
-        const items = [...document.querySelectorAll(".folio-edit-row")].map(row => {
+        const items = [...container.querySelectorAll(".folio-edit-row")].map(row => {
 
             const id = Number(row.dataset.itemId);
 
@@ -299,31 +304,33 @@ const FolioUI = {
     },
 
     // --------------------------------------------------
-    // Add service row (below table)
+    // Add service row
     // --------------------------------------------------
 
-    renderAddServiceRow() {
+    renderAddServiceRow(state) {
+
+        const c = state.containerId;
 
         return `
             <div class="folio-add-service-row">
                 <div class="folio-service-autocomplete">
                     <input
-                        id="folioServiceInput"
+                        id="${this.fid(c, "folioServiceInput")}"
                         type="text"
                         class="require-auth"
                         placeholder="Code / service name (e.g. R for Room)"
-                        onkeyup="folioServiceInputKeyup(this)">
-                    <div id="folioServiceSuggestions" class="folio-suggestions"></div>
+                        onkeyup="folioServiceInputKeyup('${c}', this)">
+                    <div id="${this.fid(c, "folioServiceSuggestions")}" class="folio-suggestions"></div>
                 </div>
-                <button class="folio-btn require-auth" onclick="folioApplyNewService()">Apply</button>
+                <button class="folio-btn require-auth" onclick="folioApplyNewService('${c}')">Apply</button>
             </div>
         `;
 
     },
 
-    renderServiceSuggestions(results) {
+    renderServiceSuggestions(containerId, results) {
 
-        const box = document.getElementById("folioServiceSuggestions");
+        const box = document.getElementById(this.fid(containerId, "folioServiceSuggestions"));
         if (!box) return;
 
         if (!results.length) {
@@ -337,7 +344,7 @@ const FolioUI = {
         box.style.display = "block";
 
         box.innerHTML = results.map(s => `
-            <div class="folio-suggestion-item" onclick="folioSelectServiceSuggestion('${s.code}')">
+            <div class="folio-suggestion-item" onclick="folioSelectServiceSuggestion('${containerId}', '${s.code}')">
                 ${escapeHtmlSimple(s.name)} <span class="folio-suggestion-code">${s.code}</span>
             </div>
         `).join("");
@@ -345,7 +352,7 @@ const FolioUI = {
     },
 
     // --------------------------------------------------
-    // Footer: normal | selection | move | split | discount | closed
+    // Footer
     // --------------------------------------------------
 
     renderFooter(state) {
@@ -372,23 +379,23 @@ const FolioUI = {
 
         if (state.toolbarAction === "move") {
 
-            return this.renderMoveToolbar(selectedCount);
+            return this.renderMoveToolbar(state, selectedCount);
 
         }
 
         if (state.toolbarAction === "split") {
 
-            return this.renderSplitToolbar(selectedCount);
+            return this.renderSplitToolbar(state, selectedCount);
 
         }
 
         if (state.toolbarAction === "discount") {
 
-            return this.renderDiscountToolbar(selectedCount);
+            return this.renderDiscountToolbar(state, selectedCount);
 
         }
 
-        return this.renderSelectionToolbar(selectedCount);
+        return this.renderSelectionToolbar(state, selectedCount);
 
     },
 
@@ -408,6 +415,7 @@ const FolioUI = {
 
     renderNormalFooter(state) {
 
+        const c = state.containerId;
         const balance = FolioService.calcBalance(state.items, state.payments);
 
         let statusLabel = "Settled";
@@ -427,7 +435,7 @@ const FolioUI = {
 
         return `
             <div class="folio-footer">
-                <button class="folio-btn require-auth" onclick="folioOpenPaymentView()">Take Payment</button>
+                <button class="folio-btn require-auth" onclick="folioOpenPaymentView('${c}')">Take Payment</button>
                 <div class="folio-balance ${statusClass}">
                     Balance: ${folioFormatCurrency(balance)} <span class="folio-balance-status">${statusLabel}</span>
                 </div>
@@ -436,72 +444,78 @@ const FolioUI = {
 
     },
 
-    renderSelectionToolbar(count) {
+    renderSelectionToolbar(state, count) {
+
+        const c = state.containerId;
 
         return `
             <div class="folio-footer folio-footer-selection">
                 <span class="folio-selection-count">${count} selected</span>
-                <button class="folio-btn require-auth" onclick="folioConfirmDelete()">Delete</button>
-                <button class="folio-btn require-auth" onclick="folioShowAction('move')">Move</button>
-                <button class="folio-btn require-auth" onclick="folioShowAction('split')">Split</button>
-                <button class="folio-btn require-auth" onclick="folioShowAction('discount')">Apply Discount</button>
-                <button class="folio-btn folio-btn-plain" onclick="folioClearSelection()">Cancel</button>
+                <button class="folio-btn require-auth" onclick="folioConfirmDelete('${c}')">Delete</button>
+                <button class="folio-btn require-auth" onclick="folioShowAction('${c}', 'move')">Move</button>
+                <button class="folio-btn require-auth" onclick="folioShowAction('${c}', 'split')">Split</button>
+                <button class="folio-btn require-auth" onclick="folioShowAction('${c}', 'discount')">Apply Discount</button>
+                <button class="folio-btn folio-btn-plain" onclick="folioClearSelection('${c}')">Cancel</button>
             </div>
         `;
 
     },
 
-    renderMoveToolbar(count) {
+    renderMoveToolbar(state, count) {
 
+        const c = state.containerId;
         const folioOptions = this.buildFolioNumberOptions();
 
         return `
             <div class="folio-footer folio-footer-action">
                 <span class="folio-selection-count">${count} selected — Move</span>
-                <input id="folioMoveReservation" type="text" placeholder="Reservation (blank = current)"
+                <input id="${this.fid(c, "folioMoveReservation")}" type="text" placeholder="Reservation (blank = current)"
                     class="folio-inline-input">
-                <select id="folioMoveFolioSelect" class="folio-inline-input">${folioOptions}</select>
-                <button class="folio-btn require-auth" onclick="folioSubmitMove()">Apply</button>
-                <button class="folio-btn folio-btn-plain" onclick="folioCancelAction()">Cancel</button>
+                <select id="${this.fid(c, "folioMoveFolioSelect")}" class="folio-inline-input">${folioOptions}</select>
+                <button class="folio-btn require-auth" onclick="folioSubmitMove('${c}')">Apply</button>
+                <button class="folio-btn folio-btn-plain" onclick="folioCancelAction('${c}')">Cancel</button>
             </div>
         `;
 
     },
 
-    renderSplitToolbar(count) {
+    renderSplitToolbar(state, count) {
 
+        const c = state.containerId;
         const folioOptions = this.buildFolioNumberOptions();
 
         return `
             <div class="folio-footer folio-footer-action">
                 <span class="folio-selection-count">${count} selected — Split</span>
-                <select id="folioSplitBasisType" class="folio-inline-input">
+                <select id="${this.fid(c, "folioSplitBasisType")}" class="folio-inline-input">
                     <option value="percentage">Percentage</option>
                     <option value="price">Price</option>
                 </select>
-                <input id="folioSplitBasisValue" type="number" step="0.01" placeholder="Value" class="folio-inline-input">
+                <input id="${this.fid(c, "folioSplitBasisValue")}" type="number" step="0.01" placeholder="Value" class="folio-inline-input">
                 <span class="folio-footer-label">to</span>
-                <input id="folioSplitReservation" type="text" placeholder="Reservation (blank = current)" class="folio-inline-input">
-                <select id="folioSplitFolioSelect" class="folio-inline-input">${folioOptions}</select>
-                <button class="folio-btn require-auth" onclick="folioSubmitSplit()">Apply</button>
-                <button class="folio-btn folio-btn-plain" onclick="folioCancelAction()">Cancel</button>
+                <input id="${this.fid(c, "folioSplitReservation")}" type="text" placeholder="Reservation (blank = current)" class="folio-inline-input">
+                <select id="${this.fid(c, "folioSplitFolioSelect")}" class="folio-inline-input">${folioOptions}</select>
+                <button class="folio-btn require-auth" onclick="folioSubmitSplit('${c}')">Apply</button>
+                <button class="folio-btn folio-btn-plain" onclick="folioCancelAction('${c}')">Cancel</button>
             </div>
         `;
 
     },
 
-    renderDiscountToolbar(count) {
+    renderDiscountToolbar(state, count) {
+
+        const c = state.containerId;
 
         return `
             <div class="folio-footer folio-footer-action">
                 <span class="folio-selection-count">${count} selected — Discount</span>
-                <select id="folioDiscountBasisType" class="folio-inline-input">
+                <select id="${this.fid(c, "folioDiscountBasisType")}" class="folio-inline-input">
                     <option value="percentage">Percentage</option>
                     <option value="price">Price</option>
                 </select>
-                <input id="folioDiscountBasisValue" type="number" step="0.01" placeholder="Value" class="folio-inline-input">
-                <button class="folio-btn require-auth" onclick="folioSubmitDiscount()">Apply</button>
-                <button class="folio-btn folio-btn-plain" onclick="folioCancelAction()">Cancel</button>
+                <input id="${this.fid(c, "folioDiscountBasisValue")}" type="number" step="0.01" placeholder="Value" class="folio-inline-input">
+                <button class="folio-btn require-auth" onclick="folioSubmitDiscount('${c}')">Apply</button>
+                <button class="folio-btn folio-btn-plain" onclick="folioCancelAction('${c}')">Cancel</button>
             </div>
         `;
 
@@ -509,38 +523,38 @@ const FolioUI = {
 
     buildFolioNumberOptions() {
 
-        // Default 1-3 (sesuai konsep card-billing1/2/3). Folio yang belum ada
-        // otomatis dibuat oleh folioResolveTargetFolio() saat Apply diklik.
         return [1, 2, 3].map(n => `<option value="${n}">Folio ${n}</option>`).join("");
 
     },
 
     // --------------------------------------------------
-    // Payment View (menggantikan body folio card saat
-    // mode === "payment", dipicu tombol "Take Payment")
+    // Payment View
+    // (catatan "API under development" DIHAPUS dari sini,
+    // sekarang dipasang permanen di status bar bawah halaman)
     // --------------------------------------------------
 
     renderPaymentView(state) {
 
+        const c = state.containerId;
         const draft = state.paymentDraft || {};
 
         return `
             <div class="folio-payment-card">
                 <div class="folio-payment-row">
                     <label>Invoice Number</label>
-                    <input id="fp_invoice_number" type="text" class="folio-inline-input" value="${escapeHtmlSimple(draft.invoice_number || "")}" readonly>
+                    <input id="${this.fid(c, "fp_invoice_number")}" type="text" class="folio-inline-input" value="${escapeHtmlSimple(draft.invoice_number || "")}" readonly>
                 </div>
                 <div class="folio-payment-row">
                     <label>Date</label>
-                    <input id="fp_date" type="date" class="folio-inline-input" value="${draft.date || ""}">
+                    <input id="${this.fid(c, "fp_date")}" type="date" class="folio-inline-input" value="${draft.date || ""}">
                 </div>
                 <div class="folio-payment-row">
                     <label>Cashiered By</label>
-                    <input id="fp_cashiered_by" type="text" class="folio-inline-input" value="${escapeHtmlSimple(draft.cashiered_by || "")}">
+                    <input id="${this.fid(c, "fp_cashiered_by")}" type="text" class="folio-inline-input" value="${escapeHtmlSimple(draft.cashiered_by || "")}">
                 </div>
                 <div class="folio-payment-row">
                     <label>Payment Method</label>
-                    <select id="fp_method" class="folio-inline-input">
+                    <select id="${this.fid(c, "fp_method")}" class="folio-inline-input">
                         <option value="Cash" ${draft.method === "Cash" ? "selected" : ""}>Cash</option>
                         <option value="Credit Card" ${draft.method === "Credit Card" ? "selected" : ""}>Credit Card</option>
                         <option value="Debit Card" ${draft.method === "Debit Card" ? "selected" : ""}>Debit Card</option>
@@ -549,26 +563,25 @@ const FolioUI = {
                 </div>
                 <div class="folio-payment-row">
                     <label>Amount</label>
-                    <input id="fp_amount" type="number" step="0.01" class="folio-inline-input" value="${draft.amount || ""}">
+                    <input id="${this.fid(c, "fp_amount")}" type="number" step="0.01" class="folio-inline-input" value="${draft.amount || ""}">
                 </div>
-                <div class="folio-payment-note">⚠ Payment terminal API is still under development — this payment will be recorded manually.</div>
                 <div class="folio-payment-actions">
-                    <button class="folio-btn folio-btn-plain" onclick="folioCancelPayment()">Cancel</button>
-                    <button class="folio-btn folio-icon-confirm require-auth" onclick="folioSubmitPayment()">Pay</button>
+                    <button class="folio-btn folio-btn-plain" onclick="folioCancelPayment('${c}')">Cancel</button>
+                    <button class="folio-btn folio-icon-confirm require-auth" onclick="folioSubmitPayment('${c}')">Pay</button>
                 </div>
             </div>
         `;
 
     },
 
-    collectPaymentDraft() {
+    collectPaymentDraft(containerId) {
 
         return {
-            invoice_number: document.getElementById("fp_invoice_number")?.value || "",
-            date: document.getElementById("fp_date")?.value || "",
-            cashiered_by: document.getElementById("fp_cashiered_by")?.value || "",
-            method: document.getElementById("fp_method")?.value || "Cash",
-            amount: document.getElementById("fp_amount")?.value || "0"
+            invoice_number: document.getElementById(this.fid(containerId, "fp_invoice_number"))?.value || "",
+            date: document.getElementById(this.fid(containerId, "fp_date"))?.value || "",
+            cashiered_by: document.getElementById(this.fid(containerId, "fp_cashiered_by"))?.value || "",
+            method: document.getElementById(this.fid(containerId, "fp_method"))?.value || "Cash",
+            amount: document.getElementById(this.fid(containerId, "fp_amount"))?.value || "0"
         };
 
     },
@@ -662,12 +675,12 @@ const FolioUI = {
 
 
 // ======================================================
-// Guest/Company ID lookup (Enter di field ID -> load dari DB)
+// Guest/Company ID lookup
 // ======================================================
 
-async function folioLookupCustomer() {
+async function folioLookupCustomer(containerId) {
 
-    const idInput = document.getElementById("fa_customer_id");
+    const idInput = document.getElementById(FolioUI.fid(containerId, "fa_customer_id"));
     if (!idInput || !idInput.value) return;
 
     try {
@@ -681,11 +694,11 @@ async function folioLookupCustomer() {
 
         }
 
-        document.getElementById("fa_name").value = `${guest.first_name || ""} ${guest.last_name || ""}`.trim();
-        document.getElementById("fa_street").value = guest.address || "";
-        document.getElementById("fa_postcode").value = guest.postal_code || "";
-        document.getElementById("fa_city").value = guest.city || "";
-        document.getElementById("fa_country").value = guest.country || "";
+        document.getElementById(FolioUI.fid(containerId, "fa_name")).value = `${guest.first_name || ""} ${guest.last_name || ""}`.trim();
+        document.getElementById(FolioUI.fid(containerId, "fa_street")).value = guest.address || "";
+        document.getElementById(FolioUI.fid(containerId, "fa_postcode")).value = guest.postal_code || "";
+        document.getElementById(FolioUI.fid(containerId, "fa_city")).value = guest.city || "";
+        document.getElementById(FolioUI.fid(containerId, "fa_country")).value = guest.country || "";
 
     } catch (e) {
 

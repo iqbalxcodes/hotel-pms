@@ -6,32 +6,16 @@
 //   openFolio({ containerId: "folioMount", reservationId: 123 })
 //   openFolio({ containerId: "folioMount", folioId: 45 })
 //
-// Folio tidak peduli siapa yang membukanya. Semua fungsi
-// di file ini di-prefix "folio" supaya tidak bentrok dengan
-// fungsi edit-mode reservasi/halaman lain yang sudah ada
-// (mis. enterEditMode() milik reservationDetail.js).
+// PENTING: state SEKARANG per-container (FolioInstances),
+// bukan singleton lagi -> mendukung banyak folio kebuka
+// bersamaan (billing1/2/3) tanpa saling timpa.
 // ======================================================
 
-const FolioState = {
-    containerId: null,
-    reservationId: null,
-    folioId: null,
-    backAction: null,      // string JS, mis. "toggleFolioMode()" — dipanggil saat tombol ← diklik
-    onChange: null,        // optional callback(folio) dipanggil tiap kali data folio berubah (buat sinkronisasi UI pemanggil)
+const FolioInstances = {};
 
-    folio: null,
-    items: [],
-    payments: [],
-    address: null,
-    activity: [],
-
-    mode: "normal",         // normal | edit | history | payment
-    selectedIds: new Set(),
-    toolbarAction: null,    // null | move | split | discount
-    paymentDraft: null,     // { invoice_number, date, cashiered_by, method, amount } saat mode === "payment"
-
-    loading: false
-};
+function folioGetState(containerId) {
+    return FolioInstances[containerId] || null;
+}
 
 
 // ======================================================
@@ -40,31 +24,45 @@ const FolioState = {
 
 async function openFolio({ containerId, reservationId = null, folioId = null, backAction = null, onChange = null }) {
 
-    FolioState.containerId = containerId;
-    FolioState.reservationId = reservationId;
-    FolioState.folioId = folioId;
-    FolioState.backAction = backAction;
-    FolioState.onChange = onChange;
-    FolioState.mode = "normal";
-    FolioState.selectedIds = new Set();
-    FolioState.toolbarAction = null;
-    FolioState.paymentDraft = null;
+    FolioInstances[containerId] = {
+        containerId,
+        reservationId,
+        folioId,
+        backAction,
+        onChange,
 
-    await folioReload();
+        folio: null,
+        items: [],
+        payments: [],
+        address: null,
+        activity: [],
+
+        mode: "normal",
+        selectedIds: new Set(),
+        toolbarAction: null,
+        paymentDraft: null,
+
+        loading: false
+    };
+
+    await folioReload(containerId);
 
 }
 
-async function folioReload() {
+async function folioReload(containerId) {
+
+    const state = FolioInstances[containerId];
+    if (!state) return;
 
     try {
 
-        FolioState.loading = true;
+        state.loading = true;
 
-        const folio = await FolioService.getOrCreateFolio(FolioState.reservationId, FolioState.folioId);
+        const folio = await FolioService.getOrCreateFolio(state.reservationId, state.folioId);
 
-        FolioState.folio = folio;
-        FolioState.folioId = folio.id;
-        FolioState.reservationId = folio.reservation_id;
+        state.folio = folio;
+        state.folioId = folio.id;
+        state.reservationId = folio.reservation_id;
 
         const [items, payments, address] = await Promise.all([
             FolioService.getItems(folio.id),
@@ -72,12 +70,12 @@ async function folioReload() {
             FolioService.getAddress(folio.id)
         ]);
 
-        FolioState.items = items;
-        FolioState.payments = payments;
-        FolioState.address = address;
+        state.items = items;
+        state.payments = payments;
+        state.address = address;
 
-        if (typeof FolioState.onChange === "function") {
-            FolioState.onChange(folio);
+        if (typeof state.onChange === "function") {
+            state.onChange(folio);
         }
 
     } catch (e) {
@@ -87,28 +85,31 @@ async function folioReload() {
 
     } finally {
 
-        FolioState.loading = false;
-        FolioUI.render(FolioState);
+        state.loading = false;
+        FolioUI.render(state);
 
     }
 
 }
 
-async function folioLoadActivity() {
+async function folioLoadActivity(containerId) {
 
-    FolioState.activity = await FolioService.getActivity(FolioState.folioId);
+    const state = FolioInstances[containerId];
+    if (!state) return;
+
+    state.activity = await FolioService.getActivity(state.folioId);
 
 }
 
 
 // ======================================================
-// Guard: folio yang sudah closed (abgeschlossen, sudah
-// dibayar lunas lewat Take Payment) tidak boleh diedit lagi.
+// Guard: folio yang sudah closed tidak boleh diedit lagi.
 // ======================================================
 
-function folioIsClosed() {
+function folioIsClosed(containerId) {
 
-    return !!(FolioState.folio && FolioState.folio.is_closed);
+    const state = FolioInstances[containerId];
+    return !!(state && state.folio && state.folio.is_closed);
 
 }
 
@@ -117,52 +118,64 @@ function folioIsClosed() {
 // Mode: History / Edit (mutually exclusive)
 // ======================================================
 
-async function folioToggleHistory() {
+async function folioToggleHistory(containerId) {
 
-    if (FolioState.mode === "history") {
+    const state = FolioInstances[containerId];
+    if (!state) return;
 
-        FolioState.mode = "normal";
-        FolioUI.render(FolioState);
+    if (state.mode === "history") {
+
+        state.mode = "normal";
+        FolioUI.render(state);
         return;
 
     }
 
-    FolioState.mode = "history";
-    await folioLoadActivity();
-    FolioUI.render(FolioState);
+    state.mode = "history";
+    await folioLoadActivity(containerId);
+    FolioUI.render(state);
 
 }
 
-function folioEnterEdit() {
+function folioEnterEdit(containerId) {
 
-    if (folioIsClosed()) {
+    const state = FolioInstances[containerId];
+    if (!state) return;
+
+    if (folioIsClosed(containerId)) {
 
         folioShowMessage("Folio sudah settled, tidak bisa diedit lagi", "info");
         return;
 
     }
 
-    FolioState.mode = "edit";
-    FolioState.selectedIds = new Set();
-    FolioState.toolbarAction = null;
-    FolioUI.render(FolioState);
+    state.mode = "edit";
+    state.selectedIds = new Set();
+    state.toolbarAction = null;
+    FolioUI.render(state);
 
 }
 
-function folioCancelEdit() {
+function folioCancelEdit(containerId) {
 
-    FolioState.mode = "normal";
-    FolioUI.render(FolioState);
+    const state = FolioInstances[containerId];
+    if (!state) return;
+
+    state.mode = "normal";
+    FolioUI.render(state);
 
 }
 
-async function folioSaveEdit() {
+async function folioSaveEdit(containerId) {
 
-    const draft = FolioUI.collectEditDraft();
+    const state = FolioInstances[containerId];
+    if (!state) return;
+
+    const draft = FolioUI.collectEditDraft(containerId);
 
     try {
 
-        await FolioService.saveAddress(FolioState.folioId, draft.address);
+        await FolioService.saveAddress(state.folioId, draft.address);
 
         for (const item of draft.items) {
 
@@ -177,11 +190,11 @@ async function folioSaveEdit() {
 
         }
 
-        FolioState.mode = "normal";
+        state.mode = "normal";
 
         folioShowMessage("Folio saved", "success");
 
-        await folioReload();
+        await folioReload(containerId);
 
     } catch (e) {
 
@@ -197,38 +210,45 @@ async function folioSaveEdit() {
 // Selection (checkbox mode)
 // ======================================================
 
-function folioToggleSelect(itemId) {
+function folioToggleSelect(containerId, itemId) {
 
-    if (folioIsClosed()) return;
+    const state = FolioInstances[containerId];
+    if (!state || folioIsClosed(containerId)) return;
 
-    if (FolioState.selectedIds.has(itemId)) {
+    if (state.selectedIds.has(itemId)) {
 
-        FolioState.selectedIds.delete(itemId);
+        state.selectedIds.delete(itemId);
 
     } else {
 
-        FolioState.selectedIds.add(itemId);
+        state.selectedIds.add(itemId);
 
     }
 
-    FolioState.toolbarAction = null;
+    state.toolbarAction = null;
 
-    FolioUI.render(FolioState);
-
-}
-
-function folioClearSelection() {
-
-    FolioState.selectedIds = new Set();
-    FolioState.toolbarAction = null;
-
-    FolioUI.render(FolioState);
+    FolioUI.render(state);
 
 }
 
-function folioGetSelectedItems() {
+function folioClearSelection(containerId) {
 
-    return FolioState.items.filter(i => FolioState.selectedIds.has(i.id));
+    const state = FolioInstances[containerId];
+    if (!state) return;
+
+    state.selectedIds = new Set();
+    state.toolbarAction = null;
+
+    FolioUI.render(state);
+
+}
+
+function folioGetSelectedItems(containerId) {
+
+    const state = FolioInstances[containerId];
+    if (!state) return [];
+
+    return state.items.filter(i => state.selectedIds.has(i.id));
 
 }
 
@@ -237,27 +257,33 @@ function folioGetSelectedItems() {
 // Selection toolbar actions
 // ======================================================
 
-function folioShowAction(action) {
+function folioShowAction(containerId, action) {
 
-    if (folioIsClosed()) return;
+    if (folioIsClosed(containerId)) return;
 
-    FolioState.toolbarAction = action;
-    FolioUI.render(FolioState);
+    const state = FolioInstances[containerId];
+    if (!state) return;
 
-}
-
-function folioCancelAction() {
-
-    FolioState.toolbarAction = null;
-    FolioUI.render(FolioState);
+    state.toolbarAction = action;
+    FolioUI.render(state);
 
 }
 
-async function folioConfirmDelete() {
+function folioCancelAction(containerId) {
 
-    if (folioIsClosed()) return;
+    const state = FolioInstances[containerId];
+    if (!state) return;
 
-    const items = folioGetSelectedItems();
+    state.toolbarAction = null;
+    FolioUI.render(state);
+
+}
+
+async function folioConfirmDelete(containerId) {
+
+    if (folioIsClosed(containerId)) return;
+
+    const items = folioGetSelectedItems(containerId);
 
     if (items.length === 0) return;
 
@@ -271,8 +297,8 @@ async function folioConfirmDelete() {
                     await FolioService.deleteItem(item);
                 }
 
-                folioClearSelection();
-                await folioReload();
+                folioClearSelection(containerId);
+                await folioReload(containerId);
 
                 folioShowMessage("Item(s) deleted", "success");
 
@@ -288,14 +314,16 @@ async function folioConfirmDelete() {
 
 }
 
-async function folioResolveTargetFolio(reservationInputId, folioSelectId) {
+async function folioResolveTargetFolio(containerId, reservationInputId, folioSelectId) {
+
+    const state = FolioInstances[containerId];
 
     const reservationInput = document.getElementById(reservationInputId);
     const folioSelect = document.getElementById(folioSelectId);
 
     const confirmationNo = reservationInput ? reservationInput.value.trim() : "";
 
-    let targetReservationId = FolioState.reservationId;
+    let targetReservationId = state.reservationId;
 
     if (confirmationNo) {
 
@@ -319,7 +347,6 @@ async function folioResolveTargetFolio(reservationInputId, folioSelectId) {
 
     if (!target) {
 
-        // folio tujuan belum ada -> buat otomatis (mis. Folio 2 baru)
         target = await FolioService.createNextFolio(targetReservationId);
 
     }
@@ -328,19 +355,24 @@ async function folioResolveTargetFolio(reservationInputId, folioSelectId) {
 
 }
 
-async function folioSubmitMove() {
+async function folioSubmitMove(containerId) {
 
-    if (folioIsClosed()) return;
+    if (folioIsClosed(containerId)) return;
 
-    const items = folioGetSelectedItems();
+    const state = FolioInstances[containerId];
+    const items = folioGetSelectedItems(containerId);
     if (items.length === 0) return;
 
     try {
 
-        const target = await folioResolveTargetFolio("folioMoveReservation", "folioMoveFolioSelect");
+        const target = await folioResolveTargetFolio(
+            containerId,
+            FolioUI.fid(containerId, "folioMoveReservation"),
+            FolioUI.fid(containerId, "folioMoveFolioSelect")
+        );
         if (!target) return;
 
-        if (target.id === FolioState.folioId) {
+        if (target.id === state.folioId) {
 
             folioShowMessage("Target folio sama dengan folio saat ini", "error");
             return;
@@ -349,8 +381,8 @@ async function folioSubmitMove() {
 
         await FolioService.moveItems(items, target.id, target.name || `Folio ${target.folio_number}`);
 
-        folioClearSelection();
-        await folioReload();
+        folioClearSelection(containerId);
+        await folioReload(containerId);
 
         folioShowMessage("Item(s) moved", "success");
 
@@ -363,15 +395,15 @@ async function folioSubmitMove() {
 
 }
 
-async function folioSubmitSplit() {
+async function folioSubmitSplit(containerId) {
 
-    if (folioIsClosed()) return;
+    if (folioIsClosed(containerId)) return;
 
-    const items = folioGetSelectedItems();
+    const items = folioGetSelectedItems(containerId);
     if (items.length === 0) return;
 
-    const basisType = document.getElementById("folioSplitBasisType").value; // percentage | price
-    const basisValue = Number(document.getElementById("folioSplitBasisValue").value);
+    const basisType = document.getElementById(FolioUI.fid(containerId, "folioSplitBasisType")).value;
+    const basisValue = Number(document.getElementById(FolioUI.fid(containerId, "folioSplitBasisValue")).value);
 
     if (!basisValue || basisValue <= 0) {
 
@@ -382,13 +414,17 @@ async function folioSubmitSplit() {
 
     try {
 
-        const target = await folioResolveTargetFolio("folioSplitReservation", "folioSplitFolioSelect");
+        const target = await folioResolveTargetFolio(
+            containerId,
+            FolioUI.fid(containerId, "folioSplitReservation"),
+            FolioUI.fid(containerId, "folioSplitFolioSelect")
+        );
         if (!target) return;
 
         await FolioService.splitItems(items, { type: basisType, value: basisValue }, target.id);
 
-        folioClearSelection();
-        await folioReload();
+        folioClearSelection(containerId);
+        await folioReload(containerId);
 
         folioShowMessage("Item(s) split", "success");
 
@@ -401,15 +437,15 @@ async function folioSubmitSplit() {
 
 }
 
-async function folioSubmitDiscount() {
+async function folioSubmitDiscount(containerId) {
 
-    if (folioIsClosed()) return;
+    if (folioIsClosed(containerId)) return;
 
-    const items = folioGetSelectedItems();
+    const items = folioGetSelectedItems(containerId);
     if (items.length === 0) return;
 
-    const basisType = document.getElementById("folioDiscountBasisType").value; // percentage | price
-    const basisValue = Number(document.getElementById("folioDiscountBasisValue").value);
+    const basisType = document.getElementById(FolioUI.fid(containerId, "folioDiscountBasisType")).value;
+    const basisValue = Number(document.getElementById(FolioUI.fid(containerId, "folioDiscountBasisValue")).value);
 
     if (!basisValue || basisValue <= 0) {
 
@@ -422,8 +458,8 @@ async function folioSubmitDiscount() {
 
         await FolioService.applyDiscount(items, { type: basisType, value: basisValue });
 
-        folioClearSelection();
-        await folioReload();
+        folioClearSelection(containerId);
+        await folioReload(containerId);
 
         folioShowMessage("Discount applied", "success");
 
@@ -441,38 +477,39 @@ async function folioSubmitDiscount() {
 // Add service row (di bawah tabel)
 // ======================================================
 
-function folioServiceInputKeyup(inputEl) {
+function folioServiceInputKeyup(containerId, inputEl) {
 
     const keyword = inputEl.value;
     const results = FolioService.searchServiceCatalog(keyword);
 
-    FolioUI.renderServiceSuggestions(results);
+    FolioUI.renderServiceSuggestions(containerId, results);
 
 }
 
-function folioSelectServiceSuggestion(code) {
+function folioSelectServiceSuggestion(containerId, code) {
 
     const service = FolioService.SERVICE_CATALOG.find(s => s.code === code);
     if (!service) return;
 
-    const input = document.getElementById("folioServiceInput");
+    const input = document.getElementById(FolioUI.fid(containerId, "folioServiceInput"));
     input.value = service.name;
     input.dataset.selectedCode = service.code;
 
-    FolioUI.renderServiceSuggestions([]);
+    FolioUI.renderServiceSuggestions(containerId, []);
 
 }
 
-async function folioApplyNewService() {
+async function folioApplyNewService(containerId) {
 
-    if (folioIsClosed()) {
+    if (folioIsClosed(containerId)) {
 
         folioShowMessage("Folio sudah settled, tidak bisa menambah service", "info");
         return;
 
     }
 
-    const input = document.getElementById("folioServiceInput");
+    const state = FolioInstances[containerId];
+    const input = document.getElementById(FolioUI.fid(containerId, "folioServiceInput"));
     const name = input.value.trim();
 
     if (!name) return;
@@ -483,7 +520,7 @@ async function folioApplyNewService() {
 
     try {
 
-        await FolioService.addItem(FolioState.folioId, {
+        await FolioService.addItem(state.folioId, {
             service_code: catalogEntry ? catalogEntry.code : null,
             service_name: catalogEntry ? catalogEntry.name : name,
             quantity: 1,
@@ -494,11 +531,9 @@ async function folioApplyNewService() {
         input.value = "";
         delete input.dataset.selectedCode;
 
-        // sesuai spec: klik Apply -> folio masuk edit mode supaya
-        // qty/price/tax item baru bisa langsung disesuaikan
-        FolioState.mode = "edit";
+        state.mode = "edit";
 
-        await folioReload();
+        await folioReload(containerId);
 
     } catch (e) {
 
@@ -512,26 +547,19 @@ async function folioApplyNewService() {
 
 // ======================================================
 // Payment
-//
-// Take Payment sekarang tidak lagi pakai prompt() browser —
-// klik "Take Payment" mengganti body folio card jadi form
-// payment (Invoice No / Date / Cashiered By / Method /
-// Amount). Klik "Pay" -> panggil FolioService.chargePaymentTerminal()
-// (stub, terminal API masih under development) -> kalau sukses,
-// catat payment dan KUNCI folio (is_closed) supaya item folio
-// tidak bisa diedit lagi.
 // ======================================================
 
-async function folioOpenPaymentView() {
+async function folioOpenPaymentView(containerId) {
 
-    if (folioIsClosed()) {
+    if (folioIsClosed(containerId)) {
 
         folioShowMessage("Folio sudah settled", "info");
         return;
 
     }
 
-    const balance = FolioService.calcBalance(FolioState.items, FolioState.payments);
+    const state = FolioInstances[containerId];
+    const balance = FolioService.calcBalance(state.items, state.payments);
 
     if (balance === 0) {
 
@@ -542,32 +570,38 @@ async function folioOpenPaymentView() {
 
     const cashieredBy = await FolioService.getCurrentUserName();
 
-    FolioState.paymentDraft = {
-        invoice_number: FolioUI.generateInvoiceNumber(FolioState.folio),
+    state.paymentDraft = {
+        invoice_number: FolioUI.generateInvoiceNumber(state.folio),
         date: new Date().toISOString().slice(0, 10),
         cashiered_by: cashieredBy,
         method: "Cash",
         amount: Math.abs(balance).toFixed(2)
     };
 
-    FolioState.mode = "payment";
+    state.mode = "payment";
 
-    FolioUI.render(FolioState);
-
-}
-
-function folioCancelPayment() {
-
-    FolioState.mode = "normal";
-    FolioState.paymentDraft = null;
-
-    FolioUI.render(FolioState);
+    FolioUI.render(state);
 
 }
 
-async function folioSubmitPayment() {
+function folioCancelPayment(containerId) {
 
-    const draft = FolioUI.collectPaymentDraft();
+    const state = FolioInstances[containerId];
+    if (!state) return;
+
+    state.mode = "normal";
+    state.paymentDraft = null;
+
+    FolioUI.render(state);
+
+}
+
+async function folioSubmitPayment(containerId) {
+
+    const state = FolioInstances[containerId];
+    if (!state) return;
+
+    const draft = FolioUI.collectPaymentDraft(containerId);
 
     const amount = Number(draft.amount);
 
@@ -587,10 +621,8 @@ async function folioSubmitPayment() {
 
     try {
 
-        // Terminal API masih under development -> chargePaymentTerminal()
-        // saat ini cuma stub yang menyimulasikan approval.
         const terminalResult = await FolioService.chargePaymentTerminal({
-            folioId: FolioState.folioId,
+            folioId: state.folioId,
             invoiceNumber: draft.invoice_number,
             amount,
             method: draft.method
@@ -603,20 +635,20 @@ async function folioSubmitPayment() {
 
         }
 
-        await FolioService.addPayment(FolioState.folioId, amount, draft.method);
+        await FolioService.addPayment(state.folioId, amount, draft.method);
 
-        await FolioService.closeFolioBilling(FolioState.folioId, {
+        await FolioService.closeFolioBilling(state.folioId, {
             invoice_number: draft.invoice_number,
             cashiered_by: draft.cashiered_by,
             paid_at_date: draft.date
         });
 
-        FolioState.mode = "normal";
-        FolioState.paymentDraft = null;
+        state.mode = "normal";
+        state.paymentDraft = null;
 
         folioShowMessage("Payment successful", "success");
 
-        await folioReload();
+        await folioReload(containerId);
 
     } catch (e) {
 
@@ -629,21 +661,26 @@ async function folioSubmitPayment() {
 
 
 // ======================================================
-// Checkout guard — dipanggil dari halaman pemanggil
-// (reservationDetail.js) sebelum status diubah ke CHECKED_OUT
+// Checkout guard — cek SEMUA folio yang lagi kebuka di
+// halaman (folio1/2/3), bukan cuma satu.
 // ======================================================
 
 function folioHasOutstandingBalance() {
 
-    const balance = FolioService.calcBalance(FolioState.items, FolioState.payments);
-    return balance < 0;
+    return Object.values(FolioInstances).some(state => {
+
+        if (!state || !state.items) return false;
+
+        const balance = FolioService.calcBalance(state.items, state.payments);
+        return balance < 0;
+
+    });
 
 }
 
 
 // ======================================================
-// Misc helpers (fallback kalau halaman pemanggil belum
-// punya showMessage/showConfirm sendiri)
+// Misc helpers
 // ======================================================
 
 function folioShowMessage(text, type = "info") {

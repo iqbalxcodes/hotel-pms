@@ -250,8 +250,8 @@ h1 {
     grid-template-columns: repeat(3, 1fr);
     grid-template-areas:
         "guest      stay       billing1"
-        "secondary  amenities  ."
-        "remarks    rate       .";
+        "secondary  amenities  billing1"
+        "remarks    rate       billing1";
 }
 
 .card-guest      { grid-area: guest; }
