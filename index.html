@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- index.html -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.supabase.co;">
+    <title>Hotel PMS</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/workspace.css">
+    <link rel="stylesheet" href="css/rsidebar.css">
+<base target="_blank">
+</head>
+<body>
+
+    <div id="pageHeaderBar" class="page-header-bar"></div>
+    <div id="wsContent" style="flex:1 1 auto; position:relative; overflow:hidden;"></div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="js/pageHeader.js"></script>
+    <script src="js/workspace.js"></script>
+    <script src="js/sidebar.js"></script>
+    <script src="js/rsidebar.js"></script>
+
+    <script>
+        const PH_PAGE_IDS = {
+            "index.html": "nav-dashboard",
+            "reservation.html": "nav-reservations",
+            "room.html": "nav-rooms",
+            "guest.html": "nav-guests"
+        };
+
+        function phHumanize(file) {
+            return file.replace(/\.html.*$/, "").replace(/-/g, " ")
+                .replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        initPageHeader();
+        initSidebar();
+        initRightSidebar();
+
+        const openParam = new URLSearchParams(location.search).get("open") || "reservation.html";
+        const bareFile = openParam.split("?")[0];
+
+        if (!/^[\w\-\.]+\.html$/.test(bareFile)) {
+            console.warn("Invalid open param, falling back to reservation.html");
+            location.replace("index.html?open=reservation.html");
+        } else if (window.Workspace) {
+            Workspace.openTab({
+                title: PH_PAGE_IDS[bareFile] ? phHumanize(bareFile) : phHumanize(bareFile),
+                url: openParam,
+                page: PH_PAGE_IDS[bareFile] || ("page-" + bareFile)
+            });
+        } else {
+            console.error("Workspace not loaded — falling back to direct navigation");
+            location.href = openParam;
+        }
+    </script>
+
+</body>
+</html>

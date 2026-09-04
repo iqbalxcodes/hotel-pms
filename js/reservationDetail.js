@@ -1,0 +1,1017 @@
+// ======================================================
+// reservationDetail.js
+// ======================================================
+
+let currentReservation = null;
+let isEditMode = false;
+let isNewReservation = false;
+
+
+// ------------------------------------------------------
+// Field configuration
+// ------------------------------------------------------
+
+const FIELD_CONFIG = [
+
+    { id: "det_first_name",     column: null,   group: "guest_name",          part: "first", type: "text" },
+    { id: "det_last_name",      column: null,   group: "guest_name",          part: "last",  type: "text" },
+    { id: "det_loyalty",        column: "loyalty",       type: "text" },
+    { id: "det_salutation",     column: "salutation",    type: "text" },
+    { id: "det_language",       column: "language",      type: "text" },
+    { id: "det_country",        column: "country",       type: "text" },
+    { id: "det_contact",        column: "contact",       type: "text" },
+    { id: "det_company",        column: "company",       type: "text" },
+    { id: "det_booker_name",    column: "booker_name",   type: "text" },
+    { id: "det_travel_agent",   column: "travel_agent",  type: "text" },
+
+    { id: "det_arrival",        column: "arrival_date",  type: "date" },
+    { id: "det_confirmation_no",column: "confirmation_no", type: "text", editable: false },
+    { id: "det_departure",      column: "departure_date", type: "date" },
+    { id: "det_external_no",    column: "external_reservation_no", type: "text" },
+    { id: "det_nights",         column: null,   type: "text", editable: false },
+    { id: "det_room_number",    column: "room_number",   type: "text" },
+
+    { id: "det_rate",           column: "rate_name",     type: "text" },
+    { id: "det_price",          column: "price",         type: "number", step: "0.01" },
+    { id: "det_cancel_policy",  column: "cancel_policy", type: "text" },
+    { id: "det_source",         column: "source",        type: "text" },
+    { id: "det_market_segment", column: "market_segment",type: "text" },
+    { id: "det_travel_reason",  column: "travel_reason", type: "text" },
+
+    { id: "det_room_type",      column: "room_type",     type: "text" },
+    { id: "det_bed_type",       column: "bed_type",      type: "text" },
+    { id: "det_breakfast",      column: "breakfast_qty", type: "number", step: "1" },
+    { id: "det_dinner",         column: "dinner",        type: "boolean" },
+    { id: "det_parking",        column: "parking",       type: "boolean" },
+    { id: "det_shuttle",        column: "shuttle",       type: "boolean" },
+
+    { id: "det_sg_first_name",  column: null,   group: "secondary_guest_name", part: "first", type: "text" },
+    { id: "det_sg_last_name",   column: null,   group: "secondary_guest_name", part: "last",  type: "text" },
+
+    { id: "det_remarks",        column: "remarks",       type: "textarea" }
+
+];
+
+const STATUS_LABELS = {
+    PENDING: "Pending",
+    CONFIRMED: "Confirmed",
+    CHECKED_IN: "Checked In",
+    CHECKED_OUT: "Checked Out",
+    CANCELLED: "Cancelled",
+    NO_SHOW: "No Show"
+};
+
+
+// ======================================================
+// Status Bar helpers (message / confirm / clock)
+// ======================================================
+
+function escapeHtml(str){
+
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+
+    return div.innerHTML;
+
+}
+
+function showMessage(text, type = "info"){
+
+    const contextArea = document.getElementById("contextArea");
+
+    if(!contextArea){
+        return;
+    }
+
+    contextArea.innerHTML =
+        `<span class="status-msg-${type}">${escapeHtml(text)}</span>`;
+
+    clearTimeout(showMessage._timer);
+
+    showMessage._timer = setTimeout(() => {
+        contextArea.innerHTML = "";
+    }, 4000);
+
+}
+
+function showConfirm(message, onConfirm, onCancel){
+
+    const contextArea = document.getElementById("contextArea");
+
+    if(!contextArea){
+        return;
+    }
+
+    contextArea.innerHTML = `
+        <span class="status-confirm">
+            ${escapeHtml(message)}
+            <button id="confirmYesBtn">Yes</button>
+            <button id="confirmNoBtn">No</button>
+        </span>
+    `;
+
+    document.getElementById("confirmYesBtn").onclick = () => {
+        contextArea.innerHTML = "";
+        onConfirm();
+    };
+
+    document.getElementById("confirmNoBtn").onclick = () => {
+        contextArea.innerHTML = "";
+        if(onCancel){ onCancel(); }
+    };
+
+}
+
+function showDevMessage(feature){
+
+    showMessage(`${feature} is still in development`, "info");
+
+}
+
+function startClock(){
+
+    const clock = document.getElementById("clock");
+
+    if(!clock){
+        return;
+    }
+
+    function updateClock(){
+
+        const now = new Date();
+
+        clock.innerText =
+            now.toLocaleString("de-DE", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit"
+            });
+
+    }
+
+    updateClock();
+
+    setInterval(updateClock, 1000);
+
+}
+
+
+// ======================================================
+// Misc Helpers
+// ======================================================
+
+function getReservationIdFromUrl(){
+
+    const params = new URLSearchParams(window.location.search);
+
+    return params.get("id");
+
+}
+
+function formatDisplayDate(dateStr){
+
+    if(!dateStr){
+
+        return "-";
+
+    }
+
+    const d = new Date(dateStr);
+
+    if(isNaN(d)){
+
+        return dateStr;
+
+    }
+
+    const day = String(d.getDate()).padStart(2,"0");
+    const month = String(d.getMonth()+1).padStart(2,"0");
+    const year = d.getFullYear();
+
+    return `${day}/${month}/${year}`;
+
+}
+
+function formatCurrency(value){
+
+    if(value === null || value === undefined || value === ""){
+
+        return "-";
+
+    }
+
+    return Number(value).toLocaleString("id-ID", {
+        style: "currency",
+        currency: "EUR"
+    });
+
+}
+
+function splitName(fullName){
+
+    if(!fullName){
+
+        return { first: "", last: "" };
+
+    }
+
+    const parts = fullName.trim().split(" ");
+
+    const first = parts[0] || "";
+    const last = parts.slice(1).join(" ") || "";
+
+    return { first, last };
+
+}
+
+function setDisplay(id, value){
+
+    const el = document.getElementById(id);
+
+    if(el){
+
+        el.innerText =
+            (value === null || value === undefined || value === "")
+            ? "-"
+            : value;
+
+    }
+
+}
+
+
+// ======================================================
+// Status Badge + Status Flow Select (header + toolbar)
+// ======================================================
+
+function updateStatusBadge(status){
+
+    const badge = document.getElementById("statusBadge");
+
+    if(!badge){
+        return;
+    }
+
+    const key = (status || "RESERVED").toLowerCase();
+
+    badge.className = `status-badge status-${key}`;
+    badge.innerText = STATUS_LABELS[status] || status || "-";
+
+    const select = document.getElementById("statusFlowSelect");
+
+    if(select){
+
+        select.value = status || "RESERVED";
+
+    }
+
+}
+
+async function changeReservationStatus(newStatus){
+
+    const select = document.getElementById("statusFlowSelect");
+
+    if(!currentReservation || !currentReservation.id){
+
+        showMessage("Simpan reservasi terlebih dahulu sebelum mengubah status", "error");
+
+        if(select){
+            select.value = currentReservation ? (currentReservation.status || "RESERVED") : "RESERVED";
+        }
+
+        return;
+
+    }
+
+    if(newStatus === currentReservation.status){
+
+        return;
+
+    }
+
+    if(newStatus === "CHECKED_OUT"){
+
+        // Guard folio: kalau ada outstanding balance, warn dulu.
+        // folioHasOutstandingBalance() cuma tersedia setelah folio.js
+        // ter-load dan openFolio() sudah dipanggil minimal sekali.
+        const hasOutstanding =
+            typeof folioHasOutstandingBalance === "function"
+            && folioHasOutstandingBalance();
+
+        const confirmMessage =
+            hasOutstanding
+            ? "Folio masih outstanding balance, tetap checkout?"
+            : "There is pending to bill, are you sure want to check out?";
+
+        showConfirm(
+            confirmMessage,
+            () => performStatusChange(newStatus),
+            () => { if(select){ select.value = currentReservation.status; } }
+        );
+
+        return;
+
+    }
+
+    await performStatusChange(newStatus);
+
+}
+
+async function performStatusChange(newStatus){
+
+    const { error } =
+        await supabaseClient
+        .from("reservation")
+        .update({ status: newStatus })
+        .eq("id", currentReservation.id);
+
+    if(error){
+
+        console.error(error);
+        showMessage("Failed to update status", "error");
+        return;
+
+    }
+
+    currentReservation.status = newStatus;
+
+    updateStatusBadge(newStatus);
+
+    showMessage(
+        newStatus === "CHECKED_OUT" ? "Checkout completed" : "Status updated",
+        "success"
+    );
+
+}
+
+
+// ======================================================
+// Folio (module reusable — lihat folio.js / folioUI.js /
+// folioService.js). Folio 1 selalu dibuka otomatis; Folio
+// 2 & 3 baru dibuat/dibuka saat user klik toggle folio-mode,
+// supaya tidak otomatis bikin folio kosong tiap reservasi
+// di-load.
+// ======================================================
+
+let folio2And3Loaded = false;
+
+function mountPrimaryFolio(reservationId){
+
+    openFolio({
+        containerId: "folioMount1",
+        reservationId: reservationId,
+        backAction: "toggleFolioMode()"
+    });
+
+}
+
+async function mountSecondaryFolios(reservationId){
+
+    if(folio2And3Loaded){
+        return;
+    }
+
+    folio2And3Loaded = true;
+
+    const folios = await FolioService.getFoliosByReservation(reservationId);
+
+    const folio2 = folios.find(f => f.folio_number === 2) || await FolioService.createNextFolio(reservationId);
+    const folio3 = folios.find(f => f.folio_number === 3) || await FolioService.createNextFolio(reservationId);
+
+    openFolio({ containerId: "folioMount2", folioId: folio2.id });
+    openFolio({ containerId: "folioMount3", folioId: folio3.id, backAction: "toggleFolioMode()" });
+
+}
+
+
+// ======================================================
+// Render (view mode) from a reservation object
+// ======================================================
+
+function calcNights(res){
+
+    if(res.arrival_date && res.departure_date){
+
+        const arrival = new Date(res.arrival_date);
+        const departure = new Date(res.departure_date);
+
+        const nights =
+            Math.round(
+                (departure - arrival) / (1000*60*60*24)
+            );
+
+        return nights > 0 ? nights : 0;
+
+    }
+
+    return 0;
+
+}
+
+function renderDetail(res){
+
+    const guestName = splitName(res.guest_name);
+    const secondaryGuestName = splitName(res.secondary_guest_name);
+
+    setDisplay("det_first_name", guestName.first);
+    setDisplay("det_last_name", guestName.last);
+
+    setDisplay("det_loyalty", res.loyalty);
+    setDisplay("det_salutation", res.salutation);
+    setDisplay("det_language", res.language);
+    setDisplay("det_country", res.country);
+    setDisplay("det_contact", res.contact);
+    setDisplay("det_company", res.company);
+    setDisplay("det_booker_name", res.booker_name);
+    setDisplay("det_travel_agent", res.travel_agent);
+
+    setDisplay("det_arrival", formatDisplayDate(res.arrival_date));
+    setDisplay("det_confirmation_no", res.confirmation_no);
+    setDisplay("det_departure", formatDisplayDate(res.departure_date));
+    setDisplay("det_external_no", res.external_reservation_no);
+
+    const nights = calcNights(res);
+
+    setDisplay("det_nights", nights > 0 ? nights : "-");
+    setDisplay("det_room_number", res.room_number);
+
+    setDisplay("det_rate", res.rate_name);
+    setDisplay("det_price", res.price !== undefined && res.price !== null ? formatCurrency(res.price) : "-");
+    setDisplay("det_cancel_policy", res.cancel_policy);
+    setDisplay("det_source", res.source);
+    setDisplay("det_market_segment", res.market_segment);
+    setDisplay("det_travel_reason", res.travel_reason);
+
+    setDisplay("det_room_type", res.room_type);
+    setDisplay("det_bed_type", res.bed_type);
+    setDisplay("det_breakfast", res.breakfast_qty);
+    setDisplay("det_dinner", res.dinner ? "Yes" : "No");
+    setDisplay("det_parking", res.parking ? "Yes" : "No");
+    setDisplay("det_shuttle", res.shuttle ? "Yes" : "No");
+
+    setDisplay("det_sg_first_name", secondaryGuestName.first);
+    setDisplay("det_sg_last_name", secondaryGuestName.last);
+
+    setDisplay("det_remarks", res.remarks);
+
+    // Folio hanya di-mount kalau reservasi sudah punya id
+    // (reservasi baru yang belum disimpan belum punya folio).
+    if(res.id){
+
+        mountPrimaryFolio(res.id);
+
+    }
+
+    updateStatusBadge(res.status);
+
+    const statusSelect = document.getElementById("statusFlowSelect");
+
+    if(statusSelect){
+
+        statusSelect.disabled = !res.id;
+
+    }
+
+}
+
+
+// ======================================================
+// Raw value getter per field (used to prefill inputs)
+// ======================================================
+
+function getRawValue(field, res){
+
+    if(field.group === "guest_name"){
+
+        const { first, last } = splitName(res.guest_name);
+
+        return field.part === "first" ? first : last;
+
+    }
+
+    if(field.group === "secondary_guest_name"){
+
+        const { first, last } = splitName(res.secondary_guest_name);
+
+        return field.part === "first" ? first : last;
+
+    }
+
+    const value = res[field.column];
+
+    return (value === null || value === undefined) ? "" : value;
+
+}
+
+
+// ======================================================
+// Enter Edit Mode
+// ======================================================
+
+function enterEditMode(){
+
+    if(isEditMode || !currentReservation){
+
+        return;
+
+    }
+
+    isEditMode = true;
+
+    document.getElementById("editBtn").style.display = "none";
+    document.getElementById("editActions").style.display = "inline-flex";
+
+    FIELD_CONFIG.forEach(field => {
+
+        if(field.editable === false){
+
+            return;
+
+        }
+
+        const container = document.getElementById(field.id);
+
+        if(!container){
+
+            return;
+
+        }
+
+        const rawValue = getRawValue(field, currentReservation);
+
+        let inputHtml;
+
+        if(field.type === "textarea"){
+
+            inputHtml = `<textarea class="inline-edit-input">${rawValue}</textarea>`;
+
+        }
+        else if(field.type === "date"){
+
+            inputHtml = `<input type="date" class="inline-edit-input" value="${rawValue}">`;
+
+        }
+        else if(field.type === "number"){
+
+            inputHtml = `<input type="number" step="${field.step || "1"}" class="inline-edit-input" value="${rawValue}">`;
+
+        }
+        else if(field.type === "boolean"){
+
+            inputHtml = `<input type="checkbox" class="inline-edit-input" ${rawValue ? "checked" : ""}>`;
+
+        }
+        else{
+
+            inputHtml = `<input type="text" class="inline-edit-input" value="${String(rawValue).replace(/"/g, "&quot;")}">`;
+
+        }
+
+        container.innerHTML = inputHtml;
+
+    });
+
+}
+
+
+// ======================================================
+// Exit Edit Mode (cancel, no save)
+// ======================================================
+
+function exitEditMode(){
+
+    isEditMode = false;
+
+    document.getElementById("editBtn").style.display = "inline-block";
+    document.getElementById("editActions").style.display = "none";
+
+    renderDetail(currentReservation);
+
+}
+
+
+// ======================================================
+// Save Edit Mode (apply + push to DB + exit edit mode)
+// ======================================================
+
+async function saveEditMode(){
+
+    if(!isEditMode || !currentReservation){
+
+        return;
+
+    }
+
+    const rawValues = {};
+
+    FIELD_CONFIG.forEach(field => {
+
+        if(field.editable === false){
+
+            return;
+
+        }
+
+        const container = document.getElementById(field.id);
+
+        if(!container){
+
+            return;
+
+        }
+
+        const input = container.querySelector("input, textarea");
+
+        rawValues[field.id] =
+            field.type === "boolean" ? input.checked : input.value;
+
+    });
+
+    const newArrival = rawValues["det_arrival"];
+    const newDeparture = rawValues["det_departure"];
+
+    if(newArrival && newDeparture && new Date(newDeparture) < new Date(newArrival)){
+
+        showMessage("Departure date tidak boleh sebelum arrival date", "error");
+        return;
+
+    }
+
+    const payload = {};
+
+    FIELD_CONFIG.forEach(field => {
+
+        if(field.group){
+            return;
+        }
+
+        if(!field.column){
+            return;
+        }
+
+        let value = rawValues[field.id];
+
+        if(field.type === "number"){
+            value = value === "" ? null : Number(value);
+        }
+        else if(field.type === "date"){
+            value = value === "" ? null : value;
+        }
+        else if(field.type === "boolean"){
+            value = Boolean(value);
+        }
+        else if(field.type === "text" || field.type === "textarea"){
+            value = value === "" ? null : value;
+        }
+
+        payload[field.column] = value;
+
+    });
+
+    if(isNewReservation){
+
+        payload.confirmation_no = currentReservation.confirmation_no;
+        payload.status = currentReservation.status || "RESERVED";
+
+    }
+
+    const guestFirst = rawValues["det_first_name"] ?? "";
+    const guestLast = rawValues["det_last_name"] ?? "";
+
+    payload.guest_name =
+        [guestFirst, guestLast]
+        .filter(part => part && part.trim() !== "")
+        .join(" ");
+
+    const sgFirst = rawValues["det_sg_first_name"] ?? "";
+    const sgLast = rawValues["det_sg_last_name"] ?? "";
+
+    payload.secondary_guest_name =
+        [sgFirst, sgLast]
+        .filter(part => part && part.trim() !== "")
+        .join(" ");
+
+    let error;
+
+    if(isNewReservation){
+
+        const { data: insertedData, error: insertError } =
+            await supabaseClient
+            .from("reservation")
+            .insert(payload)
+            .select()
+            .single();
+
+        error = insertError;
+
+        if(!error && insertedData){
+
+            currentReservation = insertedData;
+            isNewReservation = false;
+
+            const newUrl = `reservation-detail.html?id=${insertedData.id}`;
+
+            window.history.replaceState(null, "", newUrl);
+
+        }
+
+    }
+    else{
+
+        const { error: updateError } =
+            await supabaseClient
+            .from("reservation")
+            .update(payload)
+            .eq("id", currentReservation.id);
+
+        error = updateError;
+
+    }
+
+    if(error){
+
+        console.error(error);
+        showMessage("Gagal menyimpan perubahan: " + error.message, "error");
+        return;
+
+    }
+
+    showMessage("Reservation saved", "success");
+
+    await loadReservationDetail(false);
+
+    isEditMode = false;
+
+    document.getElementById("editBtn").style.display = "inline-block";
+    document.getElementById("editActions").style.display = "none";
+
+}
+
+
+// ======================================================
+// Duplicate Reservation
+// ======================================================
+
+async function duplicateReservation(){
+
+    if(!currentReservation || !currentReservation.id){
+
+        showMessage("Tidak ada reservasi untuk diduplikasi", "error");
+        return;
+
+    }
+
+    showConfirm(
+        "Duplicate this reservation?",
+        async () => {
+
+            const clone = { ...currentReservation };
+
+            delete clone.id;
+
+            clone.confirmation_no = generateReservationNumber();
+            clone.status = "RESERVED";
+
+            const { data, error } =
+                await supabaseClient
+                .from("reservation")
+                .insert(clone)
+                .select()
+                .single();
+
+            if(error){
+
+                console.error(error);
+                showMessage("Failed to duplicate reservation", "error");
+                return;
+
+            }
+
+            showMessage("Reservation duplicated", "success");
+
+            window.location.href = `reservation-detail.html?id=${data.id}`;
+
+        },
+        () => showMessage("Duplicate cancelled", "info")
+    );
+
+}
+
+
+// ======================================================
+// Enter key: toggles enter/save depending on current mode
+// ======================================================
+
+document.addEventListener("keydown", (e) => {
+
+    if(e.key !== "Enter"){
+
+        return;
+
+    }
+
+    if(e.target.tagName === "TEXTAREA" && e.shiftKey){
+
+        return;
+
+    }
+
+    // Kalau fokus lagi di dalam Folio card (address/table/add-service),
+    // biarkan Folio module sendiri yang handle Enter-nya, jangan
+    // ke-trigger juga save-mode reservasi.
+    if(e.target.closest(".folio-card")){
+
+        return;
+
+    }
+
+    e.preventDefault();
+
+    if(isEditMode){
+
+        saveEditMode();
+
+    }
+    else{
+
+        enterEditMode();
+
+    }
+
+});
+
+
+// ======================================================
+// Load reservation from DB
+// ======================================================
+
+async function loadReservationDetail(redirectOnMissingId = true){
+
+    const params = new URLSearchParams(window.location.search);
+
+    const isNew = params.get("new");
+    const id = params.get("id");
+
+
+    // ================================
+    // CREATE NEW RESERVATION
+    // ================================
+
+    if(isNew === "true"){
+
+        isNewReservation = true;
+
+        currentReservation = createEmptyReservation();
+
+        renderDetail(currentReservation);
+
+        enterEditMode();
+
+        return;
+
+    }
+
+
+    // ================================
+    // LOAD EXISTING RESERVATION
+    // ================================
+
+    if(!id){
+
+        console.warn("No reservation id");
+        return;
+
+    }
+
+    const { data: res, error } =
+        await supabaseClient
+        .from("reservation")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+    if(error || !res){
+
+        console.error(error);
+        showMessage("Gagal memuat detail reservasi", "error");
+        return;
+
+    }
+
+    currentReservation = res;
+
+    renderDetail(res);
+
+}
+
+
+// ======================================================
+// Reservation Number Generator
+// ======================================================
+
+function generateReservationNumber(){
+
+    return "HT" + Math.floor(1000000000 + Math.random() * 9000000000);
+
+}
+
+function createEmptyReservation(){
+
+    return {
+
+        id: null,
+        confirmation_no: generateReservationNumber(),
+        guest_name: "",
+        secondary_guest_name: "",
+        arrival_date: null,
+        departure_date: null,
+        room_number: "",
+        status: "CONFIRMED"
+
+    };
+
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    startClock();
+    loadReservationDetail(true);
+    setupFolioObserver();
+
+});
+
+// ======================================================
+// Folio View Toggle (multi-billing card, layar normal)
+// ======================================================
+
+function toggleFolioMode(){
+
+    const grid = document.querySelector(".detail-grid");
+
+    if(!grid){
+        return;
+    }
+
+    const turningOn = !grid.classList.contains("folio-mode");
+
+    grid.classList.toggle("folio-mode");
+
+    // Folio 2 & 3 baru di-load/dibuat pas pertama kali folio-mode
+    // dibuka, biar gak nambah folio kosong ke reservasi yang gak
+    // pernah dicek billing keduanya.
+    if(turningOn && currentReservation && currentReservation.id){
+
+        mountSecondaryFolios(currentReservation.id);
+
+    }
+
+}
+
+
+// ======================================================
+// Mobile Folio Scroll Button
+// ======================================================
+
+function scrollToFolio(){
+
+    const billingCard = document.querySelector(".card-billing1");
+
+    if(billingCard){
+
+        billingCard.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    }
+
+}
+
+function setupFolioObserver(){
+
+    const billingCard = document.querySelector(".card-billing1");
+    const folioBtn = document.getElementById("folioBtn");
+    const scrollRoot = document.querySelector(".detail-scroll");
+
+    if(!billingCard || !folioBtn || !scrollRoot){
+        return;
+    }
+
+    const observer = new IntersectionObserver(
+        (entries) => {
+
+            entries.forEach(entry => {
+
+                // "" biar CSS breakpoint yang nentuin tampil/nggaknya,
+                // "none" dipaksa saat billing card lagi kelihatan
+                folioBtn.style.display = entry.isIntersecting ? "none" : "";
+
+            });
+
+        },
+        { root: scrollRoot, threshold: 0.3 }
+    );
+
+    observer.observe(billingCard);
+
+}

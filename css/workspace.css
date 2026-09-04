@@ -1,0 +1,109 @@
+.ws-content { flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden; }
+.ws-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: none; display: none; }
+
+/* tab bar height ~ half of header row height */
+.ws-tabbar {
+    display: none;
+    align-items: center;
+    height: 30px;
+    padding: 0 8px;
+    gap: 4px;
+    border-top: 1px solid #eee;
+    background: #f5f6f7;
+}
+
+.ws-tab-arrow {
+    flex: none; width: 20px; height: 20px;
+    border: 1px solid #ccc; background: #fff; border-radius: 4px;
+    display: none; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 11px; color: #666;
+}
+.ws-tab-arrow:hover { background: #f0f0f0; }
+
+.ws-tab-scroll-wrap { position: relative; flex: 1 1 auto; min-width: 0; overflow: hidden; height: 100%; }
+
+.ws-tab-scroll {
+    display: flex; align-items: center;
+    overflow-x: auto; scrollbar-width: none;
+    height: 100%;
+}
+.ws-tab-scroll::-webkit-scrollbar { display: none; }
+
+.ws-tab-fade-right {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 24px;
+    background: linear-gradient(to right, transparent, #f5f6f7);
+    pointer-events: none; opacity: 0; transition: opacity .15s;
+}
+
+/* chrome-like tab: inactive = flat, separated by right border (pipe);
+   active = rounded ALL 4 corners, lifted, no pipe next to it */
+.ws-tab {
+    position: relative;
+    flex: none;
+    display: flex; align-items: center;
+    height: 26px;
+    padding: 0 8px;
+    cursor: pointer;
+    background: transparent;
+    user-select: none;
+    border-right: 1px solid #d8d8d8;
+}
+.ws-tab:last-child { border-right: none; }
+
+.ws-tab.active {
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.1);
+    border-right: none;
+    z-index: 1;
+}
+/* hide the pipe on the tab right before an active tab too */
+.ws-tab.active + .ws-tab,
+.ws-tab:has(+ .ws-tab.active) { border-right-color: transparent; }
+
+.ws-tab-label {
+    flex: 1 1 auto; min-width: 0;
+    overflow: hidden; white-space: nowrap;
+    font-size: 12px; color: #333;
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 6px), transparent 100%);
+    mask-image: linear-gradient(to right, black calc(100% - 6px), transparent 100%);
+}
+/* on hover: fade pulls in further left to leave room for the X */
+.ws-tab:hover .ws-tab-label {
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 22px), transparent 100%);
+    mask-image: linear-gradient(to right, black calc(100% - 22px), transparent 100%);
+    margin-right: 16px;
+}
+
+.ws-tab-close {
+    position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+    width: 15px; height: 15px; border: none; background: rgba(0,0,0,.08);
+    border-radius: 50%; font-size: 9px; line-height: 1; color: #666;
+    cursor: pointer; opacity: 0; transition: opacity .1s;
+    display: flex; align-items: center; justify-content: center;
+}
+.ws-tab:hover .ws-tab-close { opacity: 1; }
+.ws-tab-close:hover { background: rgba(0,0,0,.18); }
+
+.ws-tab.ws-dragging { opacity: .5; }
+
+.ws-kebab {
+    flex: none; width: 20px; height: 20px;
+    border: none; background: transparent; cursor: pointer;
+    font-size: 14px; color: #999; border-radius: 4px;
+}
+.ws-kebab.has-overflow { color: #666; }
+.ws-kebab:hover { background: #ebebeb; }
+
+.ws-kebab-popup {
+    position: fixed; z-index: 300; min-width: 200px; max-width: 280px;
+    background: #fff; border: 1px solid #ccc; border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.18); padding: 4px;
+}
+.ws-kebab-item {
+    padding: 7px 10px; font-size: 12.5px; border-radius: 5px; cursor: pointer;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ws-kebab-item:hover { background: #f2f3f5; }
+.ws-kebab-danger { color: #c62828; }
+.ws-kebab-popup hr { border: none; border-top: 1px solid #eee; margin: 4px 0; }

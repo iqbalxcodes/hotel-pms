@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- room.html -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel PMS — Room Management</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/roomManagement.css">
+</head>
+<body>
+
+    <div id="pageHeaderBar" class="page-header-bar"></div>
+
+    <div id="pageNavigation" data-page="room-management"></div>
+
+    <!-- Container Utama Bertipe Kartu / Detail-Card (sama seperti halaman lain) -->
+    <div class="table-container detail-card rm-page">
+
+        <div class="reservation-header">
+
+            <div class="header-title">
+                <h3>Room Management</h3>
+            </div>
+
+            <div class="header-menu"></div>
+
+        </div>
+
+        <div class="rm-grid" id="rmGrid" data-view="list">
+
+            <!-- ============================================== -->
+            <!-- COLUMN 1 — Overview / Fundsachen / Blocked-OOO -->
+            <!-- ============================================== -->
+
+            <div class="rm-overview">
+
+                <div class="rm-card">
+                    <h4>Room Overview</h4>
+                    <div class="rm-stat-grid" id="rmOverviewStats"></div>
+                </div>
+
+                <div class="rm-card">
+                    <h4>Fundsachen <span id="rmFundsachenCount" class="rm-subcard-count"></span></h4>
+                    <div class="rm-mini-list" id="rmFundsachenList"></div>
+                </div>
+
+                <div class="rm-card">
+                    <h4>Blocked / Out of Order</h4>
+                    <div class="rm-mini-list" id="rmBlockedList"></div>
+                </div>
+
+            </div>
+
+            <!-- ============================================== -->
+            <!-- COLUMN 2 — Room List -->
+            <!-- ============================================== -->
+
+            <div class="rm-list">
+
+                <div class="rm-list-toolbar" id="rmNormalToolbar">
+                    <input type="text" id="rmSearchInput" placeholder="Search room number / type / notes">
+                </div>
+
+                <div class="rm-list-toolbar" id="rmSelectionToolbar" style="display:none;">
+
+                    <span id="rmSelectedCount">0 selected</span>
+
+                    <button id="rmDirtyBtn">DIRTY</button>
+                    <button id="rmCleanBtn">CLEAN</button>
+                    <button id="rmInspectedBtn">INSPECTED</button>
+                    <button id="rmOooBtn">OUT OF SERVICE</button>
+                    <button id="rmBlockedBtn">BLOCKED</button>
+
+                </div>
+
+                <div class="rm-list-scroll">
+                    <div id="rmRoomListBody"></div>
+                </div>
+
+            </div>
+
+            <!-- ============================================== -->
+            <!-- COLUMN 3 — Activity timeline (default) / Room Detail -->
+            <!-- ============================================== -->
+
+            <div class="rm-detail">
+                <div class="rm-detail-scroll" id="rmDetailPane"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="statusBar">
+        <div id="userArea"></div>
+        <div id="contextArea"></div>
+        <div id="paginationInfo"></div>
+        <div id="paginationNav"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/supabase.js"></script>
+
+    <script src="js/roomManagementData.js"></script>
+    <script src="js/roomManagementUI.js"></script>
+    <script src="js/roomManagement.js"></script>
+    <script src="js/pageHeader.js"></script>
+    <script>initPageHeader();</script>
+    <script src="js/sidebar.js"></script>
+    <script>initSidebar();</script>
+
+</body>
+</html>

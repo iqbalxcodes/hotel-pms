@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- reservation.html -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- FIX: connect-src ditambahin -- sebelumnya gak ada, fallback ke
+         default-src 'self' -> semua fetch ke *.supabase.co keblokir,
+         itu sebabnya tabel selalu kosong -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2 https://www.googletagmanager.com https://www.google-analytics.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.supabase.co https://www.google-analytics.com;">
+    <title>Hotel PMS</title>
+    <link rel="stylesheet" href="/css/style.css">
+<base target="_blank">
+</head>
+<body>
+
+    <div id="pageHeaderBar" class="page-header-bar"></div>
+    <!-- FIX: #pageNavigation + navigation.js dibuang -- udah kegantiin
+         workspace tab system, dobel nav gak perlu lagi -->
+
+    <div id="addReservationPanel" style="display: none;">
+        <h2>Add Reservation</h2>
+
+        <button onclick="generateRandomReservations()">
+            Generate Test Reservation
+        </button>
+
+        <button onclick="showDevelopmentAlert('Group Reservation')">
+            Group Reservation
+        </button>
+
+        <form id="reservationForm">
+            <input type="text" id="guest_name" placeholder="Guest Name" required>
+            <input type="text" id="room_number" placeholder="Room Number" required>
+            <input type="date" id="arrival_date" required>
+            <input type="date" id="departure_date" required>
+
+            <select id="status">
+                <option value="PENDING">PENDING</option>
+                <option value="CONFIRMED">CONFIRMED</option>
+            </select>
+
+            <button type="submit">Save Reservation</button>
+        </form>
+    </div>
+
+    <!-- Container Utama Bertipe Kartu / Detail-Card -->
+    <div class="table-container detail-card">
+
+        <div class="reservation-header">
+
+            <!-- LEFT: Pojok Kiri -->
+            <div class="header-title">
+                <h3>Reservation List</h3>
+            </div>
+
+            <!-- CENTER: Posisi Tengah -->
+            <div class="header-menu">
+                <button onclick="changeDate(-1)">◀</button>
+
+                <select id="dateScope" onchange="changeDateScope(this.value)">
+                    <option value="today">Today's</option>
+                    <option value="entire">Entire</option>
+                </select>
+
+                <select id="modeSelect" onchange="changeMode(this.value)">
+                    <option value="arrival">Arrival</option>
+                    <option value="departure">Departure</option>
+                    <option value="inhouse">In House</option>
+                    <option value="pending">Pending</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="noshow">No Show</option>
+                </select>
+
+                <input 
+                    type="date"
+                    id="currentDate"
+                    onchange="changeSelectedDate(this.value)"
+                >
+
+                <button onclick="changeDate(1)">▶</button>
+            </div>
+
+
+        </div>
+
+        <div id="toolbar">
+
+            <!-- DEFAULT TOOLBAR -->
+            <div id="normalToolbar">
+                <button 
+                    id="addReservationBtn" 
+                    onclick="createNewReservation()">
+                    Add Reservation
+                </button>
+
+                <button
+                    id="addBulkReservationBtn"
+                    onclick="document.getElementById('addReservationPanel').style.display='block';">
+                    + Bulk Reservation
+                </button>
+
+                <button id="modifyTableBtn" onclick="toggleModifyMode()">Modify Table</button>
+
+                <button id="cancelAddBtn" onclick="hideAddReservation()">
+                    Cancel
+                </button>
+
+                <a class="icon-btn" href="room-rack.html" title="Room Rack">🗓️ Room Rack</a>
+
+                <button onclick="showRoomList()">🛏</button>
+                <button onclick="showClientList()">👤</button>
+                <button onclick="showBilling()">＄</button>
+                <button onclick="showSearch()">🔍</button>
+
+                <div id="searchContainer" style="display:none;">
+                    <input id="searchInput" type="text" placeholder="Search guest / room / ID" onkeyup="searchReservation()">
+                    <button onclick="hideSearch()">✕</button>
+                </div>
+
+                <button onclick="exportReservations()">Export</button>
+
+            </div>
+
+            <!-- SELECT TOOLBAR -->
+            <!-- FIX: auth-required dibuang sementara, biar gak kekunci -->
+            <div id="selectionToolbar" style="display:none;">
+
+                <span id="selectedCount">0 selected</span>
+
+                <button onclick="updateStatus('CHECKED_IN')">CHECK-IN</button>
+                <button onclick="updateStatus('CHECKED_OUT')">CHECK-OUT</button>
+                <button onclick="updateStatus('CANCELLED')">CANCEL</button>
+
+                <button onclick="openBulkEditPopover()">✏️ Edit Field</button>
+
+            </div>
+
+            <!-- BULK EDIT POPOVER -->
+            <div id="bulkEditPopover" class="bulk-edit-popover" style="display:none;">
+
+                <label>Column</label>
+                <select id="bulkEditColumn" onchange="renderBulkEditValueInput()"></select>
+
+                <label>New Value</label>
+                <div id="bulkEditValueContainer"></div>
+
+                <div class="bulk-edit-popover-footer">
+                    <button onclick="closeBulkEditPopover()">Cancel</button>
+                    <button id="bulkEditApplyBtn" onclick="applyBulkEdit()">Apply</button>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Tag Table Bersih Tanpa border="1" -->
+        <div class="table-scroll">
+
+            <table>
+
+                <colgroup id="reservationColgroup"></colgroup>
+
+                <thead>
+                    <tr id="reservationHeaderRow"></tr>
+                </thead>
+
+                <tbody id="reservationTable"></tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <div id="modifyTablePopup" class="modify-table-popup" style="display:none;">
+
+        <div class="modify-popup-section">
+            <label>Preset Title</label>
+            <div class="modify-preset-row">
+                <input type="text" id="presetTitleInput" placeholder="Nama preset (awali - untuk hapus)">
+                <button onclick="applyColumnChanges()">Apply</button>
+                <button onclick="savePresetFromInput()">Save</button>
+            </div>
+
+            <div class="modify-preset-existing">
+                <label>Load Preset</label>
+                <select id="presetSelect" onchange="loadSelectedPreset(this.value)">
+                    <option value="">-- Select Preset --</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="modify-popup-columns">
+
+            <div class="modify-popup-list-col">
+                <label>Column Showing</label>
+                <ul id="columnShowingList" class="column-list"></ul>
+            </div>
+
+            <div class="modify-popup-list-col">
+                <label>Column Hide</label>
+                <ul id="columnHidingList" class="column-list"></ul>
+            </div>
+
+        </div>
+
+        <div class="modify-popup-footer">
+            <button onclick="closeModifyPopup()">Close</button>
+        </div>
+
+    </div>
+
+    <div id="statusBar">
+        <div id="userArea"></div>
+        <div id="contextArea"></div>
+        <div id="paginationInfo"></div>
+        <div id="paginationNav"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/guestData.js"></script>
+    <script src="js/roomData.js"></script>
+    <script src="js/tableConfig.js"></script>
+    <script src="js/tableColumns.js"></script>
+    <script src="js/tableScrollEdge.js"></script>
+
+    <script src="js/reservationUI.js"></script>
+
+    <script src="js/reservationFilter.js"></script>
+    <script src="js/reservation.js"></script>
+    <script src="js/bulkEdit.js"></script>
+    <script src="js/generator.js"></script>
+    <script src="js/pageHeader.js"></script>
+    <script>initPageHeader();</script>
+    <script src="js/sidebar.js"></script>
+    <script>initSidebar();</script>
+
+
+    <script src="js/export.js"></script>
+    <script src="js/developmentStatusSimulator.js"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XSST5HZ5L9"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-XSST5HZ5L9');
+    </script>
+</body>
+</html>

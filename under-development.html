@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- under-development.html -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+    <title>Hotel PMS — Under Development</title>
+    <link rel="stylesheet" href="/css/style.css">
+<base target="_blank">
+</head>
+<body>
+
+    <div id="pageHeaderBar" class="page-header-bar"></div>
+
+    <div class="table-container detail-card" style="display:flex; align-items:center; justify-content:center;">
+        <div style="text-align:center; color:#888;">
+            <div style="font-size:40px; margin-bottom:12px;">🚧</div>
+            <h3 id="udTitle" style="margin:0 0 6px; color:#444;">This feature</h3>
+            <div>is still under development.</div>
+        </div>
+    </div>
+
+    <script src="js/pageHeader.js"></script>
+    <script>initPageHeader();</script>
+    <script src="js/sidebar.js"></script>
+    <script>initSidebar();</script>
+
+    <script>
+        const label = new URLSearchParams(location.search).get("label");
+        if (label) {
+            // textContent is safe against XSS (unlike innerHTML)
+            document.getElementById("udTitle").textContent = label;
+        }
+    </script>
+
+</body>
+</html>

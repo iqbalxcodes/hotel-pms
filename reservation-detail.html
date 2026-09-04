@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- reservation-detail.html -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <title>Reservation Detail</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/folio.css">
+<base target="_blank">
+</head>
+<body>
+
+    <div id="pageHeaderBar" class="page-header-bar"></div>
+
+    <!-- Container Utama Bertipe Kartu / Detail-Card (sama seperti reservation list) -->
+    <div class="table-container detail-card">
+
+        <div class="reservation-header">
+
+            <!-- LEFT -->
+            <div class="header-title">
+                <h3>Reservation Detail</h3>
+            </div>
+
+            <!-- CENTER (kosong, mengikuti pola halaman lain) -->
+            <div class="header-menu"></div>
+
+
+        </div>
+
+        <!-- ACTION BAR -->
+        <div id="toolbar">
+
+            <div id="normalToolbar">
+
+                <!-- BACK -->
+                <button onclick="window.location.href='reservation.html'">← Back</button>
+
+                <!-- RESERVATION STATUS -->
+                <select id="statusFlowSelect" onchange="changeReservationStatus(this.value)">
+                    <option value="PENDING">Pending</option>
+                    <option value="CONFIRMED">Confirmed</option>
+                    <option value="CHECKED_IN">Check-In</option>
+                    <option value="CHECKED_OUT">Check-Out</option>
+                    <option value="CANCELLED">Cancel</option>
+                    <option value="NO_SHOW">No Show</option>
+                </select>
+
+                <span class="toolbar-divider"></span>
+
+                <!-- EDIT -->
+                <button
+                    id="editBtn"
+                    class="icon-btn auth-required require-auth"
+                    onclick="enterEditMode()"
+                    title="Edit">
+                    ✏️
+                </button>
+
+                <span id="editActions" style="display:none;">
+
+                    <button
+                        id="cancelEditBtn"
+                        class="icon-btn"
+                        onclick="exitEditMode()"
+                        title="Cancel">
+                        ✕
+                    </button>
+
+                    <button
+                        id="confirmEditBtn"
+                        class="icon-btn icon-btn-confirm require-auth"
+                        onclick="saveEditMode()"
+                        title="Save">
+                        ✓
+                    </button>
+
+                </span>
+
+                <span class="toolbar-divider"></span>
+
+                <!-- RESERVATION ACTIONS -->
+                <button onclick="duplicateReservation()" class="auth-required require-auth">
+                    ⧉ Duplicate
+                </button>
+
+                <button onclick="showDevMessage('Print Registration Form')">
+                    🖨 Registration Form
+                </button>
+
+                <button onclick="showDevMessage('Print/Send Confirmation')">
+                    ✉ Confirmation
+                </button>
+
+                <button onclick="showDevMessage('Make/Encode Room Card')">
+                    🔑 Room Card
+                </button>
+
+            </div>
+
+        </div>
+
+        <!-- SCROLLABLE DETAIL GRID -->
+        <div class="detail-scroll">
+
+            <div class="detail-grid">
+
+                <div class="detail-card card-guest">
+                    <h3>Main Guest</h3>
+                    <label>First Name</label>
+                    <div class="value" id="det_first_name">-</div>
+                    <label>Last Name</label>
+                    <div class="value" id="det_last_name">-</div>
+                    <div class="field-row">
+                        <div><label>Loyalty</label><div class="value" id="det_loyalty">-</div></div>
+                        <div><label>Salutation</label><div class="value" id="det_salutation">-</div></div>
+                    </div>
+                    <div class="field-row">
+                        <div><label>Language</label><div class="value" id="det_language">-</div></div>
+                        <div><label>Country</label><div class="value" id="det_country">-</div></div>
+                    </div>
+                    <div class="field-row">
+                        <div><label>Contact</label><div class="value" id="det_contact">-</div></div>
+                        <div><label>Company</label><div class="value" id="det_company">-</div></div>
+                    </div>
+                    <div class="field-row">
+                        <div><label>Booker Name</label><div class="value" id="det_booker_name">-</div></div>
+                        <div><label>Travel Agent</label><div class="value" id="det_travel_agent">-</div></div>
+                    </div>
+                </div>
+
+                <div class="detail-card card-stay">
+                    <h3>Stay Details</h3>
+                    <div class="field-row">
+                        <div><label>Arrival</label><div class="value" id="det_arrival">-</div></div>
+                        <div><label>Res. Number</label><div class="value" id="det_confirmation_no">-</div></div>
+                    </div>
+                    <div class="field-row">
+                        <div><label>Departure</label><div class="value" id="det_departure">-</div></div>
+                        <div><label>External</label><div class="value" id="det_external_no">-</div></div>
+                    </div>
+                    <div class="field-row">
+                        <div><label>Nights</label><div class="value" id="det_nights">-</div></div>
+                        <div><label>Room Number</label><div class="value" id="det_room_number">-</div></div>
+                    </div>
+                </div>
+
+                <!-- BILLING 1 (default, selalu ada) -->
+                <!-- diganti jadi mount point Folio module. Tinggi tetap
+                     supaya .folio-table-scroll & .folio-history bisa
+                     scroll sendiri di dalamnya. -->
+                <div class="detail-card detail-card-tall card-billing1" style="padding:0;">
+                    <div id="folioMount1" style="height:100%; min-height:380px;"></div>
+                </div>
+
+                <!-- BILLING 2 (folio ke-2) -->
+                <div class="detail-card detail-card-tall card-billing2" style="padding:0;">
+                    <div id="folioMount2" style="height:100%; min-height:380px;"></div>
+                </div>
+
+                <!-- BILLING 3 (folio ke-3) -->
+                <div class="detail-card detail-card-tall card-billing3" style="padding:0;">
+                    <div id="folioMount3" style="height:100%; min-height:380px;"></div>
+                </div>
+
+                <div class="detail-card card-secondary">
+                    <h3>Secondary Guest</h3>
+                    <label>First Name</label>
+                    <div class="value" id="det_sg_first_name">-</div>
+                    <label>Last Name</label>
+                    <div class="value" id="det_sg_last_name">-</div>
+                </div>
+
+                <div class="detail-card card-amenities">
+                    <h3>Room &amp; Amenities</h3>
+                    <div class="field-row">
+                        <div><label>Room Type</label><div class="value" id="det_room_type">-</div></div>
+                        <div><label>Bed Type</label><div class="value" id="det_bed_type">-</div></div>
+                    </div>
+                    <div class="field-row">
+                        <div><label>Breakfast</label><div class="value" id="det_breakfast">-</div></div>
+                        <div><label>Dinner</label><div class="value" id="det_dinner">-</div></div>
+                    </div>
+                    <div class="field-row">
+                        <div><label>Parking</label><div class="value" id="det_parking">-</div></div>
+                        <div><label>Shuttle</label><div class="value" id="det_shuttle">-</div></div>
+                    </div>
+                </div>
+
+                <div class="detail-card card-remarks">
+                    <h3>Remarks</h3>
+                    <div class="value" id="det_remarks" style="min-height:80px; white-space:pre-wrap;">-</div>
+                </div>
+
+                <div class="detail-card card-rate">
+                    <h3>Rate &amp; Statistics</h3>
+                    <div class="field-row">
+                        <div><label>Rate</label><div class="value" id="det_rate">-</div></div>
+                        <div><label>Price</label><div class="value" id="det_price">-</div></div>
+                    </div>
+                    <div class="field-row">
+                        <div><label>Cancel Policy</label><div class="value" id="det_cancel_policy">-</div></div>
+                        <div><label>Source</label><div class="value" id="det_source">-</div></div>
+                    </div>
+                    <div class="field-row">
+                        <div><label>Market Segm.</label><div class="value" id="det_market_segment">-</div></div>
+                        <div><label>Travel Reason</label><div class="value" id="det_travel_reason">-</div></div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="statusBar">
+        <div id="userArea"></div>
+        <div id="contextArea"></div>
+        <div id="paginationInfo"></div>
+        <div class="status-msg-info">⚠ Payment terminal API belum terhubung — pembayaran folio sementara dicatat manual.</div>
+
+
+        <div><button id="folioBtn" onclick="scrollToFolio()">🧾 Folio</button></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/folioService.js"></script>
+    <script src="js/folio.js"></script>
+    <script src="js/folioUI.js"></script>
+    <script src="js/reservationDetail.js"></script>
+    <script src="js/pageHeader.js"></script>
+    <script>initPageHeader();</script>
+    <script src="js/sidebar.js"></script>
+    <script>initSidebar();</script>
+
+</body>
+</html>

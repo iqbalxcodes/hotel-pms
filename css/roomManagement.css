@@ -1,0 +1,442 @@
+/* ======================================================
+   ROOM MANAGEMENT — layout grid 3-kolom
+   Column 1 (overview) | Column 2 (list) | Column 3 (detail)
+   ====================================================== */
+
+.rm-page {
+    overflow: hidden;
+}
+
+.rm-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 280px 420px 1fr;
+    grid-template-areas: "overview list detail";
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.rm-overview,
+.rm-list,
+.rm-detail {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.rm-overview { grid-area: overview; gap: 16px; overflow-y: auto; }
+.rm-list     { grid-area: list; }
+.rm-detail   { grid-area: detail; }
+
+
+/* ======================================================
+   MINI CARDS di Column 1
+   ====================================================== */
+
+.rm-card {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    padding: 10px 14px;
+    box-sizing: border-box;
+}
+
+.rm-card h4 {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #666;
+}
+
+.rm-stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+}
+
+.rm-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.rm-stat .rm-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.rm-stat .rm-stat-label {
+    font-size: 11px;
+    color: #888;
+}
+
+.rm-mini-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rm-mini-item {
+    border: 1px solid #eee;
+    border-radius: 5px;
+    padding: 6px 8px;
+    cursor: pointer;
+    font-size: 12.5px;
+}
+
+.rm-mini-item:hover {
+    background: #f5f5f5;
+}
+
+.rm-mini-item .rm-mini-title {
+    font-weight: 600;
+}
+
+.rm-mini-item .rm-mini-sub {
+    color: #888;
+    font-size: 11px;
+}
+
+.rm-empty-note {
+    color: #999;
+    font-size: 12.5px;
+}
+
+
+/* ======================================================
+   COLUMN 2 — Room List
+   ====================================================== */
+
+.rm-list-toolbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.rm-list-toolbar input[type="text"] {
+    flex: 1 1 auto;
+    min-width: 120px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px 8px;
+    font-size: 13px;
+}
+
+.rm-list-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.rm-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    font-size: 13.5px;
+}
+
+.rm-row:last-child { border-bottom: none; }
+.rm-row:hover { background: #f5f5f5; }
+.rm-row.active { background: #e3f2fd; }
+
+.rm-row .rm-row-number { font-weight: 600; width: 52px; flex: none; }
+.rm-row .rm-row-type { flex: 1 1 auto; color: #555; }
+.rm-row .rm-row-floor { width: 40px; flex: none; color: #888; text-align: center; }
+
+.rm-status-dot {
+    font-size: 10px;
+    line-height: 1;
+    flex: none;
+}
+
+.rm-status-dot.status-available,
+.rm-status-dot.status-clean { color: #2e7d32; }
+.rm-status-dot.status-dirty { color: #e65100; }
+.rm-status-dot.status-inspected { color: #1565c0; }
+.rm-status-dot.status-out_of_service { color: #ad1457; }
+.rm-status-dot.status-blocked { color: #616161; }
+
+.rm-row-status-label {
+    width: 90px;
+    flex: none;
+    font-size: 11.5px;
+    color: #777;
+}
+
+
+/* ======================================================
+   COLUMN 3 — Activity pane (default) & Room Detail
+   ====================================================== */
+
+.rm-detail-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    padding: 12px 16px;
+    box-sizing: border-box;
+}
+
+.rm-activity-row {
+    display: flex;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+}
+
+.rm-activity-row:last-child { border-bottom: none; }
+
+.rm-activity-time {
+    flex: none;
+    width: 68px;
+    color: #888;
+    font-size: 11.5px;
+}
+
+.rm-activity-body .rm-activity-room {
+    font-weight: 600;
+}
+
+.rm-activity-desc { color: #444; }
+.rm-activity-actor { color: #999; font-size: 11.5px; }
+
+
+/* ======================================================
+   ROOM DETAIL VIEW
+   ====================================================== */
+
+.rm-detail-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.rm-detail-header .rm-detail-room-number {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.rm-detail-header .rm-detail-room-type {
+    color: #888;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.rm-back-btn {
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+
+.rm-back-btn:hover { background: #f0f0f0; }
+
+.rm-detail-section {
+    margin-bottom: 16px;
+}
+
+.rm-detail-section h5 {
+    margin: 0 0 8px 0;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #777;
+}
+
+.rm-field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px 16px;
+}
+
+.rm-field label {
+    display: block;
+    font-size: 11px;
+    color: #999;
+}
+
+.rm-field .rm-field-value {
+    font-weight: 600;
+    font-size: 13.5px;
+}
+
+.rm-check-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    font-size: 13px;
+}
+
+.rm-check-yes::before { content: "✓ "; color: #2e7d32; }
+.rm-check-no::before { content: "✕ "; color: #bbb; }
+.rm-check-no { color: #bbb; }
+
+
+/* ======================================================
+   SUBCARDS — Fundsachen / Maintenance / Room History
+   ====================================================== */
+
+.rm-subcards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 900px) {
+    .rm-subcards { grid-template-columns: 1fr; }
+}
+
+.rm-subcard {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 10px 12px;
+    background: #fafafa;
+}
+
+.rm-subcard h5 {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.rm-subcard-count {
+    font-weight: 400;
+    color: #999;
+    font-size: 11px;
+}
+
+.rm-subcard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+    margin-bottom: 8px;
+}
+
+.rm-subcard-item {
+    border: 1px solid #e2e2e2;
+    border-radius: 5px;
+    padding: 6px 8px;
+    background: #fff;
+    font-size: 12.5px;
+}
+
+.rm-subcard-item-title { font-weight: 600; }
+.rm-subcard-item-meta { color: #888; font-size: 11px; }
+
+.rm-subcard-item select,
+.rm-subcard-item .rm-subcard-status {
+    margin-top: 4px;
+    font-size: 11px;
+}
+
+.rm-quick-add {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rm-quick-add input,
+.rm-quick-add select,
+.rm-quick-add textarea {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px 7px;
+    font-size: 12.5px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.rm-quick-add button {
+    align-self: flex-start;
+    border: 1px solid #1565c0;
+    color: #1565c0;
+    background: #fff;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.rm-quick-add button:hover { background: #e3f2fd; }
+
+
+/* ======================================================
+   RESPONSIVE — medium (2 kolom, detail overlay col 1)
+   ====================================================== */
+
+@media (max-width: 1300px) and (min-width: 701px) {
+
+    .rm-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas: "overview list";
+    }
+
+    .rm-detail { display: none; }
+
+    .rm-grid[data-view="detail"] {
+        grid-template-areas: "detail list";
+    }
+
+    .rm-grid[data-view="detail"] .rm-overview { display: none; }
+    .rm-grid[data-view="detail"] .rm-detail { display: flex; }
+
+}
+
+
+/* ======================================================
+   RESPONSIVE — mobile (1 kolom, stacked)
+   ====================================================== */
+
+@media (max-width: 700px) {
+
+    .rm-page { overflow: visible; }
+
+    .rm-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas: "overview" "list" "detail";
+        overflow-y: auto;
+    }
+
+    .rm-list-scroll,
+    .rm-detail-scroll {
+        max-height: 60vh;
+    }
+
+    .rm-grid[data-view="detail"] {
+        grid-template-areas: "detail";
+    }
+
+    .rm-grid[data-view="detail"] .rm-overview,
+    .rm-grid[data-view="detail"] .rm-list {
+        display: none;
+    }
+
+}
