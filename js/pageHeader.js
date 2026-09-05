@@ -3,6 +3,15 @@
 // Order: hamburger | avatar | logo | search | add | notif | messages
 // + workspace tab bar (#wsTabbar) di bawahnya.
 // Skip total kalau di dalam iframe (shell yang render chrome).
+//
+// COMPACT REDESIGN:
+// - Height header = tinggi search bar (gak ada margin
+//   atas/bawah nganggur), border-radius 0 di semua elemen
+//   (termasuk hover).
+// - Tablet: search bar diperpendek (bukan disembunyikan).
+// - Mobile (<=700px): avatar+logo+search box disembunyikan,
+//   muncul tombol kaca pembesar sebagai gantinya. Klik ->
+//   overlay search full-width nutupin seluruh header row.
 // ======================================================
 
 const PH_ORDER_KEY = "ph_header_order";
@@ -10,31 +19,34 @@ const PH_DEFAULT_ORDER = ["hamburger", "avatar", "logo", "search", "add", "notif
 
 const PH_ITEMS = {
     hamburger: {
-        width: "56px",
+        width: "34px",
         html: `<button class="ph-icon-btn ph-hamburger-btn" title="Menu" onclick="phToggleNav()"><i data-lucide="menu"></i></button>`
     },
     avatar: {
-        width: "44px",
+        width: "34px",
         html: `<button class="ph-icon-btn ph-avatar-btn" title="Account" onclick="phAvatarClick()"><i data-lucide="circle-user"></i></button>`
     },
     logo: {
-        width: "140px 160px",
+        width: "100px 130px",
         html: `<a href="index.html" class="ph-logo"><img src="iqbalpms.png" alt="Hotel PMS"></a>`
     },
     search: {
         width: "flex",
-        html: `<div class="ph-search"><i data-lucide="search"></i><input id="phSearchInput" type="text" placeholder="Search..." oninput="phSearch(this.value)"></div>`
+        html: `
+            <div class="ph-search" id="phSearchBox"><i data-lucide="search"></i><input id="phSearchInput" type="text" placeholder="Search..." oninput="phSearch(this.value)"></div>
+            <button class="ph-icon-btn ph-mobile-search-btn" id="phMobileSearchBtn" title="Search" onclick="phToggleMobileSearch(true)"><i data-lucide="search"></i></button>
+        `
     },
     add: {
-        width: "44px",
+        width: "34px",
         html: `<button class="ph-icon-btn" title="Add" onclick="phAction('add')"><i data-lucide="plus"></i></button>`
     },
     notification: {
-        width: "44px",
+        width: "34px",
         html: `<button class="ph-icon-btn" title="Notifications" onclick="phAction('notification')"><i data-lucide="bell"></i></button>`
     },
     messages: {
-        width: "44px",
+        width: "34px",
         html: `<button class="ph-icon-btn ph-messages-btn" title="Messages" onclick="rsCycleMode()"><i data-lucide="message-square"></i></button>`
     }
 };
@@ -42,7 +54,6 @@ const PH_ITEMS = {
 function phLoadOrder() {
     try {
         const saved = JSON.parse(localStorage.getItem(PH_ORDER_KEY));
-        // validasi: panjang cocok DAN semua key masih dikenal (auto-heal kalau ada key lama yg dihapus, mis "more")
         if (Array.isArray(saved) && saved.length === PH_DEFAULT_ORDER.length && saved.every(k => PH_ITEMS[k])) {
             return saved;
         }
@@ -60,52 +71,86 @@ function phInjectStyle() {
     const style = document.createElement("style");
     style.id = "phStyle";
     style.textContent = `
-        :root { --ph-header-height: 64px; }
+        :root { --ph-header-height: 40px; }
+
         #pageHeaderBar { flex: none; }
+
         .ph-header {
-            height: var(--ph-header-height, 64px);
+            position: relative;
+            height: var(--ph-header-height);
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 0 12px;
+            gap: 6px;
+            padding: 0 8px;
+            margin: 0;
             border-bottom: 1px solid #ddd;
             background: #fff;
             box-sizing: border-box;
         }
-        .ph-item { flex: none; display: flex; align-items: center; height: 100%; cursor: grab; }
-        .ph-item[data-key="search"] { flex: 1 1 auto; min-width: 0; cursor: default; }
+
+        .ph-item { flex: none; display: flex; align-items: center; height: 100%; margin: 0; cursor: grab; }
+        .ph-item[data-key="search"] { flex: 1 1 auto; min-width: 0; cursor: default; gap: 6px; }
         .ph-item.ph-dragging { opacity: 0.4; }
         .ph-item.ph-drop-before { border-left: 2px solid #1565c0; }
         .ph-item.ph-drop-after { border-right: 2px solid #1565c0; }
 
+        /* sudut kotak semua, termasuk hover -- gak ada radius di state manapun */
         .ph-icon-btn {
-            width: 44px; height: 44px;
+            width: 34px; height: 34px;
             display: flex; align-items: center; justify-content: center;
-            border: none; background: none; border-radius: 8px; cursor: pointer;
-            color: #333;
+            border: none; background: none; border-radius: 0; cursor: pointer;
+            color: #333; margin: 0; padding: 0;
         }
-        .ph-icon-btn:hover { background: #f0f0f0; }
-        .ph-hamburger-btn { width: 56px; }
+        .ph-icon-btn:hover { background: #f0f0f0; border-radius: 0; }
 
         .ph-logo {
             display: flex; align-items: center; gap: 6px;
-            text-decoration: none; color: #222; font-weight: 700; font-size: 15px;
+            text-decoration: none; color: #222; font-weight: 700; font-size: 13px;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            border-radius: 0;
         }
 
         .ph-search {
-            width: 100%; height: 40px;
-            display: flex; align-items: center; gap: 8px;
-            background: #f2f3f5; border-radius: 8px; padding: 0 10px;
-            color: #777;
+            width: 100%; height: 30px;
+            display: flex; align-items: center; gap: 6px;
+            background: #f2f3f5; border-radius: 0; padding: 0 8px;
+            color: #777; box-sizing: border-box;
         }
         .ph-search input {
             border: none; background: none; outline: none;
             font: inherit; width: 100%; color: #222;
         }
-        .ph-search svg { flex: none; width: 16px; height: 16px; }
-        .ph-icon-btn svg { width: 20px; height: 20px; }
-        .ph-logo img { height: 36px; width: auto; object-fit: contain; }
+        .ph-search svg { flex: none; width: 15px; height: 15px; }
+        .ph-icon-btn svg { width: 18px; height: 18px; }
+        .ph-logo img { height: 22px; width: auto; object-fit: contain; }
+
+        .ph-mobile-search-btn { display: none; }
+
+        .ph-mobile-search-overlay {
+            position: absolute;
+            inset: 0;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 8px;
+            z-index: 20;
+        }
+        .ph-mobile-search-overlay .ph-search { flex: 1 1 auto; }
+
+        /* ---- TABLET: search diperpendek, bukan disembunyikan ---- */
+        @media (max-width: 1024px) and (min-width: 701px) {
+            .ph-item[data-key="search"] { flex: 0 1 260px; }
+        }
+
+        /* ---- MOBILE: avatar+logo+search box hilang, muncul icon kaca pembesar ---- */
+        @media (max-width: 700px) {
+            .ph-item[data-key="avatar"],
+            .ph-item[data-key="logo"] { display: none; }
+            .ph-item[data-key="search"] { flex: none; }
+            #phSearchBox { display: none; }
+            .ph-mobile-search-btn { display: flex; }
+        }
     `;
     document.head.appendChild(style);
 }
@@ -198,6 +243,43 @@ function phBindDrag() {
             row.insertBefore(draggedEl, before ? item : item.nextSibling);
         });
     });
+}
+
+// ------------------------------------------------------
+// mobile search overlay -- nutupin seluruh header row
+// ------------------------------------------------------
+
+function phToggleMobileSearch(show) {
+    const headerRow = document.getElementById("phHeaderRow");
+    if (!headerRow) return;
+
+    let overlay = document.getElementById("phMobileSearchOverlay");
+
+    if (show) {
+
+        if (overlay) return;
+
+        overlay = document.createElement("div");
+        overlay.id = "phMobileSearchOverlay";
+        overlay.className = "ph-mobile-search-overlay";
+        overlay.innerHTML = `
+            <button class="ph-icon-btn" id="phMobileSearchClose"><i data-lucide="arrow-left"></i></button>
+            <div class="ph-search"><i data-lucide="search"></i><input id="phMobileSearchInput" type="text" placeholder="Search..." oninput="phSearch(this.value)"></div>
+        `;
+
+        headerRow.appendChild(overlay);
+
+        if (window.lucide) lucide.createIcons();
+
+        document.getElementById("phMobileSearchClose").onclick = () => phToggleMobileSearch(false);
+        document.getElementById("phMobileSearchInput").focus();
+
+    } else {
+
+        overlay?.remove();
+
+    }
+
 }
 
 // ------------------------------------------------------
