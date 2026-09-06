@@ -2,8 +2,11 @@
 // tableScrollEdge.js
 // Edge-hover scroll card. Nempel otomatis ke semua .table-scroll
 // yang overflow horizontal. Native scroll manual tetap jalan.
-// position:fixed + koordinat viewport -- card gak ikut kescroll
-// pas isi .table-scroll discroll horizontal.
+// position:fixed + koordinat viewport -- card di-portal ke
+// document.body (BUKAN child container) karena scroll container
+// ber-overflow:auto kadang bikin compositing layer sendiri yang
+// tetep nge-clip descendant position:fixed, walau spec bilang
+// harusnya kebal.
 // ======================================================
 
 (function(){
@@ -39,8 +42,8 @@
         const leftCard = makeCard("left");
         const rightCard = makeCard("right");
 
-        container.appendChild(leftCard);
-        container.appendChild(rightCard);
+        document.body.appendChild(leftCard);
+        document.body.appendChild(rightCard);
 
         leftCard.addEventListener("click", () => {
             container.scrollBy({ left: -SCROLL_STEP, behavior: "smooth" });
