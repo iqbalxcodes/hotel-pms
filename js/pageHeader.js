@@ -2,9 +2,7 @@
 // pageHeader.js
 // Order: hamburger | avatar | logo | search | [add | notif | messages]
 // 3 item terakhir dikunci di grup kanan (.ph-right-group,
-// margin-left:auto) -- gak lagi kegeser pas search di-resize.
-// Drag reorder tetap bisa, tapi cuma sesama anggota grup yang sama
-// (kiri<->kiri, kanan<->kanan), gak bisa lintas grup.
+// margin-left:auto). Drag reorder cuma sesama grup.
 // + workspace tab bar (#wsTabbar) di bawahnya.
 // Skip total kalau di dalam iframe (shell yang render chrome).
 // ======================================================
@@ -14,13 +12,7 @@ const PH_SEARCH_WIDTH_KEY = "ph_search_width";
 const PH_DEFAULT_ORDER = ["hamburger", "avatar", "logo", "search", "add", "notification", "messages"];
 const PH_RIGHT_KEYS = ["add", "notification", "messages"];
 
-// ------------------------------------------------------
-// account-ready storage key helper
-// ------------------------------------------------------
-
 function phStorageKey(base) {
-    // const uid = window.currentUserId; // TODO: isi pas auth siap
-    // if (uid) return `u_${uid}_${base}`;
     return base;
 }
 
@@ -82,7 +74,7 @@ function phInjectStyle() {
     const style = document.createElement("style");
     style.id = "phStyle";
     style.textContent = `
-        :root { --ph-header-height: 40px; }
+        :root { --ph-header-height: 48px; }
 
         #pageHeaderBar { flex: none; }
 
@@ -105,8 +97,6 @@ function phInjectStyle() {
         .ph-item.ph-drop-before { border-left: 2px solid #1565c0; }
         .ph-item.ph-drop-after { border-right: 2px solid #1565c0; }
 
-        /* grup kanan terkunci: add / notification / messages -- selalu
-           nempel pojok kanan, gak kegeser walau search di-resize */
         .ph-right-group {
             flex: none;
             display: flex;
@@ -117,25 +107,24 @@ function phInjectStyle() {
         }
 
         .ph-icon-btn {
-            width: 34px; height: 34px;
+            width: 36px; height: 36px;
             display: flex; align-items: center; justify-content: center;
-            border: none; background: none; border-radius: 0; cursor: pointer;
+            border: none; background: none; border-radius: 6px; cursor: pointer;
             color: #333; margin: 0; padding: 0;
         }
-        .ph-icon-btn:hover { background: #f0f0f0; border-radius: 0; }
+        .ph-icon-btn:hover { background: #f0f0f0; }
 
         .ph-logo {
             display: flex; align-items: center; gap: 6px;
-            text-decoration: none; color: #222; font-weight: 700; font-size: 13px;
+            text-decoration: none; color: #222; font-weight: 700; font-size: 14px;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            border-radius: 0;
         }
 
         .ph-search {
             position: relative;
-            width: 100%; height: 30px;
+            width: 100%; height: 32px;
             display: flex; align-items: center; gap: 6px;
-            background: #f2f3f5; border-radius: 0; padding: 0 8px;
+            background: #f2f3f5; border-radius: 8px; padding: 0 8px;
             color: #777; box-sizing: border-box;
         }
         .ph-search input {
@@ -143,8 +132,8 @@ function phInjectStyle() {
             font: inherit; width: 100%; color: #222;
         }
         .ph-search svg { flex: none; width: 15px; height: 15px; }
-        .ph-icon-btn svg { width: 18px; height: 18px; }
-        .ph-logo img { height: 22px; width: auto; object-fit: contain; }
+        .ph-icon-btn svg { width: 19px; height: 19px; }
+        .ph-logo img { height: 24px; width: auto; object-fit: contain; }
 
         .ph-search-resize-handle {
             position: absolute; top: 0; right: 0; bottom: 0; width: 6px;
@@ -166,7 +155,7 @@ function phInjectStyle() {
         }
         .ph-mobile-search-overlay .ph-search { flex: 1 1 auto; }
 
-        /* ---- DESKTOP (>1024px): lebar search custom hasil drag ---- */
+        /* DESKTOP: search bisa di-resize manual, TANPA batas atas */
         @media (min-width: 1025px) {
             .ph-item[data-key="search"].ph-search-custom-width {
                 flex: 0 0 var(--ph-search-width) !important;
@@ -174,13 +163,12 @@ function phInjectStyle() {
             }
         }
 
-        /* ---- TABLET: search diperpendek, bukan disembunyikan ---- */
+        /* TABLET: search diperpendek default, bukan disembunyikan */
         @media (max-width: 1024px) and (min-width: 701px) {
             .ph-item[data-key="search"] { flex: 0 1 260px; }
         }
 
-        /* ---- MOBILE: avatar+logo TETEP TAMPIL, search box diganti
-           icon kaca pembesar yang flex-grow ngisi sisa ruang kosong ---- */
+        /* MOBILE: avatar+logo tetap tampil, search jadi icon kaca pembesar */
         @media (max-width: 700px) {
             .ph-item[data-key="search"] {
                 flex: 1 1 auto;
@@ -297,10 +285,6 @@ function phBindDrag() {
     });
 }
 
-// ------------------------------------------------------
-// search bar resize (desktop only)
-// ------------------------------------------------------
-
 function phBindSearchResize() {
 
     const handle = document.getElementById("phSearchResizeHandle");
@@ -329,7 +313,8 @@ function phBindSearchResize() {
         const startWidth = item.getBoundingClientRect().width;
 
         function onMove(ev) {
-            const newWidth = Math.min(800, Math.max(160, startWidth + (ev.clientX - startX)));
+            // TIDAK ADA batas atas (dulu ada Math.min(800, ...))
+            const newWidth = Math.max(160, startWidth + (ev.clientX - startX));
             item.style.setProperty("--ph-search-width", newWidth + "px");
             item.classList.add("ph-search-custom-width");
         }
@@ -351,10 +336,6 @@ function phBindSearchResize() {
     });
 
 }
-
-// ------------------------------------------------------
-// mobile search overlay
-// ------------------------------------------------------
 
 function phToggleMobileSearch(show) {
     const headerRow = document.getElementById("phHeaderRow");
@@ -389,10 +370,6 @@ function phToggleMobileSearch(show) {
 
 }
 
-// ------------------------------------------------------
-// icon messages update (dipanggil rsidebar.js pas mode berubah)
-// ------------------------------------------------------
-
 function phUpdateMessagesIcon(rsMode) {
     const btn = document.querySelector(".ph-messages-btn");
     if (!btn) return;
@@ -403,10 +380,6 @@ function phUpdateMessagesIcon(rsMode) {
     if (window.lucide) lucide.createIcons();
 }
 window.phUpdateMessagesIcon = phUpdateMessagesIcon;
-
-// ------------------------------------------------------
-// Action hooks
-// ------------------------------------------------------
 
 function phToggleNav() {
     document.body.classList.toggle("ph-nav-open");

@@ -1,5 +1,5 @@
 .rs-panel {
-    position: fixed; top: 64px; right: 0; bottom: 12px;
+    position: fixed; top: var(--ph-header-height, 48px); right: 0; bottom: 12px;
     width: 0; background: #fff;
     border-left: 1px solid transparent;
     border-radius: 10px 0 0 10px;

@@ -1,6 +1,7 @@
 // ======================================================
 // workspace.js — tab manager, iframe host per tab
-// FIXED: Chrome-style drag + free-float ghost + tab persistence
+// Chrome-style drag + free-float ghost bisa lewat iframe/card
+// content (drag overlay full-screen), tab persistence.
 // ======================================================
 
 const Workspace = (function () {
@@ -20,9 +21,6 @@ const Workspace = (function () {
         return measure._ctx.measureText(text).width;
     }
 
-    // --------------------------------------------------
-    // persistence helpers
-    // --------------------------------------------------
     function saveTabs() {
         const data = tabs.map(t => ({ id: t.id, title: t.title, url: t.url, page: t.page }));
         localStorage.setItem(WS_TABS_KEY, JSON.stringify(data));
@@ -35,10 +33,6 @@ const Workspace = (function () {
         } catch (e) {}
         return [];
     }
-
-    // --------------------------------------------------
-    // open / activate / close
-    // --------------------------------------------------
 
     const MAX_TABS = 20;
 
@@ -119,10 +113,6 @@ const Workspace = (function () {
         });
     }
 
-    // --------------------------------------------------
-    // width calc
-    // --------------------------------------------------
-
     function computeWidths(containerWidth) {
         const n = tabs.length;
         if (n === 0) return [];
@@ -133,10 +123,6 @@ const Workspace = (function () {
         if (even >= MIN_W) return tabs.map(() => Math.min(even, MAX_W));
         return tabs.map(() => MIN_W);
     }
-
-    // --------------------------------------------------
-    // render
-    // --------------------------------------------------
 
     function render() {
         const bar = document.getElementById("wsTabbar");
@@ -156,10 +142,11 @@ const Workspace = (function () {
             </div>
         `).join("");
 
-        updateOverflowUI();
+        // FIX: tunggu 2 frame biar scrollWidth/clientWidth udah akurat
+        // sebelum ngukur overflow -> arrow ‹› gak flicker/miss-render
+        requestAnimationFrame(() => requestAnimationFrame(updateOverflowUI));
     }
 
-    // ======== EVENT DELEGATION ========
     function initTabEventDelegation() {
         const scrollEl = document.getElementById("wsTabScroll");
         if (!scrollEl) return;
@@ -183,7 +170,9 @@ const Workspace = (function () {
     }
 
     // ==========================================================
-    // FREE-FLOAT GHOST DRAG (Chrome-style angle detection)
+    // FREE-FLOAT GHOST DRAG — overlay full-screen dipasang saat
+    // masuk mode "reorder" biar mousemove tetap ke-terima parent
+    // document walau pointer lewat di atas iframe (card konten).
     // ==========================================================
     function onTabPointerDown(e) {
         const tabEl = e.target.closest(".ws-tab");
@@ -201,12 +190,11 @@ const Workspace = (function () {
         dragEl.classList.add("ws-dragging");
         dragEl.dataset.dragged = "1";
 
-        // --- simpan posisi asli untuk snap-back ---
         const originalNextId = [...scrollEl.children].find(el => el === dragEl)?.nextElementSibling?.dataset?.id || null;
 
-        // --- GHOST ---
         let ghost = null;
         let ghostOffsetX = 0, ghostOffsetY = 0;
+        let dragOverlay = null;
 
         function createGhost() {
             const rect = dragEl.getBoundingClientRect();
@@ -234,6 +222,20 @@ const Workspace = (function () {
             if (ghost) { ghost.remove(); ghost = null; }
         }
 
+        // overlay full-screen: nangkep semua mouse event selama
+        // reorder-drag, biar gak "macet" pas lewat iframe di area
+        // konten (reservation table, dsb) yang punya document sendiri
+        function createDragOverlay() {
+            dragOverlay = document.createElement("div");
+            dragOverlay.id = "wsDragOverlay";
+            dragOverlay.style.cssText = "position:fixed;inset:0;z-index:9998;cursor:grabbing;";
+            document.body.appendChild(dragOverlay);
+        }
+
+        function removeDragOverlay() {
+            if (dragOverlay) { dragOverlay.remove(); dragOverlay = null; }
+        }
+
         function detectMode(dx, dy) {
             const angle = Math.atan2(Math.abs(dy), Math.abs(dx)) * (180 / Math.PI);
             return angle < 25 ? "scroll" : "reorder";
@@ -255,6 +257,7 @@ const Workspace = (function () {
                     if (mode === "reorder") {
                         dragEl.classList.add("ws-reordering");
                         createGhost();
+                        createDragOverlay();
                         dragEl.style.opacity = "0.25";
                     }
                 }
@@ -269,7 +272,9 @@ const Workspace = (function () {
                 edgeDir = ev.clientX > rect.right - 44 ? 1 : ev.clientX < rect.left + 44 ? -1 : 0;
 
                 if (ghost) ghost.style.visibility = "hidden";
+                if (dragOverlay) dragOverlay.style.pointerEvents = "none";
                 const overEl = document.elementFromPoint(ev.clientX, rect.top + rect.height / 2)?.closest(".ws-tab");
+                if (dragOverlay) dragOverlay.style.pointerEvents = "";
                 if (ghost) ghost.style.visibility = "visible";
 
                 if (overEl && overEl !== dragEl) {
@@ -294,6 +299,7 @@ const Workspace = (function () {
             dragEl.style.opacity = "";
             dragEl.dataset.dragged = "0";
             removeGhost();
+            removeDragOverlay();
 
             if (mode === "reorder") {
                 const tabbarRect = tabbar.getBoundingClientRect();
@@ -306,7 +312,6 @@ const Workspace = (function () {
                     syncOrderFromDom();
                     saveTabs();
                 } else {
-                    // snap back
                     const scrollEl2 = document.getElementById("wsTabScroll");
                     const nextEl = originalNextId
                         ? scrollEl2.querySelector(`.ws-tab[data-id="${originalNextId}"]`)
@@ -323,14 +328,10 @@ const Workspace = (function () {
         document.addEventListener("mouseup", onUp);
     }
 
-    // --------------------------------------------------
-    // init + restore
-    // --------------------------------------------------
     function init() {
         if (Workspace._inited) return;
         Workspace._inited = true;
 
-        // --- RESTORE TABS ---
         const saved = loadTabs();
         if (saved.length > 0) {
             const host = document.getElementById("wsContent");
@@ -376,12 +377,9 @@ const Workspace = (function () {
         tabs = ids.map(id => tabs.find(t => t.id === id));
     }
 
-    // --------------------------------------------------
-    // overflow UI
-    // --------------------------------------------------
-
     function updateOverflowUI() {
         const scrollEl = document.getElementById("wsTabScroll");
+        if (!scrollEl) return;
         const overflow = scrollEl.scrollWidth > scrollEl.clientWidth + 1;
 
         document.getElementById("wsArrowLeft").style.display = overflow ? "flex" : "none";

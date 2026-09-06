@@ -1,6 +1,7 @@
 // ======================================================
 // sidebar.js
 // FIXED: click listener tidak menumpuk + event delegation
+// Nempel di bawah header (var(--ph-header-height))
 // ======================================================
 
 const SB_KEY_STRUCT = "ph_sidebar_structure";
@@ -56,10 +57,6 @@ let sbMode = "hidden";
 let sbWidth = 260;
 let sbCustomizing = false;
 
-// ------------------------------------------------------
-// shared helpers
-// ------------------------------------------------------
-
 function esc(s) {
     const d = document.createElement("div");
     d.textContent = s ?? "";
@@ -72,12 +69,7 @@ function escAttr(s) {
     return d.innerHTML.replace(/"/g, "&quot;");
 }
 
-
 let sbShowHidden = false;
-
-// ------------------------------------------------------
-// persistence
-// ------------------------------------------------------
 
 function sbLoad() {
     try {
@@ -94,17 +86,13 @@ function sbSaveStructure() { localStorage.setItem(SB_KEY_STRUCT, JSON.stringify(
 function sbSaveMode() { localStorage.setItem(SB_KEY_MODE, sbMode); }
 function sbSaveWidth() { localStorage.setItem(SB_KEY_WIDTH, String(sbWidth)); }
 
-// ------------------------------------------------------
-// styles
-// ------------------------------------------------------
-
 function sbInjectStyle() {
     if (document.getElementById("sbStyle")) return;
     const style = document.createElement("style");
     style.id = "sbStyle";
     style.textContent = `
         .sb-sidebar {
-            position: fixed; top: 64px; left: 0; bottom: 0;
+            position: fixed; top: var(--ph-header-height, 48px); left: 0; bottom: 0;
             width: 0; background: #fff; border-right: 1px solid transparent;
             display: flex; flex-direction: column;
             z-index: 40; overflow: hidden;
@@ -237,15 +225,11 @@ function sbInjectStyle() {
         @media (max-width: 700px) {
             .sb-sidebar.sb-mode-full { width: min(85vw, 300px) !important; box-shadow: 0 0 24px rgba(0,0,0,.25); }
             .sb-sidebar.sb-mode-icon { width: 56px; }
-            .sb-backdrop { position: fixed; inset: 64px 0 0 0; background: rgba(0,0,0,.25); z-index: 39; }
+            .sb-backdrop { position: fixed; inset: var(--ph-header-height, 48px) 0 0 0; background: rgba(0,0,0,.25); z-index: 39; }
         }
     `;
     document.head.appendChild(style);
 }
-
-// ------------------------------------------------------
-// icon helpers
-// ------------------------------------------------------
 
 function sbPascalToKebab(str) { return str.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase(); }
 function sbAllIconNames() {
@@ -254,10 +238,6 @@ function sbAllIconNames() {
 }
 function sbIconSvg(name) { return `<i data-lucide="${name}"></i>`; }
 function sbRenderIcons() { if (window.lucide) window.lucide.createIcons({ nameAttr: "data-lucide" }); }
-
-// ------------------------------------------------------
-// render
-// ------------------------------------------------------
 
 function sbGetMount() {
     let mount = document.getElementById("sbMount");
@@ -292,7 +272,6 @@ function sbRender() {
     sbBindCustomizeInputs();
     sbBindMarquee();
     sbApplyLabelFade();
-    // FIX: sbBindItemClicks dipindah ke initSidebar() sekali saja via delegation
 
     if (sbMode === "full" && window.innerWidth <= 700) {
         let bd = document.getElementById("sbBackdrop");
@@ -353,7 +332,6 @@ function sbRenderItem(it, groupId) {
     `;
 }
 
-// FIX: Event delegation di sbMount — attach SEKALI, tidak menumpuk
 function sbBindItemClicks() {
     const mount = sbGetMount();
     if (mount._sbClickBound) return;
@@ -441,10 +419,6 @@ function sbApplyContentPush() {
     if (tabbar) tabbar.style.marginLeft = margin;
 }
 
-// ------------------------------------------------------
-// mode cycling + header icon sync
-// ------------------------------------------------------
-
 function sbUpdateHamburgerIcon() {
     const btn = document.querySelector(".ph-hamburger-btn");
     if (!btn) return;
@@ -473,10 +447,6 @@ function sbCycleMode() {
     else if (sbMode === "full") sbSetMode("icon");
     else sbSetMode("hidden");
 }
-
-// ------------------------------------------------------
-// resize
-// ------------------------------------------------------
 
 function sbBindResize() {
     const handle = document.getElementById("sbResizeHandle");
@@ -511,10 +481,6 @@ function sbBindResize() {
         document.addEventListener("mouseup", onUp);
     });
 }
-
-// ------------------------------------------------------
-// inline label / icon / hide edit
-// ------------------------------------------------------
 
 function sbFindTarget(ref) {
     const [type, id] = ref.split(":");
@@ -608,10 +574,6 @@ function sbOpenIconPicker(anchor, ref) {
     }, 0);
 }
 
-// ------------------------------------------------------
-// label overflow -> blur/fade, running text on hover
-// ------------------------------------------------------
-
 function sbBindMarquee() {
     document.querySelectorAll(".sb-label").forEach(el => {
         el.addEventListener("mouseenter", () => {
@@ -634,10 +596,6 @@ function sbApplyLabelFade() {
         el.classList.toggle("sb-label-fade", el.scrollWidth - el.clientWidth > 1);
     });
 }
-
-// ------------------------------------------------------
-// drag & drop reorder (customize mode)
-// ------------------------------------------------------
 
 function sbBindDrag() {
     let draggedItem = null;
@@ -756,10 +714,6 @@ function sbSyncStructureFromDom() {
     sbSaveStructure();
 }
 
-// ------------------------------------------------------
-// init
-// ------------------------------------------------------
-
 function initSidebar() {
     if (window.self !== window.top) return;
 
@@ -768,7 +722,6 @@ function initSidebar() {
     sbRender();
     sbUpdateHamburgerIcon();
 
-    // FIX: attach click delegation SEKALI di mount, tidak di sbRender
     sbBindItemClicks();
 
     document.addEventListener("ph:toggle-nav", sbCycleMode);
