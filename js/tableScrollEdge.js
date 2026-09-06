@@ -2,11 +2,10 @@
 // tableScrollEdge.js
 // Edge-hover scroll card. Nempel otomatis ke semua .table-scroll
 // yang overflow horizontal. Native scroll manual tetap jalan.
-// position:fixed + koordinat viewport -- card di-portal ke
-// document.body (BUKAN child container) karena scroll container
-// ber-overflow:auto kadang bikin compositing layer sendiri yang
-// tetep nge-clip descendant position:fixed, walau spec bilang
-// harusnya kebal.
+// FIXED: dulu di-hide paksa tiap event "scroll", jadi kalau user
+// klik card buat scroll (smooth-scroll nembak banyak event scroll),
+// card langsung ilang di tengah animasi sendiri -> "macet-macet".
+// Sekarang recalc pakai posisi mouse TERAKHIR, gak hide paksa.
 // ======================================================
 
 (function(){
@@ -45,30 +44,26 @@
         document.body.appendChild(leftCard);
         document.body.appendChild(rightCard);
 
-        leftCard.addEventListener("click", () => {
-            container.scrollBy({ left: -SCROLL_STEP, behavior: "smooth" });
-        });
+        let lastX = null, lastY = null, isOver = false;
 
-        rightCard.addEventListener("click", () => {
-            container.scrollBy({ left: SCROLL_STEP, behavior: "smooth" });
-        });
+        function recalc(){
 
-        function hideBoth(){
-            leftCard.style.display = "none";
-            rightCard.style.display = "none";
-        }
-
-        container.addEventListener("pointermove", (e) => {
+            if(!isOver || lastX === null){
+                leftCard.style.display = "none";
+                rightCard.style.display = "none";
+                return;
+            }
 
             const hasOverflow = container.scrollWidth > container.clientWidth;
 
             if(!hasOverflow){
-                hideBoth();
+                leftCard.style.display = "none";
+                rightCard.style.display = "none";
                 return;
             }
 
             const rect = container.getBoundingClientRect();
-            const x = e.clientX - rect.left;
+            const x = lastX - rect.left;
 
             const canLeft = container.scrollLeft > 0;
             const canRight = container.scrollLeft < container.scrollWidth - container.clientWidth - 1;
@@ -79,7 +74,7 @@
             leftCard.style.display = nearLeft ? "flex" : "none";
             rightCard.style.display = nearRight ? "flex" : "none";
 
-            const topPx = e.clientY - CARD_H / 2;
+            const topPx = lastY - CARD_H / 2;
 
             if(nearLeft){
                 leftCard.style.top = topPx + "px";
@@ -91,17 +86,51 @@
                 rightCard.style.left = (rect.right - CARD_W - 4) + "px";
             }
 
+        }
+
+        leftCard.addEventListener("click", () => {
+            container.scrollBy({ left: -SCROLL_STEP, behavior: "smooth" });
         });
 
-        container.addEventListener("pointerleave", hideBoth);
-        container.addEventListener("scroll", hideBoth);
+        rightCard.addEventListener("click", () => {
+            container.scrollBy({ left: SCROLL_STEP, behavior: "smooth" });
+        });
+
+        container.addEventListener("pointerenter", () => { isOver = true; });
+
+        container.addEventListener("pointermove", (e) => {
+            lastX = e.clientX;
+            lastY = e.clientY;
+            isOver = true;
+            recalc();
+        });
+
+        container.addEventListener("pointerleave", () => {
+            isOver = false;
+            lastX = null; lastY = null;
+            leftCard.style.display = "none";
+            rightCard.style.display = "none";
+        });
+
+        // FIX INTI: recalc pakai posisi mouse terakhir, BUKAN hide paksa
+        container.addEventListener("scroll", recalc);
+
+        // kalau container resize (mis. sidebar dibuka/ditutup), recalc juga
+        if (window.ResizeObserver) {
+            new ResizeObserver(recalc).observe(container);
+        }
 
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-
+    function initAll(){
         document.querySelectorAll(".table-scroll").forEach(setupEdgeScroll);
+    }
 
-    });
+    document.addEventListener("DOMContentLoaded", initAll);
+
+    // safety net: kalau ada .table-scroll yang dibuat dinamis SETELAH
+    // DOMContentLoaded (fetch+innerHTML dll), rescan berkala biar tetap
+    // ke-attach. Murah, cuma cek dataset flag.
+    setInterval(initAll, 1000);
 
 })();
