@@ -28,7 +28,10 @@ let currentPage = 1;
 let rowsPerPage = 25; // number or "all"
 let totalCount = 0;
 
-let activeSearchKeyword = "";
+// Search card sekarang multi-field (bukan satu keyword lagi).
+// { column_key: "value", ... } -- kosong berarti gak lagi searching,
+// mode/date filter yang jalan.
+let activeSearchFields = {};
 
 
 
@@ -387,8 +390,9 @@ async function updateFilterCount(){
 }
 
 // ======================================================
-// Base Query (mode filter + search filter, shared by
-// data query, count query, and export query)
+// Base Query — mode filter kalau lagi gak search, atau
+// per-field filter dari Search card kalau activeSearchFields
+// terisi (search OVERRIDE mode/date, bukan tambahan).
 // ======================================================
 
 function buildBaseQuery(forCount = false){
@@ -412,20 +416,34 @@ function buildBaseQuery(forCount = false){
 
     }
 
+    const searchKeys = Object.keys(activeSearchFields);
+
+    if(searchKeys.length > 0){
+
+        searchKeys.forEach(key => {
+
+            const colDef = COLUMN_MAP[key];
+            const value = activeSearchFields[key];
+
+            if(colDef && (colDef.type === "date" || colDef.type === "status" || key === "status")){
+
+                query = query.eq(key, value);
+
+            } else {
+
+                query = query.ilike(key, `%${value}%`);
+
+            }
+
+        });
+
+        return query;
+
+    }
+
     const date = formatDate(currentDate);
 
     query = applyModeFilter(query, currentMode, currentScope, date);
-
-    if(activeSearchKeyword){
-
-        const kw = activeSearchKeyword;
-
-        const filter =
-            `confirmation_no.ilike.%${kw}%,guest_name.ilike.%${kw}%,room_number.ilike.%${kw}%,status.ilike.%${kw}%`;
-
-        query = query.or(filter);
-
-    }
 
     return query;
 

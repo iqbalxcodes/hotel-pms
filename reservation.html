@@ -4,13 +4,11 @@
     <!-- reservation.html -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- FIX: connect-src ditambahin -- sebelumnya gak ada, fallback ke
-         default-src 'self' -> semua fetch ke *.supabase.co keblokir,
-         itu sebabnya tabel selalu kosong -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2 https://unpkg.com https://www.googletagmanager.com https://www.google-analytics.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.supabase.co https://www.google-analytics.com;">
     <title>Hotel PMS</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/pmsTopbar.css">
+    <link rel="stylesheet" href="/css/reservationPage.css">
 <base target="_blank">
 </head>
 <body>
@@ -43,76 +41,120 @@
 
             <button type="submit">Save Reservation</button>
         </form>
+
+        <button id="cancelAddBtn" onclick="hideAddReservation()">Cancel</button>
     </div>
 
-    <div class="table-container">
+    <div class="rsv-page">
 
-        <div class="pms-date-row">
-            <button onclick="changeDate(-1)">◀</button>
+        <!-- ============================================== -->
+        <!-- HEADER ROW -->
+        <!-- ============================================== -->
 
-            <select id="dateScope" onchange="changeDateScope(this.value)">
-                <option value="today">Today's</option>
-                <option value="entire">Entire</option>
-            </select>
+        <div class="rsv-header-row">
+            <h2>Reservation</h2>
 
-            <select id="modeSelect" onchange="changeMode(this.value)">
-                <option value="arrival">Arrival</option>
-                <option value="departure">Departure</option>
-                <option value="inhouse">In House</option>
-                <option value="pending">Pending</option>
-                <option value="cancelled">Cancelled</option>
-                <option value="noshow">No Show</option>
-            </select>
+            <div class="rsv-header-actions">
+                <button id="addReservationBtn" class="rsv-btn rsv-btn-primary" onclick="createNewReservation()">
+                    <i data-lucide="calendar-plus"></i><span class="rsv-btn-label">Add Reservation</span>
+                </button>
 
-            <input
-                type="date"
-                id="currentDate"
-                onchange="changeSelectedDate(this.value)"
-            >
-
-            <button onclick="changeDate(1)">▶</button>
+                <button id="addBulkReservationBtn" class="rsv-btn" onclick="document.getElementById('addReservationPanel').style.display='block';">
+                    <i data-lucide="copy-plus"></i><span class="rsv-btn-label">Bulk Reservation</span>
+                </button>
+            </div>
         </div>
 
-        <div id="toolbar">
+        <!-- ============================================== -->
+        <!-- SEARCH CARD -->
+        <!-- ============================================== -->
 
-            <!-- DEFAULT TOOLBAR -->
-            <div id="normalToolbar">
-                <button
-                    id="addReservationBtn"
-                    onclick="createNewReservation()">
-                    Add Reservation
-                </button>
+        <div class="rsv-card rsv-search-card">
+            <h3>Search</h3>
 
-                <button
-                    id="addBulkReservationBtn"
-                    onclick="document.getElementById('addReservationPanel').style.display='block';">
-                    + Bulk Reservation
-                </button>
+            <form id="rsvSearchForm">
+                <div class="rsv-search-grid">
 
-                <button id="modifyTableBtn" onclick="toggleModifyMode()">Modify Table</button>
+                    <div class="rsv-field"><label>Confirmation No</label><input type="text" data-search-key="confirmation_no"></div>
+                    <div class="rsv-field"><label>Room</label><input type="text" data-search-key="room_number"></div>
+                    <div class="rsv-field"><label>Room Type</label><input type="text" data-search-key="room_type"></div>
+                    <div class="rsv-field"><label>Booking Channel</label><input type="text" data-search-key="booking_channel"></div>
 
-                <button id="cancelAddBtn" onclick="hideAddReservation()">
-                    Cancel
-                </button>
+                    <div class="rsv-field"><label>Guest Name</label><input type="text" data-search-key="guest_name"></div>
+                    <div class="rsv-field"><label>Arrival Date</label><input type="date" data-search-key="arrival_date"></div>
+                    <div class="rsv-field"><label>Departure Date</label><input type="date" data-search-key="departure_date"></div>
+                    <div class="rsv-field"><label>Company</label><input type="text" data-search-key="company"></div>
 
-                <a class="icon-btn" href="room-rack.html" title="Room Rack">🗓️ Room Rack</a>
+                    <div class="rsv-field">
+                        <label>Status</label>
+                        <select data-search-key="status">
+                            <option value="">Any</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="CONFIRMED">Confirmed</option>
+                            <option value="CHECKED_IN">Checked In</option>
+                            <option value="CHECKED_OUT">Checked Out</option>
+                            <option value="CANCELLED">Cancelled</option>
+                            <option value="NO_SHOW">No Show</option>
+                        </select>
+                    </div>
+                    <div class="rsv-field"><label>Booker Name</label><input type="text" data-search-key="booker_name"></div>
+                    <div class="rsv-field"><label>Travel Agent</label><input type="text" data-search-key="travel_agent"></div>
+                    <div class="rsv-field"><label>Rate Name</label><input type="text" data-search-key="rate_name"></div>
 
-                <button onclick="showRoomList()">🛏</button>
-                <button onclick="showClientList()">👤</button>
-                <button onclick="showBilling()">＄</button>
-                <button onclick="showSearch()">🔍</button>
-
-                <div id="searchContainer" style="display:none;">
-                    <input id="searchInput" type="text" placeholder="Search guest / room / ID" onkeyup="searchReservation()">
-                    <button onclick="hideSearch()">✕</button>
                 </div>
 
-                <button onclick="exportReservations()">Export</button>
+                <div class="rsv-search-footer">
+                    <button type="submit" class="rsv-btn rsv-btn-primary">
+                        <i data-lucide="search"></i><span class="rsv-btn-label">Search</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- SHOWING CARD -->
+        <!-- ============================================== -->
+
+        <div class="rsv-card rsv-showing-card table-container">
+
+            <div class="rsv-showing-header">
+
+                <span class="rsv-showing-title">Showing</span>
+
+                <div class="rsv-showing-pills" id="rsvShowingPills">
+                    <button class="rsv-pill-arrow" onclick="changeDate(-1)"><i data-lucide="chevron-left"></i></button>
+
+                    <select id="dateScope" class="rsv-pill-select" onchange="changeDateScope(this.value)">
+                        <option value="today">Today's</option>
+                        <option value="entire">Entire</option>
+                    </select>
+
+                    <select id="modeSelect" class="rsv-pill-select" onchange="changeMode(this.value)">
+                        <option value="arrival">Arrival</option>
+                        <option value="departure">Departure</option>
+                        <option value="inhouse">In House</option>
+                        <option value="pending">Pending</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="noshow">No Show</option>
+                    </select>
+
+                    <input type="date" id="currentDate" class="rsv-pill-date" onchange="changeSelectedDate(this.value)">
+
+                    <button class="rsv-pill-arrow" onclick="changeDate(1)"><i data-lucide="chevron-right"></i></button>
+                </div>
+
+                <div class="rsv-search-chip" id="rsvSearchChip"></div>
+
+                <button class="rsv-btn rsv-export-btn" onclick="exportReservations()">
+                    <i data-lucide="download"></i><span class="rsv-btn-label">Export</span>
+                </button>
 
             </div>
 
-            <!-- SELECT TOOLBAR -->
-            <!-- FIX: auth-required dibuang sementara, biar gak kekunci -->
+            <!-- placeholder wajib, dipakai reservationUI.js buat toggle
+                 pas ada baris ke-select (lihat updateActionBar) -->
+            <div id="normalToolbar"></div>
+
             <div id="selectionToolbar" style="display:none;">
 
                 <span id="selectedCount">0 selected</span>
@@ -125,7 +167,6 @@
 
             </div>
 
-            <!-- BULK EDIT POPOVER -->
             <div id="bulkEditPopover" class="bulk-edit-popover" style="display:none;">
 
                 <label>Column</label>
@@ -141,61 +182,22 @@
 
             </div>
 
-        </div>
+            <div class="table-scroll">
 
-        <!-- Tag Table Bersih Tanpa border="1" -->
-        <div class="table-scroll">
+                <table>
 
-            <table>
+                    <colgroup id="reservationColgroup"></colgroup>
 
-                <colgroup id="reservationColgroup"></colgroup>
+                    <thead>
+                        <tr id="reservationHeaderRow"></tr>
+                    </thead>
 
-                <thead>
-                    <tr id="reservationHeaderRow"></tr>
-                </thead>
+                    <tbody id="reservationTable"></tbody>
 
-                <tbody id="reservationTable"></tbody>
+                </table>
 
-            </table>
-
-        </div>
-
-    </div>
-
-    <div id="modifyTablePopup" class="modify-table-popup" style="display:none;">
-
-        <div class="modify-popup-section">
-            <label>Preset Title</label>
-            <div class="modify-preset-row">
-                <input type="text" id="presetTitleInput" placeholder="Nama preset (awali - untuk hapus)">
-                <button onclick="applyColumnChanges()">Apply</button>
-                <button onclick="savePresetFromInput()">Save</button>
             </div>
 
-            <div class="modify-preset-existing">
-                <label>Load Preset</label>
-                <select id="presetSelect" onchange="loadSelectedPreset(this.value)">
-                    <option value="">-- Select Preset --</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="modify-popup-columns">
-
-            <div class="modify-popup-list-col">
-                <label>Column Showing</label>
-                <ul id="columnShowingList" class="column-list"></ul>
-            </div>
-
-            <div class="modify-popup-list-col">
-                <label>Column Hide</label>
-                <ul id="columnHidingList" class="column-list"></ul>
-            </div>
-
-        </div>
-
-        <div class="modify-popup-footer">
-            <button onclick="closeModifyPopup()">Close</button>
         </div>
 
     </div>
@@ -227,6 +229,7 @@
     <script src="js/sidebar.js"></script>
     <script>initSidebar();</script>
     <script src="js/pmsTopbar.js"></script>
+    <script src="js/reservationPage.js"></script>
 
     <script src="js/export.js"></script>
     <script src="js/developmentStatusSimulator.js"></script>

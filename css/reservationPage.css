@@ -1,0 +1,228 @@
+/* ======================================================
+   reservationPage.css
+   Layout baru reservation.html: header row + search card
+   + showing card. Reuse .table-container/.table-scroll dari
+   style.css buat behavior scroll/flex, jadi gak duplikat.
+   ====================================================== */
+
+.rsv-page {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 12px 24px 8px;
+    box-sizing: border-box;
+}
+
+/* ---- header row: title + action buttons ---- */
+
+.rsv-header-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: none;
+    flex-wrap: wrap;
+}
+
+.rsv-header-row h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.rsv-header-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+}
+
+.rsv-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: #333;
+    cursor: pointer;
+}
+.rsv-btn:hover { background: #f5f5f5; }
+.rsv-btn svg { width: 16px; height: 16px; flex: none; }
+
+.rsv-btn-primary {
+    background: #1565c0;
+    border-color: #1565c0;
+    color: #fff;
+}
+.rsv-btn-primary:hover { background: #0d47a1; }
+
+/* ---- generic thin rounded gray card ---- */
+
+.rsv-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+/* ---- search card ---- */
+
+.rsv-search-card {
+    flex: none;
+    padding: 14px 16px;
+}
+
+.rsv-search-card h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: #333;
+}
+
+.rsv-search-grid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(200px, 1fr);
+    grid-template-rows: repeat(4, auto);
+    gap: 10px 24px;
+}
+
+.rsv-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.rsv-field label { font-size: 11px; color: #777; }
+.rsv-field input,
+.rsv-field select {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 6px 8px;
+    font-size: 13px;
+    font: inherit;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.rsv-search-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+/* ---- showing card ---- */
+
+.rsv-showing-card {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+}
+
+.rsv-showing-header {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    flex-wrap: wrap;
+}
+
+.rsv-showing-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+    flex: none;
+}
+
+.rsv-showing-pills {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.rsv-pill-arrow {
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #555;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    flex: none;
+}
+.rsv-pill-arrow:hover { background: #f0f0f0; }
+.rsv-pill-arrow svg { width: 15px; height: 15px; }
+
+.rsv-pill-select,
+.rsv-pill-date {
+    border: 1px solid #ccc;
+    border-radius: 14px;
+    padding: 4px 10px;
+    font-size: 12px;
+    background: #fafafa;
+    color: #444;
+    cursor: pointer;
+}
+.rsv-pill-date { cursor: text; }
+
+.rsv-search-chip {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto;
+    background: #e3f2fd;
+    color: #1565c0;
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 12px;
+    max-width: 60%;
+}
+.rsv-search-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.rsv-search-chip button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #1565c0;
+    display: flex;
+    flex: none;
+}
+.rsv-search-chip svg { width: 13px; height: 13px; }
+
+.rsv-export-btn { flex: none; }
+
+/* placeholder wajib ada -- dipakai reservationUI.js buat toggle
+   toolbar seleksi, kosong secara visual */
+#normalToolbar { display: none; }
+
+#selectionToolbar {
+    flex: none;
+    padding: 8px 16px;
+    border-bottom: 1px solid #eee;
+}
+
+/* ---- responsive ---- */
+
+@media (max-width: 1024px) {
+    .rsv-search-grid {
+        grid-auto-flow: row;
+        grid-auto-columns: unset;
+        grid-template-rows: unset;
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 700px) {
+    .rsv-btn-label { display: none; }
+    .rsv-btn { padding: 6px; }
+    .rsv-search-grid { grid-template-columns: 1fr; }
+    .rsv-page { margin: 8px 8px 8px; }
+}
