@@ -4,7 +4,7 @@
     <!-- reservation-detail.html -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2 https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
     <title>Reservation Detail</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/folio.css">
@@ -14,21 +14,9 @@
 
     <div id="pageHeaderBar" class="page-header-bar"></div>
 
-    <!-- Container Utama Bertipe Kartu / Detail-Card (sama seperti reservation list) -->
-    <div class="table-container detail-card">
+    <div id="pmsTopbar" data-page="reservation" data-title="Reservation Detail"></div>
 
-        <div class="reservation-header">
-
-            <!-- LEFT -->
-            <div class="header-title">
-                <h3>Reservation Detail</h3>
-            </div>
-
-            <!-- CENTER (kosong, mengikuti pola halaman lain) -->
-            <div class="header-menu"></div>
-
-
-        </div>
+    <div class="table-container">
 
         <!-- ACTION BAR -->
         <div id="toolbar">
@@ -147,20 +135,14 @@
                     </div>
                 </div>
 
-                <!-- BILLING 1 (default, selalu ada) -->
-                <!-- diganti jadi mount point Folio module. Tinggi tetap
-                     supaya .folio-table-scroll & .folio-history bisa
-                     scroll sendiri di dalamnya. -->
                 <div class="detail-card detail-card-tall card-billing1" style="padding:0;">
                     <div id="folioMount1" style="height:100%; min-height:380px;"></div>
                 </div>
 
-                <!-- BILLING 2 (folio ke-2) -->
                 <div class="detail-card detail-card-tall card-billing2" style="padding:0;">
                     <div id="folioMount2" style="height:100%; min-height:380px;"></div>
                 </div>
 
-                <!-- BILLING 3 (folio ke-3) -->
                 <div class="detail-card detail-card-tall card-billing3" style="padding:0;">
                     <div id="folioMount3" style="height:100%; min-height:380px;"></div>
                 </div>
@@ -236,6 +218,7 @@
     <script>initPageHeader();</script>
     <script src="js/sidebar.js"></script>
     <script>initSidebar();</script>
+    <script src="js/pmsTopbar.js"></script>
 
 </body>
 </html>

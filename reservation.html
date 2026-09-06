@@ -7,7 +7,7 @@
     <!-- FIX: connect-src ditambahin -- sebelumnya gak ada, fallback ke
          default-src 'self' -> semua fetch ke *.supabase.co keblokir,
          itu sebabnya tabel selalu kosong -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2 https://www.googletagmanager.com https://www.google-analytics.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.supabase.co https://www.google-analytics.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2 https://unpkg.com https://www.googletagmanager.com https://www.google-analytics.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.supabase.co https://www.google-analytics.com;">
     <title>Hotel PMS</title>
     <link rel="stylesheet" href="/css/style.css">
 <base target="_blank">
@@ -15,8 +15,8 @@
 <body>
 
     <div id="pageHeaderBar" class="page-header-bar"></div>
-    <!-- FIX: #pageNavigation + navigation.js dibuang -- udah kegantiin
-         workspace tab system, dobel nav gak perlu lagi -->
+
+    <div id="pmsTopbar" data-page="reservation"></div>
 
     <div id="addReservationPanel" style="display: none;">
         <h2>Add Reservation</h2>
@@ -44,52 +44,40 @@
         </form>
     </div>
 
-    <!-- Container Utama Bertipe Kartu / Detail-Card -->
-    <div class="table-container detail-card">
+    <div class="table-container">
 
-        <div class="reservation-header">
+        <div class="pms-date-row">
+            <button onclick="changeDate(-1)">◀</button>
 
-            <!-- LEFT: Pojok Kiri -->
-            <div class="header-title">
-                <h3>Reservation List</h3>
-            </div>
+            <select id="dateScope" onchange="changeDateScope(this.value)">
+                <option value="today">Today's</option>
+                <option value="entire">Entire</option>
+            </select>
 
-            <!-- CENTER: Posisi Tengah -->
-            <div class="header-menu">
-                <button onclick="changeDate(-1)">◀</button>
+            <select id="modeSelect" onchange="changeMode(this.value)">
+                <option value="arrival">Arrival</option>
+                <option value="departure">Departure</option>
+                <option value="inhouse">In House</option>
+                <option value="pending">Pending</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="noshow">No Show</option>
+            </select>
 
-                <select id="dateScope" onchange="changeDateScope(this.value)">
-                    <option value="today">Today's</option>
-                    <option value="entire">Entire</option>
-                </select>
+            <input
+                type="date"
+                id="currentDate"
+                onchange="changeSelectedDate(this.value)"
+            >
 
-                <select id="modeSelect" onchange="changeMode(this.value)">
-                    <option value="arrival">Arrival</option>
-                    <option value="departure">Departure</option>
-                    <option value="inhouse">In House</option>
-                    <option value="pending">Pending</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="noshow">No Show</option>
-                </select>
-
-                <input 
-                    type="date"
-                    id="currentDate"
-                    onchange="changeSelectedDate(this.value)"
-                >
-
-                <button onclick="changeDate(1)">▶</button>
-            </div>
-
-
+            <button onclick="changeDate(1)">▶</button>
         </div>
 
         <div id="toolbar">
 
             <!-- DEFAULT TOOLBAR -->
             <div id="normalToolbar">
-                <button 
-                    id="addReservationBtn" 
+                <button
+                    id="addReservationBtn"
                     onclick="createNewReservation()">
                     Add Reservation
                 </button>
@@ -237,7 +225,7 @@
     <script>initPageHeader();</script>
     <script src="js/sidebar.js"></script>
     <script>initSidebar();</script>
-
+    <script src="js/pmsTopbar.js"></script>
 
     <script src="js/export.js"></script>
     <script src="js/developmentStatusSimulator.js"></script>

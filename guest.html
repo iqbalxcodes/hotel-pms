@@ -10,8 +10,9 @@
 <body>
 
     <div id="pageHeaderBar" class="page-header-bar"></div>
-    
-    <div id="pageNavigation" data-page="guests"></div>
+
+    <div id="pmsTopbar" data-page="guest"></div>
+
     <div id="addGuestPanel" style="display: none;">
         <h2>Add Client</h2>
 
@@ -46,20 +47,7 @@
         </form>
     </div>
 
-    <!-- Container Utama Bertipe Kartu / Detail-Card (sama seperti reservation list) -->
-    <div class="table-container detail-card">
-
-        <div class="reservation-header">
-
-            <!-- LEFT -->
-            <div class="header-title">
-                <h3>Client List</h3>
-            </div>
-
-            <!-- CENTER (kosong — guest tidak punya date scope/mode) -->
-            <div class="header-menu"></div>
-
-        </div>
+    <div class="table-container">
 
         <div id="toolbar">
 
@@ -162,7 +150,7 @@
         <div id="paginationInfo"></div>
         <div id="paginationNav"></div>
     </div>
-    <script src="js/navigation.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script src="js/supabase.js"></script>
@@ -175,6 +163,7 @@
     <script>initPageHeader();</script>
     <script src="js/sidebar.js"></script>
     <script>initSidebar();</script>
+    <script src="js/pmsTopbar.js"></script>
 
 </body>
 </html>
