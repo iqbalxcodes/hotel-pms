@@ -52,6 +52,7 @@
         <!-- ============================================== -->
 
         <div class="rsv-header-row">
+            <h2>Reservations</h2>
 
             <div class="rsv-header-actions">
                 <button id="addReservationBtn" class="rsv-btn rsv-btn-primary" onclick="createNewReservation()">
@@ -72,35 +73,42 @@
             <h3>Search</h3>
 
             <form id="rsvSearchForm">
-                <div class="rsv-search-scroll"><div class="rsv-search-grid">
+                <div class="rsv-search-columns">
 
-                    <div class="rsv-field"><label>Confirmation No</label><input type="text" data-search-key="confirmation_no"></div>
-                    <div class="rsv-field"><label>Room</label><input type="text" data-search-key="room_number"></div>
-                    <div class="rsv-field"><label>Room Type</label><input type="text" data-search-key="room_type"></div>
-                    <div class="rsv-field"><label>Booking Channel</label><input type="text" data-search-key="booking_channel"></div>
-
-                    <div class="rsv-field"><label>Guest Name</label><input type="text" data-search-key="guest_name"></div>
-                    <div class="rsv-field"><label>Arrival Date</label><input type="date" data-search-key="arrival_date"></div>
-                    <div class="rsv-field"><label>Departure Date</label><input type="date" data-search-key="departure_date"></div>
-                    <div class="rsv-field"><label>Company</label><input type="text" data-search-key="company"></div>
-
-                    <div class="rsv-field">
-                        <label>Status</label>
-                        <select data-search-key="status">
-                            <option value="">Any</option>
-                            <option value="PENDING">Pending</option>
-                            <option value="CONFIRMED">Confirmed</option>
-                            <option value="CHECKED_IN">Checked In</option>
-                            <option value="CHECKED_OUT">Checked Out</option>
-                            <option value="CANCELLED">Cancelled</option>
-                            <option value="NO_SHOW">No Show</option>
-                        </select>
+                    <div class="rsv-search-column">
+                        <div class="rsv-field"><label>Confirmation No</label><input type="text" data-search-key="confirmation_no"></div>
+                        <div class="rsv-field"><label>Guest Name</label><input type="text" data-search-key="guest_name"></div>
+                        <div class="rsv-field"><label>Status</label>
+                            <select data-search-key="status">
+                                <option value="">Any</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="CONFIRMED">Confirmed</option>
+                                <option value="CHECKED_IN">Checked In</option>
+                                <option value="CHECKED_OUT">Checked Out</option>
+                                <option value="CANCELLED">Cancelled</option>
+                                <option value="NO_SHOW">No Show</option>
+                            </select>
+                        </div>
+                        <div class="rsv-field"><label>Booker Name</label><input type="text" data-search-key="booker_name"></div>
                     </div>
-                    <div class="rsv-field"><label>Booker Name</label><input type="text" data-search-key="booker_name"></div>
-                    <div class="rsv-field"><label>Travel Agent</label><input type="text" data-search-key="travel_agent"></div>
-                    <div class="rsv-field"><label>Rate Name</label><input type="text" data-search-key="rate_name"></div>
 
-                </div>
+                    <div class="rsv-search-column">
+                        <div class="rsv-field"><label>Room</label><input type="text" data-search-key="room_number"></div>
+                        <div class="rsv-field"><label>Arrival Date</label><input type="date" data-search-key="arrival_date"></div>
+                        <div class="rsv-field"><label>Departure Date</label><input type="date" data-search-key="departure_date"></div>
+                        <div class="rsv-field"><label>Travel Agent</label><input type="text" data-search-key="travel_agent"></div>
+                    </div>
+
+                    <div class="rsv-search-column">
+                        <div class="rsv-field"><label>Room Type</label><input type="text" data-search-key="room_type"></div>
+                        <div class="rsv-field"><label>Company</label><input type="text" data-search-key="company"></div>
+                        <div class="rsv-field"><label>Rate Name</label><input type="text" data-search-key="rate_name"></div>
+                    </div>
+
+                    <div class="rsv-search-column">
+                        <div class="rsv-field"><label>Booking Channel</label><input type="text" data-search-key="booking_channel"></div>
+                    </div>
+
                 </div>
 
                 <div class="rsv-search-footer">
@@ -143,7 +151,7 @@
                     <button class="rsv-pill-arrow" onclick="changeDate(1)"><i data-lucide="chevron-right"></i></button>
                 </div>
 
-                <div class="rsv-search-chip" id="rsvSearchChip"></div>
+                <div class="rsv-search-chips" id="rsvSearchChips"></div>
 
                 <button class="rsv-btn rsv-export-btn" onclick="exportReservations()">
                     <i data-lucide="download"></i><span class="rsv-btn-label">Export</span>

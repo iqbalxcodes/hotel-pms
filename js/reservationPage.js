@@ -44,32 +44,46 @@ function rsvClearSearch() {
     rsvRenderChip();
 }
 
+function rsvRemoveSearchField(key) {
+    delete activeSearchFields[key];
+
+    const el = document.querySelector(`#rsvSearchForm [data-search-key="${key}"]`);
+    if (el) el.value = "";
+
+    currentPage = 1;
+    refreshTable();
+    rsvRenderChip();
+}
+
 function rsvRenderChip() {
     const pills = document.getElementById("rsvShowingPills");
-    const chip = document.getElementById("rsvSearchChip");
-    if (!pills || !chip) return;
+    const wrap = document.getElementById("rsvSearchChips");
+    if (!pills || !wrap) return;
 
     const keys = Object.keys(activeSearchFields);
 
     if (keys.length === 0) {
         pills.style.display = "flex";
-        chip.style.display = "none";
+        wrap.style.display = "none";
+        wrap.innerHTML = "";
         return;
     }
 
     pills.style.display = "none";
-    chip.style.display = "flex";
+    wrap.style.display = "flex";
 
-    const summary = keys.map(k => `${rsvFieldLabel(k)}: ${activeSearchFields[k]}`).join(" · ");
-
-    chip.innerHTML = `
-        <span>${escapeHtml(summary)}</span>
-        <button id="rsvClearSearchBtn" title="Clear search"><i data-lucide="x"></i></button>
-    `;
+    wrap.innerHTML = keys.map(k => `
+        <span class="rsv-search-chip" data-key="${k}">
+            <span>${escapeHtml(rsvFieldLabel(k))}: ${escapeHtml(activeSearchFields[k])}</span>
+            <button data-remove="${k}" title="Remove"><i data-lucide="x"></i></button>
+        </span>
+    `).join("");
 
     if (window.lucide) lucide.createIcons();
 
-    document.getElementById("rsvClearSearchBtn").onclick = rsvClearSearch;
+    wrap.querySelectorAll("[data-remove]").forEach(btn => {
+        btn.onclick = () => rsvRemoveSearchField(btn.dataset.remove);
+    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {

@@ -21,7 +21,14 @@
 .rsv-header-row {
     display: flex;
     align-items: center;
+    gap: 12px;
     flex: none;
+}
+
+.rsv-header-row h2 {
+    margin: 0;
+    font-size: 18px;
+    white-space: nowrap;
 }
 
 .rsv-header-actions {
@@ -65,40 +72,45 @@
 
 .rsv-search-card {
     flex: none;
-    padding: 10px 12px;
+    padding: 8px 12px;
+    box-sizing: border-box;
 }
 
 .rsv-search-card h3 {
-    margin: 0 0 6px;
+    margin: 0 0 5px;
     font-size: 13px;
     color: #333;
 }
 
-/* max 4 field per kolom (grid-template-rows: repeat(4,auto)),
-   lebih dari 4 otomatis bikin kolom baru ke kanan (grid-auto-flow:
-   column). Kolom sempit -> scroll horizontal di wrapper, BUKAN
-   dipaksa row-wrap (itu yang bikin >4 per "kolom" di mobile lama). */
-.rsv-search-scroll {
+/* kolom eksplisit, max 4 field/kolom (lihat html). overflow-x kalau
+   kolom lebih dari muat layar, gak dipaksa row-wrap. Divider vertikal
+   abu = border-left tiap kolom kecuali yang pertama. */
+.rsv-search-columns {
+    display: flex;
     overflow-x: auto;
 }
 
-.rsv-search-grid {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 140px;
-    grid-template-rows: repeat(4, auto);
-    gap: 6px 12px;
-    width: max-content;
+.rsv-search-column {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 12px;
+    flex: none;
+    width: 130px;
 }
 
-.rsv-field { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.rsv-field label { font-size: 10px; color: #777; }
+.rsv-search-column + .rsv-search-column {
+    border-left: 1px solid #ddd;
+}
+
+.rsv-field { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.rsv-field label { font-size: 9px; color: #777; }
 .rsv-field input,
 .rsv-field select {
     border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 4px 6px;
-    font-size: 12px;
+    border-radius: 4px;
+    padding: 3px 5px;
+    font-size: 11px;
     font: inherit;
     box-sizing: border-box;
     width: 100%;
@@ -107,7 +119,7 @@
 .rsv-search-footer {
     display: flex;
     justify-content: flex-end;
-    margin-top: 8px;
+    margin-top: 6px;
 }
 
 /* ---- showing card ---- */
@@ -124,7 +136,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 12px 16px;
+    padding: 6px 12px;
     border-bottom: 1px solid #eee;
     flex-wrap: wrap;
 }
@@ -173,17 +185,24 @@
 }
 .rsv-pill-date { cursor: text; }
 
-.rsv-search-chip {
+.rsv-search-chips {
     display: none;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     margin: 0 auto;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.rsv-search-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     background: #e3f2fd;
     color: #1565c0;
     border-radius: 14px;
-    padding: 4px 12px;
+    padding: 3px 10px;
     font-size: 12px;
-    max-width: 60%;
+    max-width: 220px;
 }
 .rsv-search-chip span {
     overflow: hidden;
@@ -198,7 +217,7 @@
     display: flex;
     flex: none;
 }
-.rsv-search-chip svg { width: 13px; height: 13px; }
+.rsv-search-chip svg { width: 12px; height: 12px; }
 
 .rsv-export-btn { flex: none; }
 
@@ -222,5 +241,6 @@
     .rsv-page { margin: 8px 8px 8px; }
     .rsv-page .rsv-showing-card.table-container {
         margin: 0;
+        box-sizing:border-box;
     }
 }
