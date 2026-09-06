@@ -4,18 +4,37 @@
 // + workspace tab bar (#wsTabbar) di bawahnya.
 // Skip total kalau di dalam iframe (shell yang render chrome).
 //
-// COMPACT REDESIGN:
-// - Height header = tinggi search bar (gak ada margin
-//   atas/bawah nganggur), border-radius 0 di semua elemen
-//   (termasuk hover).
-// - Tablet: search bar diperpendek (bukan disembunyikan).
-// - Mobile (<=700px): avatar+logo+search box disembunyikan,
-//   muncul tombol kaca pembesar sebagai gantinya. Klik ->
-//   overlay search full-width nutupin seluruh header row.
+// - Desktop (>1024px): search bar bisa di-drag dari ujung
+//   kanannya buat resize, lebar disimpan localStorage.
+//   phStorageKey() disiapkan biar gampang di-prefix user id
+//   nanti pas sistem akun udah ada -- SEKARANG masih global.
+// - Tablet & mobile (<=1024px): notification + messages
+//   dipaksa selalu di ujung kanan (order override), gak
+//   ngikut custom drag-order header.
+// - Mobile (<=700px): avatar + logo tetap tampil (space
+//   masih cukup karena header udah dipendekin), search box
+//   diganti icon kaca pembesar yang ngisi sisa ruang kosong
+//   (flex-grow) biar gak ada gap nganggur di kiri-kanan.
+//   Klik icon -> overlay search full-width.
 // ======================================================
 
 const PH_ORDER_KEY = "ph_header_order";
+const PH_SEARCH_WIDTH_KEY = "ph_search_width";
 const PH_DEFAULT_ORDER = ["hamburger", "avatar", "logo", "search", "add", "notification", "messages"];
+
+// ------------------------------------------------------
+// account-ready storage key helper -- sekarang cuma balikin
+// nama key apa adanya (global/localStorage per-browser).
+// Nanti kalau sistem akun udah jalan, tinggal isi baris yang
+// di-comment: prefix key pakai user id, biar preferensi per
+// akun (bukan per-browser lagi).
+// ------------------------------------------------------
+
+function phStorageKey(base) {
+    // const uid = window.currentUserId; // TODO: isi pas auth siap
+    // if (uid) return `u_${uid}_${base}`;
+    return base;
+}
 
 const PH_ITEMS = {
     hamburger: {
@@ -33,7 +52,11 @@ const PH_ITEMS = {
     search: {
         width: "flex",
         html: `
-            <div class="ph-search" id="phSearchBox"><i data-lucide="search"></i><input id="phSearchInput" type="text" placeholder="Search..." oninput="phSearch(this.value)"></div>
+            <div class="ph-search" id="phSearchBox">
+                <i data-lucide="search"></i>
+                <input id="phSearchInput" type="text" placeholder="Search..." oninput="phSearch(this.value)">
+                <div class="ph-search-resize-handle" id="phSearchResizeHandle" title="Drag to resize"></div>
+            </div>
             <button class="ph-icon-btn ph-mobile-search-btn" id="phMobileSearchBtn" title="Search" onclick="phToggleMobileSearch(true)"><i data-lucide="search"></i></button>
         `
     },
@@ -111,6 +134,7 @@ function phInjectStyle() {
         }
 
         .ph-search {
+            position: relative;
             width: 100%; height: 30px;
             display: flex; align-items: center; gap: 6px;
             background: #f2f3f5; border-radius: 0; padding: 0 8px;
@@ -123,6 +147,13 @@ function phInjectStyle() {
         .ph-search svg { flex: none; width: 15px; height: 15px; }
         .ph-icon-btn svg { width: 18px; height: 18px; }
         .ph-logo img { height: 22px; width: auto; object-fit: contain; }
+
+        /* handle resize search -- cuma efektif di desktop, lihat JS guard */
+        .ph-search-resize-handle {
+            position: absolute; top: 0; right: 0; bottom: 0; width: 6px;
+            cursor: ew-resize;
+        }
+        .ph-search-resize-handle:hover { background: rgba(0,0,0,.12); }
 
         .ph-mobile-search-btn { display: none; }
 
@@ -138,17 +169,36 @@ function phInjectStyle() {
         }
         .ph-mobile-search-overlay .ph-search { flex: 1 1 auto; }
 
+        /* ---- DESKTOP (>1024px): lebar search custom hasil drag ---- */
+        @media (min-width: 1025px) {
+            .ph-item[data-key="search"].ph-search-custom-width {
+                flex: 0 0 var(--ph-search-width) !important;
+                width: var(--ph-search-width);
+            }
+        }
+
+        /* ---- TABLET & MOBILE (<=1024px): notif + messages dipaksa
+           selalu di ujung kanan, gak ngikut custom drag-order ---- */
+        @media (max-width: 1024px) {
+            .ph-item[data-key="notification"] { order: 90; }
+            .ph-item[data-key="messages"] { order: 91; }
+        }
+
         /* ---- TABLET: search diperpendek, bukan disembunyikan ---- */
         @media (max-width: 1024px) and (min-width: 701px) {
             .ph-item[data-key="search"] { flex: 0 1 260px; }
         }
 
-        /* ---- MOBILE: avatar+logo+search box hilang, muncul icon kaca pembesar ---- */
+        /* ---- MOBILE: avatar+logo TETEP TAMPIL (space masih cukup),
+           search box diganti icon kaca pembesar yang flex-grow ngisi
+           sisa ruang kosong biar gak ada gap nganggur ---- */
         @media (max-width: 700px) {
-            .ph-item[data-key="avatar"],
-            .ph-item[data-key="logo"] { display: none; }
-            .ph-item[data-key="search"] { flex: none; }
+            .ph-item[data-key="search"] {
+                flex: 1 1 auto;
+                justify-content: flex-end;
+            }
             #phSearchBox { display: none; }
+            .ph-search-resize-handle { display: none; }
             .ph-mobile-search-btn { display: flex; }
         }
     `;
@@ -196,6 +246,7 @@ function phRender() {
 
     phLoadLucide(() => lucide.createIcons());
     phBindDrag();
+    phBindSearchResize();
 
     if (window.Workspace) Workspace.init();
 }
@@ -243,6 +294,69 @@ function phBindDrag() {
             row.insertBefore(draggedEl, before ? item : item.nextSibling);
         });
     });
+}
+
+// ------------------------------------------------------
+// search bar resize (desktop only) -- drag ujung kanan,
+// lebar disimpan ke localStorage lewat phStorageKey()
+// ------------------------------------------------------
+
+function phBindSearchResize() {
+
+    const handle = document.getElementById("phSearchResizeHandle");
+    const item = document.querySelector('.ph-item[data-key="search"]');
+    if (!handle || !item) return;
+
+    // restore lebar tersimpan (cuma dipakai kalau lagi di desktop)
+    const saved = Number(localStorage.getItem(phStorageKey(PH_SEARCH_WIDTH_KEY)));
+
+    if (saved && window.innerWidth > 1024) {
+        item.style.setProperty("--ph-search-width", saved + "px");
+        item.classList.add("ph-search-custom-width");
+    }
+
+    handle.addEventListener("mousedown", (e) => {
+
+        if (window.innerWidth <= 1024) return; // resize cuma buat desktop
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        // overlay biar drag gak kepotong pas kursor lewat iframe
+        const overlay = document.createElement("div");
+        overlay.style.cssText = "position:fixed;inset:0;z-index:9999;cursor:ew-resize;";
+        document.body.appendChild(overlay);
+
+        const startX = e.clientX;
+        const startWidth = item.getBoundingClientRect().width;
+
+        function onMove(ev) {
+
+            const newWidth = Math.min(800, Math.max(160, startWidth + (ev.clientX - startX)));
+
+            item.style.setProperty("--ph-search-width", newWidth + "px");
+            item.classList.add("ph-search-custom-width");
+
+        }
+
+        function onUp() {
+
+            overlay.remove();
+            document.removeEventListener("mousemove", onMove);
+            document.removeEventListener("mouseup", onUp);
+
+            const finalWidth = parseInt(item.style.getPropertyValue("--ph-search-width"), 10)
+                || Math.round(item.getBoundingClientRect().width);
+
+            localStorage.setItem(phStorageKey(PH_SEARCH_WIDTH_KEY), String(finalWidth));
+
+        }
+
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+
+    });
+
 }
 
 // ------------------------------------------------------
