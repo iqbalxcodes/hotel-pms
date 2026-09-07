@@ -1,10 +1,11 @@
 // ======================================================
 // reservationPage.js
-// Search fields sekarang dirender dinamis dari config (order +
-// hidden), disimpan di localStorage. Mode "customize" dipicu dari
-// tombol customize di pmsTopbar (event "pms:customize-toggle") --
-// pas aktif: tiap field card dapet border putus-putus + tombol
-// minus (hide) / plus (show), dan bisa di-drag&drop reorder.
+// Search fields dirender dinamis dari config (order + hidden),
+// disimpan di localStorage. Mode "customize" dipicu dari tombol
+// customize di pmsTopbar (event "pms:customize-toggle") -- pas
+// aktif: tiap field card dapet border putus-putus + tombol
+// minus (hide, merah) / plus (show, hijau), bisa drag&drop reorder
+// dengan indikator garis biru di posisi drop.
 // Search state (activeSearchFields) & query logic ada di
 // reservationFilter.js -- file ini cuma UI glue.
 // ======================================================
@@ -110,6 +111,8 @@ function rsvRenderFields() {
             inputHtml = `<input type="${def.type}" data-search-key="${def.key}" value="${rsvEsc(savedValue)}">`;
         }
 
+        const hideBtnClass = hidden ? "rsv-btn-show" : "rsv-btn-hide";
+
         return `
             <div class="rsv-field-card ${hidden ? "rsv-field-hidden" : ""}" data-key="${def.key}" draggable="${rsvCustomizing}">
                 ${rsvCustomizing ? `<span class="rsv-field-drag">${rsvIcon("grip-vertical")}</span>` : ""}
@@ -117,7 +120,7 @@ function rsvRenderFields() {
                     <label>${rsvEsc(def.label)}</label>
                     ${inputHtml}
                 </div>
-                ${rsvCustomizing ? `<button class="rsv-field-hide-btn" data-hide="${def.key}" title="${hidden ? "Show" : "Hide"}">${rsvIcon(hidden ? "plus" : "minus")}</button>` : ""}
+                ${rsvCustomizing ? `<button class="rsv-field-hide-btn ${hideBtnClass}" data-hide="${def.key}" title="${hidden ? "Show" : "Hide"}">${rsvIcon(hidden ? "plus" : "minus")}</button>` : ""}
             </div>
         `;
     }).join("");
@@ -196,8 +199,7 @@ document.addEventListener("pms:customize-toggle", (e) => {
 });
 
 // ------------------------------------------------------
-// search: gather / apply / clear / chips (logic lama, sekarang
-// baca dari field yang dirender dinamis di atas)
+// search: gather / apply / clear / chips
 // ------------------------------------------------------
 
 function rsvLoadLucide(cb) {

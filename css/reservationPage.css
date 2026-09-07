@@ -1,8 +1,5 @@
 /* ======================================================
    reservationPage.css
-   Layout reservation.html: header row + search card
-   + showing card. Reuse .table-container/.table-scroll dari
-   style.css buat behavior scroll/flex, jadi gak duplikat.
    ====================================================== */
 
 .rsv-page {
@@ -10,12 +7,12 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin: 8px 24px 8px;
+    gap: 6px;
+    margin: 6px 12px 6px;
     box-sizing: border-box;
 }
 
-/* ---- header row: judul + action buttons ---- */
+/* ---- header row ---- */
 
 .rsv-header-row {
     display: flex;
@@ -26,14 +23,14 @@
 
 .rsv-header-row h2 {
     margin: 0;
-    font-size: 18px;
+    font-size: 17px;
     white-space: nowrap;
 }
 
 .rsv-header-actions {
     margin-left: auto;
     display: flex;
-    gap: 8px;
+    gap: 6px;
 }
 
 .rsv-btn {
@@ -43,13 +40,13 @@
     border: 1px solid #ccc;
     background: #fff;
     border-radius: 6px;
-    padding: 6px 12px;
+    padding: 5px 10px;
     font-size: 13px;
     color: #333;
     cursor: pointer;
 }
 .rsv-btn:hover { background: #f5f5f5; }
-.rsv-btn svg { width: 16px; height: 16px; flex: none; }
+.rsv-btn svg { width: 15px; height: 15px; flex: none; }
 
 .rsv-btn-primary {
     background: #1565c0;
@@ -57,8 +54,6 @@
     color: #fff;
 }
 .rsv-btn-primary:hover { background: #0d47a1; }
-
-/* ---- generic thin rounded gray card ---- */
 
 .rsv-card {
     background: #fff;
@@ -71,22 +66,21 @@
 
 .rsv-search-card {
     flex: none;
-    padding: 8px 12px;
+    padding: 6px 10px;
     box-sizing: border-box;
 }
 
 .rsv-search-card h3 {
-    margin: 0 0 6px;
-    font-size: 13px;
+    margin: 0 0 4px;
+    font-size: 12px;
     color: #333;
 }
 
-/* fields flex-wrap: gak ada scroll-x paksa, field pendek biar
-   natural wrap ke baris baru di layar kecil */
 .rsv-search-fields {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 14px;
+    row-gap: 6px;
+    column-gap: 0;
 }
 
 .rsv-field-card {
@@ -94,9 +88,17 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    width: 130px;
+    width: 128px;
     flex: none;
     box-sizing: border-box;
+    padding-right: 8px;
+}
+
+/* divider abu vertikal antar field -- cuma tampil di mode normal
+   (bukan customize, karena customize udah punya box putus-putus sendiri) */
+.rsv-search-fields:not(.rsv-customizing) .rsv-field-card:not(:first-child) {
+    border-left: 1px solid #e0e0e0;
+    padding-left: 10px;
 }
 
 /* mode customize: border putus-putus + ruang buat tombol hide */
@@ -104,6 +106,7 @@
     border: 1px dashed rgba(0,0,0,.25);
     border-radius: 6px;
     padding: 4px 20px 4px 4px;
+    margin: 0 6px 0 0;
 }
 
 .rsv-field-card.rsv-field-hidden { opacity: .45; }
@@ -126,70 +129,93 @@
     align-items: center;
     justify-content: center;
     border: none;
-    background: #fff;
     border-radius: 3px;
     cursor: pointer;
-    color: #888;
 }
-.rsv-field-hide-btn:hover { background: #f0f0f0; color: #333; }
 .rsv-field-hide-btn svg { width: 11px; height: 11px; }
 
+/* minus (hide) = merah, plus (show) = hijau */
+.rsv-field-hide-btn.rsv-btn-hide { background: #ffebee; color: #c62828; }
+.rsv-field-hide-btn.rsv-btn-hide:hover { background: #ffcdd2; }
+.rsv-field-hide-btn.rsv-btn-show { background: #e8f5e9; color: #2e7d32; }
+.rsv-field-hide-btn.rsv-btn-show:hover { background: #c8e6c9; }
+
+/* drop indicator: garis biru tebal nempel di sisi tempat card bakal jatuh */
 .rsv-field-card.rsv-dragging { opacity: .4; }
-.rsv-field-card.rsv-drop-before { border-left: 2px solid #1565c0; }
-.rsv-field-card.rsv-drop-after { border-right: 2px solid #1565c0; }
+.rsv-field-card.rsv-drop-before { box-shadow: -3px 0 0 0 #1565c0; }
+.rsv-field-card.rsv-drop-after { box-shadow: 3px 0 0 0 #1565c0; }
 
 .rsv-field { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
-.rsv-field label { font-size: 9px; color: #777; }
+.rsv-field label { font-size: 10px; color: #777; white-space: nowrap; }
 .rsv-field input,
 .rsv-field select {
     border: 1px solid #ccc;
     border-radius: 4px;
     padding: 3px 5px;
-    font-size: 11px;
+    font-size: 10px;
     font: inherit;
     box-sizing: border-box;
     width: 100%;
 }
+.rsv-field input,
+.rsv-field select { font-size: 10px; }
 
 .rsv-search-footer {
     display: flex;
     justify-content: flex-end;
-    margin-top: 6px;
+    margin-top: 4px;
 }
 
 /* ---- showing card ---- */
 
 .rsv-showing-card {
+    flex: 1 1 auto;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     padding: 0;
     overflow: hidden;
+    position: relative;
 }
 
 .rsv-showing-header {
     flex: none;
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 12px;
+    flex-direction: column;
     border-bottom: 1px solid #eee;
-    flex-wrap: wrap;
+}
+
+.rsv-showing-row1 {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px 2px;
 }
 
 .rsv-showing-title {
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
     color: #333;
     flex: none;
+}
+
+.rsv-showing-row1 .rsv-export-btn { margin-left: auto; }
+
+/* row2 hosts EITHER pills (default) OR chips (search active) --
+   overflow-x scroll biar gak numpuk/berantakan kalau kepanjangan */
+.rsv-showing-row2 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px 6px;
+    overflow-x: auto;
+    white-space: nowrap;
 }
 
 .rsv-showing-pills {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin: 0 auto;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex: none;
 }
 
 .rsv-pill-arrow {
@@ -197,8 +223,8 @@
     background: none;
     cursor: pointer;
     color: #555;
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -206,17 +232,18 @@
     flex: none;
 }
 .rsv-pill-arrow:hover { background: #f0f0f0; }
-.rsv-pill-arrow svg { width: 15px; height: 15px; }
+.rsv-pill-arrow svg { width: 14px; height: 14px; }
 
 .rsv-pill-select,
 .rsv-pill-date {
     border: 1px solid #ccc;
     border-radius: 14px;
-    padding: 4px 10px;
-    font-size: 12px;
+    padding: 3px 9px;
+    font-size: 11.5px;
     background: #fafafa;
     color: #444;
     cursor: pointer;
+    flex: none;
 }
 .rsv-pill-date { cursor: text; }
 
@@ -224,9 +251,7 @@
     display: none;
     align-items: center;
     gap: 6px;
-    margin: 0 auto;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex: 1 1 auto;
 }
 .rsv-search-chip {
     display: flex;
@@ -236,12 +261,14 @@
     color: #1565c0;
     border-radius: 14px;
     padding: 3px 10px;
-    font-size: 12px;
-    max-width: 220px;
+    font-size: 11.5px;
+    flex: none;
+    white-space: nowrap;
 }
 .rsv-search-chip span {
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 180px;
     white-space: nowrap;
 }
 .rsv-search-chip button {
@@ -254,27 +281,57 @@
 }
 .rsv-search-chip svg { width: 12px; height: 12px; }
 
-.rsv-export-btn { flex: none; }
-
 /* placeholder wajib ada -- dipakai reservationUI.js buat toggle
    toolbar seleksi, kosong secara visual */
 #normalToolbar { display: none; }
 
 #selectionToolbar {
     flex: none;
-    padding: 8px 16px;
+    padding: 6px 12px;
     border-bottom: 1px solid #eee;
 }
 
-/* ---- responsive: field lebih pendek lagi di layar kecil ---- */
+/* ---- pagination footer nempel bawah card (terpisah dari #statusBar
+   global -- itu punya sendiri, jangan diubah) ---- */
+
+.rsv-table-footer {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 12px;
+    border-top: 1px solid #eee;
+    font-size: 12px;
+    color: #555;
+}
+
+.rsv-page-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.rsv-page-nav button {
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 3px;
+    padding: 2px 8px;
+    cursor: pointer;
+    font-size: 11.5px;
+}
+.rsv-page-nav button:disabled { opacity: .4; cursor: default; }
+
+/* ---- responsive ---- */
 
 @media (max-width: 700px) {
     .rsv-btn-label { display: none; }
     .rsv-btn { padding: 6px; }
-    .rsv-page { margin: 8px 8px 8px; }
-    .rsv-page .rsv-showing-card.table-container {
-        margin: 0;
-        box-sizing: border-box;
-    }
+    /* Search button di search card TETAP tampil labelnya di mobile */
+    .rsv-search-footer .rsv-btn-label { display: inline; }
+    .rsv-page { margin: 6px 8px 6px; }
     .rsv-field-card { width: 100px; }
+    .rsv-search-fields:not(.rsv-customizing) .rsv-field-card:not(:first-child) {
+        padding-left: 6px;
+    }
 }

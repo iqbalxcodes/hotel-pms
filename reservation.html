@@ -88,39 +88,44 @@
         <!-- SHOWING CARD -->
         <!-- ============================================== -->
 
-        <div class="rsv-card rsv-showing-card table-container">
+        <div class="rsv-card rsv-showing-card">
 
             <div class="rsv-showing-header">
 
-                <span class="rsv-showing-title">Showing</span>
-
-                <div class="rsv-showing-pills" id="rsvShowingPills">
-                    <button class="rsv-pill-arrow" onclick="changeDate(-1)"><i data-lucide="chevron-left"></i></button>
-
-                    <select id="dateScope" class="rsv-pill-select" onchange="changeDateScope(this.value)">
-                        <option value="today">Today's</option>
-                        <option value="entire">Entire</option>
-                    </select>
-
-                    <select id="modeSelect" class="rsv-pill-select" onchange="changeMode(this.value)">
-                        <option value="arrival">Arrival</option>
-                        <option value="departure">Departure</option>
-                        <option value="inhouse">In House</option>
-                        <option value="pending">Pending</option>
-                        <option value="cancelled">Cancelled</option>
-                        <option value="noshow">No Show</option>
-                    </select>
-
-                    <input type="date" id="currentDate" class="rsv-pill-date" onchange="changeSelectedDate(this.value)">
-
-                    <button class="rsv-pill-arrow" onclick="changeDate(1)"><i data-lucide="chevron-right"></i></button>
+                <div class="rsv-showing-row1">
+                    <span class="rsv-showing-title">Showing</span>
+                    <button class="rsv-btn rsv-export-btn" onclick="exportReservations()">
+                        <i data-lucide="download"></i><span class="rsv-btn-label">Export</span>
+                    </button>
                 </div>
 
-                <div class="rsv-search-chips" id="rsvSearchChips"></div>
+                <div class="rsv-showing-row2">
 
-                <button class="rsv-btn rsv-export-btn" onclick="exportReservations()">
-                    <i data-lucide="download"></i><span class="rsv-btn-label">Export</span>
-                </button>
+                    <div class="rsv-showing-pills" id="rsvShowingPills">
+                        <button class="rsv-pill-arrow" onclick="changeDate(-1)"><i data-lucide="chevron-left"></i></button>
+
+                        <select id="dateScope" class="rsv-pill-select" onchange="changeDateScope(this.value)">
+                            <option value="today">Today's</option>
+                            <option value="entire">Entire</option>
+                        </select>
+
+                        <select id="modeSelect" class="rsv-pill-select" onchange="changeMode(this.value)">
+                            <option value="arrival">Arrival</option>
+                            <option value="departure">Departure</option>
+                            <option value="inhouse">In House</option>
+                            <option value="pending">Pending</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="noshow">No Show</option>
+                        </select>
+
+                        <input type="date" id="currentDate" class="rsv-pill-date" onchange="changeSelectedDate(this.value)">
+
+                        <button class="rsv-pill-arrow" onclick="changeDate(1)"><i data-lucide="chevron-right"></i></button>
+                    </div>
+
+                    <div class="rsv-search-chips" id="rsvSearchChips"></div>
+
+                </div>
 
             </div>
 
@@ -169,6 +174,11 @@
 
                 </table>
 
+            </div>
+
+            <div class="rsv-table-footer">
+                <span id="rsvPageInfo">No reservations</span>
+                <div class="rsv-page-nav" id="rsvPageNav"></div>
             </div>
 
         </div>

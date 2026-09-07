@@ -1,6 +1,6 @@
 #pmsTopbar {
     background: #fff;
-    padding: 6px 16px 0;
+    padding: 4px 12px 0;
     box-sizing: border-box;
     flex: none;
 }
@@ -11,18 +11,18 @@
     gap: 4px;
     padding: 0;
     margin: 0;
-    height: 30px;
+    height: 26px;
     flex: none;
 }
 
 .pms-icon-btn {
-    width: 28px; height: 28px;
+    width: 26px; height: 26px;
     display: flex; align-items: center; justify-content: center;
     border: none; background: none; border-radius: 4px; cursor: pointer; color: #555;
     flex: none; margin: 0; padding: 0;
 }
 .pms-icon-btn:hover { background: #f0f0f0; }
-.pms-icon-btn svg { width: 16px; height: 16px; }
+.pms-icon-btn svg { width: 15px; height: 15px; }
 
 .pms-icon-btn.pms-customize-active {
     background: #1565c0;
@@ -31,7 +31,7 @@
 .pms-icon-btn.pms-customize-active:hover { background: #0d47a1; }
 
 .pms-path {
-    font-size: 13px;
+    font-size: 12px;
     color: #666;
     padding: 4px 6px;
     margin: 0;
@@ -56,6 +56,6 @@
     flex: none;
 }
 
-.pms-divider { border: none; border-top: 1px solid #ddd; margin: 6px 0 0; flex: none; }
-.pms-title-row { padding: 8px 0 4px; margin: 0; flex: none; }
-.pms-title { margin: 0; font-size: 16px; font-weight: 700; }
+.pms-divider { border: none; border-top: 1px solid #ddd; margin: 4px 0 0; flex: none; }
+.pms-title-row { padding: 6px 0 2px; margin: 0; flex: none; }
+.pms-title { margin: 0; font-size: 15px; font-weight: 700; }

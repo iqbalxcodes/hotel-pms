@@ -436,46 +436,72 @@ function updateDropdownText(counts){
 
 }
 
+// ======================================================
+// PATCHED: renderPaginationBar sekarang isi 2 tempat:
+// 1) #paginationInfo/#paginationNav (statusBar global lama, gak diubah)
+// 2) #rsvPageInfo/#rsvPageNav (footer baru nempel bawah card showing)
+// ======================================================
+
 function renderPaginationBar(){
-
-    const info = document.getElementById("paginationInfo");
-    const nav = document.getElementById("paginationNav");
-
-    if(!info || !nav){
-        return;
-    }
 
     const totalPages = getTotalPages();
 
-    renderPaginationInfoDisplay(info);
+    // ---- target lama (statusBar global) ----
+    const info = document.getElementById("paginationInfo");
+    const nav = document.getElementById("paginationNav");
 
-    info.onmouseenter = () => renderPaginationInfoEditor(info);
-    info.onmouseleave = () => renderPaginationInfoDisplay(info);
+    if(info){
+        renderPaginationInfoDisplay(info);
+        info.onmouseenter = () => renderPaginationInfoEditor(info);
+        info.onmouseleave = () => renderPaginationInfoDisplay(info);
+    }
+
+    if(nav){
+        buildPageNavButtons(nav, totalPages);
+    }
+
+    // ---- target baru (footer card showing) ----
+    const rsvInfo = document.getElementById("rsvPageInfo");
+    const rsvNav = document.getElementById("rsvPageNav");
+
+    if(rsvInfo){
+        rsvInfo.innerText =
+            totalCount > 0
+            ? `${totalCount} reservations · Page ${currentPage}/${totalPages}`
+            : "No reservations";
+    }
+
+    if(rsvNav){
+        buildPageNavButtons(rsvNav, totalPages);
+    }
+
+}
+
+function buildPageNavButtons(nav, totalPages){
 
     nav.innerHTML = "";
 
-    // Kalau cuma 1 halaman, tombol Prev/Next gak perlu ditampilkan
-    if(totalPages > 1){
-
-        const prevBtn = document.createElement("button");
-        prevBtn.innerText = "‹ Prev";
-        prevBtn.disabled = currentPage <= 1;
-        prevBtn.onclick = async () => {
-            currentPage--;
-            await refreshTable();
-        };
-        nav.appendChild(prevBtn);
-
-        const nextBtn = document.createElement("button");
-        nextBtn.innerText = "Next ›";
-        nextBtn.disabled = currentPage >= totalPages;
-        nextBtn.onclick = async () => {
-            currentPage++;
-            await refreshTable();
-        };
-        nav.appendChild(nextBtn);
-
+    if(totalPages <= 1){
+        return;
     }
+
+    const prevBtn = document.createElement("button");
+    prevBtn.innerText = "‹ Prev";
+    prevBtn.disabled = currentPage <= 1;
+    prevBtn.onclick = async () => {
+        currentPage--;
+        await refreshTable();
+    };
+    nav.appendChild(prevBtn);
+
+    const nextBtn = document.createElement("button");
+    nextBtn.innerText = "Next ›";
+    nextBtn.disabled = currentPage >= totalPages;
+    nextBtn.onclick = async () => {
+        currentPage++;
+        await refreshTable();
+    };
+    nav.appendChild(nextBtn);
 
 }
 
