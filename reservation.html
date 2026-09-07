@@ -92,14 +92,9 @@
 
             <div class="rsv-showing-header">
 
-                <div class="rsv-showing-row1">
-                    <span class="rsv-showing-title">Showing</span>
-                    <button class="rsv-btn rsv-export-btn" onclick="exportReservations()">
-                        <i data-lucide="download"></i><span class="rsv-btn-label">Export</span>
-                    </button>
-                </div>
+                <span class="rsv-showing-title">Showing</span>
 
-                <div class="rsv-showing-row2">
+                <div class="rsv-showing-center">
 
                     <div class="rsv-showing-pills" id="rsvShowingPills">
                         <button class="rsv-pill-arrow" onclick="changeDate(-1)"><i data-lucide="chevron-left"></i></button>
@@ -126,6 +121,10 @@
                     <div class="rsv-search-chips" id="rsvSearchChips"></div>
 
                 </div>
+
+                <button class="rsv-btn rsv-export-btn" onclick="exportReservations()">
+                    <i data-lucide="download"></i><span class="rsv-btn-label">Export</span>
+                </button>
 
             </div>
 
@@ -174,11 +173,6 @@
 
                 </table>
 
-            </div>
-
-            <div class="rsv-table-footer">
-                <span id="rsvPageInfo">No reservations</span>
-                <div class="rsv-page-nav" id="rsvPageNav"></div>
             </div>
 
         </div>

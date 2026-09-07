@@ -1,15 +1,13 @@
 // ======================================================
 // tableColumns.js
 // State kolom tabel (visible/order/width), render header
-// dinamis, resize kolom, drag&drop reorder kolom langsung
-// di header, dan popup "Modify Table" (preset A-Z, drag &
-// drop, click-to-move).
+// dinamis, resize kolom (Pointer Events, robust drag), drag&drop
+// reorder kolom langsung di header, popup "Modify Table", dan
+// running-text + edge-blur untuk label header yang kepanjangan.
 // ======================================================
 
 const TABLE_STATE_KEY = "hotel_pms_table_state_v1";
 const TABLE_PRESETS_KEY = "hotel_pms_table_presets_v1";
-// NOTE: belum ada login system -> preset masih global (localStorage browser),
-// nanti gampang dikaitkan ke user_id saat login system sudah ada.
 
 
 // ======================================================
@@ -85,7 +83,7 @@ function savePresets(presets){
 
 
 // ======================================================
-// Value Formatting (dipakai oleh reservation.js saat render)
+// Value Formatting
 // ======================================================
 
 function calcNightsSimple(arrival, departure){
@@ -179,16 +177,72 @@ function formatColumnValue(key, res){
 
 
 // ======================================================
-// Render Header + Colgroup (dipanggil saat load & saat
-// Apply di popup Modify Table, atau saat drag reorder)
+// Header label: fade-right by default, hover -> slides to
+// reveal the cut-off tail with fade on BOTH edges.
 //
-// - Simbol "↕" statis DIBUANG dari label -- fungsinya
-//   (klik = sort) tetap jalan lewat listener di labelSpan.
-// - Kolom yang lagi aktif di-sort dapet indikator ▲/▼ kecil,
-//   kolom lain polos (gak ada clutter simbol).
-// - labelSpan sekarang draggable=true -> bisa di-drag buat
-//   reorder kolom langsung di header (gak perlu buka popup
-//   Modify Table lagi).
+// Structure: .col-header-label-wrap (fixed-width viewport,
+// overflow:hidden, carries the mask) > .col-header-label
+// (inner, natural full width, gets translateX on hover).
+// The wrap is what visually clips -- translating the inner
+// span within it is what reveals the hidden tail; a label that
+// clips itself and then moves wouldn't reveal anything new.
+// ======================================================
+
+function bindHeaderLabelMarquee(wrap){
+
+    const inner = wrap.querySelector(".col-header-label");
+    if(!inner) return;
+
+    wrap.addEventListener("mouseenter", () => {
+
+        const over = inner.scrollWidth - wrap.clientWidth;
+        if(over <= 1) return;
+
+        wrap.classList.remove("col-label-fade");
+        wrap.classList.add("col-label-fade-both");
+
+        inner.style.transitionDuration = Math.max(0.4, over / 40) + "s";
+        inner.style.transform = `translateX(-${over}px)`;
+
+    });
+
+    wrap.addEventListener("mouseleave", () => {
+
+        inner.style.transform = "translateX(0)";
+        inner.style.transitionDuration = ".3s";
+
+        setTimeout(() => applyHeaderLabelFade(wrap), 300);
+
+    });
+
+}
+
+function applyHeaderLabelFade(wrap){
+
+    if(!wrap.isConnected) return;
+
+    const inner = wrap.querySelector(".col-header-label");
+    if(!inner) return;
+
+    const overflowing = inner.scrollWidth - wrap.clientWidth > 1;
+
+    wrap.classList.toggle("col-label-fade", overflowing);
+    wrap.classList.remove("col-label-fade-both");
+
+}
+
+function initHeaderLabelFades(headerRow){
+
+    headerRow.querySelectorAll(".col-header-label-wrap").forEach(wrap => {
+        bindHeaderLabelMarquee(wrap);
+        applyHeaderLabelFade(wrap);
+    });
+
+}
+
+
+// ======================================================
+// Render Header + Colgroup
 // ======================================================
 
 let thDragKey = null;
@@ -230,46 +284,52 @@ function renderTableHeader(){
         th.className = "resizable-th";
         th.dataset.key = key;
 
-        const labelSpan = document.createElement("span");
-        labelSpan.className = "col-header-label";
-        labelSpan.textContent = colDef.label;
-        labelSpan.draggable = true;
+        // ---- label wrap (viewport, draggable, clickable to sort) ----
+        const labelWrap = document.createElement("span");
+        labelWrap.className = "col-header-label-wrap";
+        labelWrap.draggable = true;
+
+        const labelInner = document.createElement("span");
+        labelInner.className = "col-header-label";
+        labelInner.textContent = colDef.label;
+        labelWrap.appendChild(labelInner);
 
         if(colDef.sortable !== false){
 
-            labelSpan.classList.add("col-header-sortable");
-            labelSpan.addEventListener("click", () => sortTable(key));
-
-            // Indikator arah sort -- CUMA muncul di kolom yang lagi aktif
-            if(typeof activeSortColumn !== "undefined" && activeSortColumn === key){
-
-                const indicator = document.createElement("span");
-                indicator.className = "col-sort-indicator";
-                indicator.textContent = sortDirection[key] === "asc" ? " ▲" : " ▼";
-                labelSpan.appendChild(indicator);
-
-            }
+            labelWrap.classList.add("col-header-sortable");
+            labelWrap.addEventListener("click", () => sortTable(key));
 
         }
 
-        // ---- drag source: mulai drag dari label (bukan whole th),
-        // biar gak bentrok sama resize handle ----
-        labelSpan.addEventListener("dragstart", (e) => {
+        labelWrap.addEventListener("dragstart", (e) => {
             thDragKey = key;
             th.classList.add("col-dragging");
             e.dataTransfer.effectAllowed = "move";
         });
 
-        labelSpan.addEventListener("dragend", () => {
+        labelWrap.addEventListener("dragend", () => {
             th.classList.remove("col-dragging");
             document.querySelectorAll(".resizable-th").forEach(x =>
                 x.classList.remove("col-drop-before", "col-drop-after"));
             thDragKey = null;
         });
 
-        th.appendChild(labelSpan);
+        th.appendChild(labelWrap);
 
-        // ---- drop target: whole th, biar area drop lega ----
+        // Indikator arah sort -- sibling di luar label wrap, biar gak
+        // ikut ke-translate pas marquee jalan.
+        if(colDef.sortable !== false &&
+           typeof activeSortColumn !== "undefined" &&
+           activeSortColumn === key){
+
+            const indicator = document.createElement("span");
+            indicator.className = "col-sort-indicator";
+            indicator.textContent = sortDirection[key] === "asc" ? " ▲" : " ▼";
+            th.appendChild(indicator);
+
+        }
+
+        // ---- drop target: whole th ----
         th.addEventListener("dragover", (e) => {
 
             if(!thDragKey || thDragKey === key) return;
@@ -298,10 +358,11 @@ function renderTableHeader(){
 
         });
 
+        // ---- resize handle: Pointer Events + capture, robust drag ----
         const handle = document.createElement("div");
         handle.className = "col-resize-handle";
         handle.draggable = false;
-        handle.addEventListener("mousedown", (e) => {
+        handle.addEventListener("pointerdown", (e) => {
             e.stopPropagation();
             startColumnResize(e, key);
         });
@@ -311,11 +372,12 @@ function renderTableHeader(){
 
     });
 
+    initHeaderLabelFades(headerRow);
+
 }
 
 // ------------------------------------------------------
-// Drag&drop reorder: pindahin draggedKey ke sebelum/sesudah
-// targetKey di visibleOrder, simpan, render ulang.
+// Drag&drop reorder
 // ------------------------------------------------------
 
 function reorderColumn(draggedKey, targetKey, before){
@@ -353,7 +415,9 @@ function reorderColumn(draggedKey, targetKey, before){
 
 
 // ======================================================
-// Column Resize (drag di header, body ikut via colgroup)
+// Column Resize (Pointer Events -- setPointerCapture keeps the
+// drag alive even if the pointer moves fast off the 6px handle,
+// which is what made mousedown/mousemove flaky before)
 // ======================================================
 
 let resizeState = null;
@@ -361,19 +425,27 @@ let resizeState = null;
 function startColumnResize(e, key){
 
     e.preventDefault();
-    e.stopPropagation();
 
     const col = document.getElementById(`col-${key}`);
     if(!col) return;
 
+    const handle = e.currentTarget;
+
+    try { handle.setPointerCapture(e.pointerId); } catch(err) {}
+
     resizeState = {
         key,
+        pointerId: e.pointerId,
+        handle,
         startX: e.clientX,
         startWidth: col.getBoundingClientRect().width
     };
 
-    document.addEventListener("mousemove", handleColumnResizeMove);
-    document.addEventListener("mouseup", endColumnResize);
+    document.body.classList.add("col-resizing");
+
+    handle.addEventListener("pointermove", handleColumnResizeMove);
+    handle.addEventListener("pointerup", endColumnResize);
+    handle.addEventListener("pointercancel", endColumnResize);
 
 }
 
@@ -391,7 +463,7 @@ function handleColumnResizeMove(e){
 
 }
 
-function endColumnResize(){
+function endColumnResize(e){
 
     if(!resizeState) return;
 
@@ -407,10 +479,21 @@ function endColumnResize(){
 
     }
 
-    resizeState = null;
+    const { handle, pointerId, key } = resizeState;
 
-    document.removeEventListener("mousemove", handleColumnResizeMove);
-    document.removeEventListener("mouseup", endColumnResize);
+    handle.removeEventListener("pointermove", handleColumnResizeMove);
+    handle.removeEventListener("pointerup", endColumnResize);
+    handle.removeEventListener("pointercancel", endColumnResize);
+
+    try { handle.releasePointerCapture(pointerId); } catch(err) {}
+
+    document.body.classList.remove("col-resizing");
+
+    // width berubah -> overflow status label bisa berubah, recalc fade
+    const wrap = document.querySelector(`.resizable-th[data-key="${key}"] .col-header-label-wrap`);
+    if(wrap) applyHeaderLabelFade(wrap);
+
+    resizeState = null;
 
 }
 
@@ -423,7 +506,7 @@ let draftShowing = [];
 let draftHiding = [];
 
 let dragSourceKey = null;
-let dragSourceList = null; // "showing" | "hiding"
+let dragSourceList = null;
 
 function toggleModifyMode(){
 
@@ -448,9 +531,6 @@ function openModifyPopup(){
         .map(c => c.key)
         .filter(k => !draftShowing.includes(k));
 
-    // Sesuai spec: list ditampilkan urut A-Z saat popup dibuka.
-    // Setelah itu urutan berubah mengikuti drag/klik user, tidak
-    // di-resort ulang otomatis.
     draftShowing.sort((a, b) => COLUMN_MAP[a].label.localeCompare(COLUMN_MAP[b].label));
     draftHiding.sort((a, b) => COLUMN_MAP[a].label.localeCompare(COLUMN_MAP[b].label));
 
@@ -501,7 +581,6 @@ function buildColumnListItem(key, listName){
     li.dataset.list = listName;
     li.innerText = colDef ? colDef.label : key;
 
-    // Klik = pindah otomatis ke list satunya (masuk di posisi paling akhir)
     li.addEventListener("click", () => {
         moveColumnBetweenLists(key, listName);
     });
@@ -612,7 +691,6 @@ function setupListContainerDragDrop(ulElement, listName){
 
         e.preventDefault();
 
-        // kalau drop kena li, li sendiri yang handle (event sudah di-stopPropagation)
         if(e.target !== ulElement) return;
 
         if(dragSourceKey === null) return;
@@ -663,7 +741,6 @@ function savePresetFromInput(){
 
     const presets = getPresets();
 
-    // Nama diawali "-" -> hapus preset itu
     if(nameRaw.startsWith("-")){
 
         const nameToDelete = nameRaw.slice(1).trim();

@@ -544,6 +544,11 @@ h1 {
 
 }
 
+#paginationInfo + #paginationNav {
+    border-left: none;
+    padding-left: 4px;
+}
+
 
 /* ======================================================
    USER AREA
@@ -588,13 +593,11 @@ h1 {
    ====================================================== */
 
 #paginationInfo {
-
     flex: none;
-
     cursor: pointer;
-
     position: relative;
-
+    margin-left: auto;
+    padding-right: 4px;
 }
 
 
@@ -1108,8 +1111,25 @@ h1 {
     padding-right: 14px;
 }
 
+.col-header-label-wrap {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    vertical-align: bottom;
+    white-space: nowrap;
+}
+.col-header-label-wrap.col-label-fade {
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
+}
+.col-header-label-wrap.col-label-fade-both {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
 .col-header-label {
     display: inline-block;
+    white-space: nowrap;
+    transition-property: transform;
 }
 
 .col-resize-handle {
@@ -1120,6 +1140,13 @@ h1 {
     height: 100%;
     cursor: col-resize;
     user-select: none;
+    touch-action: none;
+}
+
+.col-resizing,
+.col-resizing * {
+    user-select: none !important;
+    cursor: col-resize !important;
 }
 
 .col-resize-handle:hover {

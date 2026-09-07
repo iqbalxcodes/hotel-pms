@@ -1,16 +1,12 @@
 // ======================================================
 // reservationPage.js
-// Search fields dirender dinamis dari config (order + hidden),
-// disimpan di localStorage. Mode "customize" dipicu dari tombol
-// customize di pmsTopbar (event "pms:customize-toggle") -- pas
-// aktif: tiap field card dapet border putus-putus + tombol
-// minus (hide, merah) / plus (show, hijau), bisa drag&drop reorder
-// dengan indikator garis biru di posisi drop.
-// Search state (activeSearchFields) & query logic ada di
-// reservationFilter.js -- file ini cuma UI glue.
+// Search fields grouped into real column <div>s (max 4/col,
+// overflow-x scroll if more), so the divider between columns
+// is one continuous border, not per-field.
 // ======================================================
 
 const RSV_FIELDS_KEY = "rsv_search_fields_config";
+const RSV_COLUMN_SIZE = 4;
 
 const RSV_SEARCH_FIELDS_DEFAULT = [
     { key: "confirmation_no", label: "Confirmation No", type: "text" },
@@ -81,6 +77,36 @@ function rsvEsc(s) {
     return d.innerHTML;
 }
 
+function rsvRenderFieldCard(key, values) {
+    const def = rsvFieldDef(key);
+    if (!def) return "";
+
+    const hidden = rsvFieldsHidden.includes(key);
+    const savedValue = values[key] || "";
+
+    let inputHtml;
+    if (def.type === "select") {
+        inputHtml = `<select data-search-key="${def.key}">${def.options.map(o =>
+            `<option value="${o.value}" ${o.value === savedValue ? "selected" : ""}>${o.label}</option>`
+        ).join("")}</select>`;
+    } else {
+        inputHtml = `<input type="${def.type}" data-search-key="${def.key}" value="${rsvEsc(savedValue)}">`;
+    }
+
+    const hideBtnClass = hidden ? "rsv-btn-show" : "rsv-btn-hide";
+
+    return `
+        <div class="rsv-field-card ${hidden ? "rsv-field-hidden" : ""}" data-key="${def.key}" draggable="${rsvCustomizing}">
+            ${rsvCustomizing ? `<span class="rsv-field-drag">${rsvIcon("grip-vertical")}</span>` : ""}
+            <div class="rsv-field">
+                <label>${rsvEsc(def.label)}</label>
+                ${inputHtml}
+            </div>
+            ${rsvCustomizing ? `<button class="rsv-field-hide-btn ${hideBtnClass}" data-hide="${def.key}" title="${hidden ? "Show" : "Hide"}">${rsvIcon(hidden ? "plus" : "minus")}</button>` : ""}
+        </div>
+    `;
+}
+
 function rsvRenderFields() {
     const container = document.getElementById("rsvSearchFields");
     if (!container) return;
@@ -93,37 +119,21 @@ function rsvRenderFields() {
         values[el.dataset.searchKey] = el.value;
     });
 
-    container.innerHTML = rsvFieldsOrder.map(key => {
-        const def = rsvFieldDef(key);
-        if (!def) return "";
-
+    const visibleKeys = rsvFieldsOrder.filter(key => {
         const hidden = rsvFieldsHidden.includes(key);
-        if (hidden && !rsvCustomizing) return "";
+        return !hidden || rsvCustomizing;
+    });
 
-        const savedValue = values[key] || "";
+    const columns = [];
+    for (let i = 0; i < visibleKeys.length; i += RSV_COLUMN_SIZE) {
+        columns.push(visibleKeys.slice(i, i + RSV_COLUMN_SIZE));
+    }
 
-        let inputHtml;
-        if (def.type === "select") {
-            inputHtml = `<select data-search-key="${def.key}">${def.options.map(o =>
-                `<option value="${o.value}" ${o.value === savedValue ? "selected" : ""}>${o.label}</option>`
-            ).join("")}</select>`;
-        } else {
-            inputHtml = `<input type="${def.type}" data-search-key="${def.key}" value="${rsvEsc(savedValue)}">`;
-        }
-
-        const hideBtnClass = hidden ? "rsv-btn-show" : "rsv-btn-hide";
-
-        return `
-            <div class="rsv-field-card ${hidden ? "rsv-field-hidden" : ""}" data-key="${def.key}" draggable="${rsvCustomizing}">
-                ${rsvCustomizing ? `<span class="rsv-field-drag">${rsvIcon("grip-vertical")}</span>` : ""}
-                <div class="rsv-field">
-                    <label>${rsvEsc(def.label)}</label>
-                    ${inputHtml}
-                </div>
-                ${rsvCustomizing ? `<button class="rsv-field-hide-btn ${hideBtnClass}" data-hide="${def.key}" title="${hidden ? "Show" : "Hide"}">${rsvIcon(hidden ? "plus" : "minus")}</button>` : ""}
-            </div>
-        `;
-    }).join("");
+    container.innerHTML = columns.map(colKeys => `
+        <div class="rsv-search-column">
+            ${colKeys.map(key => rsvRenderFieldCard(key, values)).join("")}
+        </div>
+    `).join("");
 
     if (window.lucide) lucide.createIcons();
 
