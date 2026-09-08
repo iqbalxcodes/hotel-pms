@@ -761,128 +761,6 @@ function datesOverlap(
     );
 }
 
-
-/* ==========================================================================
-   PROPERTY
-   ========================================================================== */
-
-async function getGeneratorProperty() {
-
-    const possibleKeys = [
-
-        "selectedPropertyId",
-        "currentPropertyId",
-        "property_id",
-        "pms_property_id"
-    ];
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Prefer current property context.
-    |--------------------------------------------------------------------------
-    */
-
-    for (
-        const key
-        of possibleKeys
-    ) {
-
-        const propertyId =
-            localStorage.getItem(key);
-
-
-        if (!propertyId) {
-            continue;
-        }
-
-
-        const {
-            data,
-            error
-        } = await supabaseClient
-            .from("properties")
-            .select(`
-                id,
-                organization_id,
-                code,
-                name,
-                currency,
-                timezone,
-                status
-            `)
-            .eq(
-                "id",
-                propertyId
-            )
-            .eq(
-                "status",
-                "ACTIVE"
-            )
-            .maybeSingle();
-
-
-        if (
-            !error &&
-            data
-        ) {
-
-            return data;
-        }
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Otherwise use first accessible active property.
-    |--------------------------------------------------------------------------
-    */
-
-    const {
-        data,
-        error
-    } = await supabaseClient
-        .from("properties")
-        .select(`
-            id,
-            organization_id,
-            code,
-            name,
-            currency,
-            timezone,
-            status
-        `)
-        .eq(
-            "status",
-            "ACTIVE"
-        )
-        .order(
-            "created_at",
-            {
-                ascending: true
-            }
-        )
-        .limit(1)
-        .maybeSingle();
-
-
-    if (error) {
-        throw error;
-    }
-
-
-    if (!data) {
-
-        throw new Error(
-            "No active property is available."
-        );
-    }
-
-
-    return data;
-}
-
-
 /* ==========================================================================
    ROOM TYPES
    ========================================================================== */
@@ -3329,7 +3207,7 @@ async function generateRandomReservations() {
         */
 
         const property =
-            await getGeneratorProperty();
+            await getActiveProperty();
 
 
         console.log(

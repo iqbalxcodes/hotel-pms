@@ -493,6 +493,9 @@ function endColumnResize(e){
     const wrap = document.querySelector(`.resizable-th[data-key="${key}"] .col-header-label-wrap`);
     if(wrap) applyHeaderLabelFade(wrap);
 
+    // kolom di-resize -> isi sel di kolom itu juga perlu recalc blur
+    if (typeof refreshCellFadeForColumn === "function") refreshCellFadeForColumn(key);
+
     resizeState = null;
 
 }

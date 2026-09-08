@@ -43,6 +43,13 @@ async function loadReservations(){
 
 }
 
+// ------------------------------------------------------
+// Render rows -- tiap cell (kecuali checkbox & status) dibungkus
+// span wrap+inner buat efek blur/running-text. data-key dipakai
+// endColumnResize() (tableColumns.js) buat nge-refresh status
+// blur pas kolom di-resize.
+// ------------------------------------------------------
+
 function renderReservations(reservations){
 
     const tbody = document.getElementById("reservationTable");
@@ -63,9 +70,10 @@ function renderReservations(reservations){
 
             if(key === "status"){
                 const statusKey = (res.status || "").toLowerCase();
-                cellsHtml += `<td><span class="status-badge status-${statusKey}">${res.status ?? ""}</span></td>`;
+                cellsHtml += `<td data-key="status"><span class="status-badge status-${statusKey}">${res.status ?? ""}</span></td>`;
             } else {
-                cellsHtml += `<td>${formatColumnValue(key, res)}</td>`;
+                const val = formatColumnValue(key, res);
+                cellsHtml += `<td data-key="${key}"><span class="cell-text-wrap"><span class="cell-text-inner">${val}</span></span></td>`;
             }
 
         });
@@ -82,7 +90,67 @@ function renderReservations(reservations){
     });
 
     setupCheckbox();
+    initCellMarquees();
 
+}
+
+// ------------------------------------------------------
+// Cell marquee: hover -> geser ke kiri reveal teks kepotong,
+// blur 2 sisi. Gak hover -> blur 1 sisi kanan doang. Sama
+// persis pola header (col-header-label-wrap) tapi buat isi tabel.
+// ------------------------------------------------------
+
+function bindCellMarquee(wrap){
+
+    const inner = wrap.querySelector(".cell-text-inner");
+    if(!inner) return;
+
+    wrap.addEventListener("mouseenter", () => {
+
+        const over = inner.scrollWidth - wrap.clientWidth;
+        if(over <= 1) return;
+
+        wrap.classList.remove("cell-fade");
+        wrap.classList.add("cell-fade-both");
+
+        inner.style.transitionDuration = Math.max(0.6, over / 45) + "s";
+        inner.style.transform = `translateX(-${over}px)`;
+
+    });
+
+    wrap.addEventListener("mouseleave", () => {
+        inner.style.transform = "translateX(0)";
+        inner.style.transitionDuration = ".3s";
+        setTimeout(() => applyCellFade(wrap), 300);
+    });
+
+}
+
+function applyCellFade(wrap){
+
+    if(!wrap.isConnected) return;
+
+    const inner = wrap.querySelector(".cell-text-inner");
+    if(!inner) return;
+
+    const overflowing = inner.scrollWidth - wrap.clientWidth > 1;
+
+    wrap.classList.toggle("cell-fade", overflowing);
+    wrap.classList.remove("cell-fade-both");
+
+}
+
+function initCellMarquees(){
+    document.querySelectorAll("#reservationTable .cell-text-wrap").forEach(wrap => {
+        bindCellMarquee(wrap);
+        applyCellFade(wrap);
+    });
+}
+
+// dipanggil dari tableColumns.js endColumnResize() -- optional
+// hook, cek typeof dulu (pola yang sama dipakai di codebase ini)
+function refreshCellFadeForColumn(key){
+    document.querySelectorAll(`#reservationTable td[data-key="${key}"] .cell-text-wrap`).forEach(applyCellFade);
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -112,10 +180,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 });
 
-// Form manual "Add Reservation" DIMATIKAN — field guest_name/room_number
-// teks bebas gak kompatibel sama skema baru (butuh UUID FK guest_id/room_id).
-// Pakai "Generate Test Reservation" dulu, atau tunggu form baru (dropdown
-// pilih guest & room) dibikinin.
 const form = document.getElementById("reservationForm");
 if(form){
     form.addEventListener("submit", (e) => {
