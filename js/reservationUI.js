@@ -124,41 +124,32 @@ function enableEdit(column, inputType = "text") {
 
 async function saveEdit(column){
 
-    const inputs =
-        document.querySelectorAll(
-            `.edit-input[data-column="${column}"]`
-        );
+    const inputs = document.querySelectorAll(`.edit-input[data-column="${column}"]`);
 
+    // guest & room sekarang FK (guest_id/room_id), gak bisa diedit sebagai
+    // teks bebas lagi — cuma arrival/departure yang masih plain edit.
     const dbColumn = {
-
-        guest: "guest_name",
-        room: "room_number",
         arrival: "arrival_date",
         departure: "departure_date"
-
     };
+
+    if(column === "guest" || column === "room"){
+        showMessage("Guest/Room sekarang FK — belum ada UI pilih dari dropdown", "error");
+        await refreshTable();
+        return;
+    }
 
     for(const input of inputs){
 
-        const { error } =
-            await supabaseClient
-            .from("reservation")
-            .update({
-
-                [dbColumn[column]]: input.value
-
-            })
-            .eq(
-                "id",
-                Number(input.dataset.id)
-            );
+        const { error } = await supabaseClient
+            .from("reservations")
+            .update({ [dbColumn[column]]: input.value })
+            .eq("id", input.dataset.id);
 
         if(error){
-
             console.error(error);
-            alert("Failed");
+            showMessage("Failed", "error");
             return;
-
         }
 
     }

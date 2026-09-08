@@ -13,20 +13,17 @@ const RSV_SEARCH_FIELDS_DEFAULT = [
     { key: "guest_name", label: "Guest Name", type: "text" },
     { key: "status", label: "Status", type: "select", options: [
         { value: "", label: "Any" },
-        { value: "PENDING", label: "Pending" },
+        { value: "TENTATIVE", label: "Tentative" },
         { value: "CONFIRMED", label: "Confirmed" },
         { value: "CHECKED_IN", label: "Checked In" },
         { value: "CHECKED_OUT", label: "Checked Out" },
         { value: "CANCELLED", label: "Cancelled" },
         { value: "NO_SHOW", label: "No Show" }
     ]},
-    { key: "booker_name", label: "Booker Name", type: "text" },
     { key: "room_number", label: "Room", type: "text" },
     { key: "arrival_date", label: "Arrival Date", type: "date" },
     { key: "departure_date", label: "Departure Date", type: "date" },
-    { key: "travel_agent", label: "Travel Agent", type: "text" },
     { key: "room_type", label: "Room Type", type: "text" },
-    { key: "company", label: "Company", type: "text" },
     { key: "rate_name", label: "Rate Name", type: "text" },
     { key: "booking_channel", label: "Booking Channel", type: "text" }
 ];

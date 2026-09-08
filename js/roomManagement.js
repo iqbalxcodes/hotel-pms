@@ -1,345 +1,379 @@
 // ======================================================
-// roomManagement.js
-// State + wiring. Memanggil roomManagementData.js (fetch/mutasi)
-// dan roomManagementUI.js (render).
+// roomManagementData.js
 // ======================================================
 
-let rmAllRooms = [];
-let rmOccupiedSet = new Set();
-let rmSearchKeyword = "";
-let rmSelectedRoom = null;
+const RM_TODAY_ISO = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+})();
 
+async function rmFetchAllRooms(){
 
-// ======================================================
-// Clock (sama seperti halaman lain)
-// ======================================================
+    const propertyId = await getActivePropertyId();
 
-function startClock(){
+    const { data, error } = await supabaseClient
+        .from("room_list_view")
+        .select("*")
+        .eq("property_id", propertyId)
+        .order("room_number", { ascending: true });
 
-    const clock = document.getElementById("clock");
-    if(!clock) return;
+    if(error){ console.error(error); return []; }
+    return data;
 
-    function updateClock(){
+}
 
-        const now = new Date();
+async function rmFetchRoom(roomNumber){
 
-        clock.innerText = now.toLocaleString("de-DE", {
-            day: "2-digit", month: "2-digit", year: "numeric",
-            hour: "2-digit", minute: "2-digit", second: "2-digit"
+    const propertyId = await getActivePropertyId();
+
+    const { data, error } = await supabaseClient
+        .from("room_list_view")
+        .select("*")
+        .eq("property_id", propertyId)
+        .eq("room_number", roomNumber)
+        .single();
+
+    if(error){ console.error(error); return null; }
+    return data;
+
+}
+
+async function rmUpdateRoomStatus(roomNumbers, status, extra = {}){
+
+    const propertyId = await getActivePropertyId();
+
+    let patch = { updated_at: new Date().toISOString(), ...extra };
+
+    if(status === "BLOCKED"){
+        patch.operational_status = "BLOCKED";
+    } else {
+        patch.housekeeping_status = status;
+        patch.operational_status = "OPEN";
+    }
+
+    const { error } = await supabaseClient
+        .from("rooms")
+        .update(patch)
+        .eq("property_id", propertyId)
+        .in("room_number", roomNumbers);
+
+    return { error };
+
+}
+
+async function rmFetchOccupiedRoomNumbers(){
+
+    const propertyId = await getActivePropertyId();
+
+    const { data, error } = await supabaseClient
+        .from("reservation_list_view")
+        .select("room_number")
+        .eq("property_id", propertyId)
+        .eq("status", "CHECKED_IN")
+        .lte("arrival_date", RM_TODAY_ISO)
+        .gte("departure_date", RM_TODAY_ISO);
+
+    if(error){ console.error(error); return new Set(); }
+    return new Set((data || []).map(r => r.room_number));
+
+}
+
+const FUNDSACHEN_OPEN_STATUSES = ["UNCLAIMED"];
+
+async function rmFetchOpenFundsachen(limit = 5){
+
+    const propertyId = await getActivePropertyId();
+
+    const { data, error } = await supabaseClient
+        .from("lost_found_list_view")
+        .select("*")
+        .eq("property_id", propertyId)
+        .in("status", FUNDSACHEN_OPEN_STATUSES)
+        .order("found_at", { ascending: false })
+        .limit(limit);
+
+    if(error){ console.error(error); return []; }
+    return data;
+
+}
+
+async function rmFetchFundsachenForRoom(roomNumber){
+
+    const propertyId = await getActivePropertyId();
+
+    const { data, error } = await supabaseClient
+        .from("lost_found_list_view")
+        .select("*")
+        .eq("property_id", propertyId)
+        .eq("room_number", roomNumber)
+        .order("found_at", { ascending: false });
+
+    if(error){ console.error(error); return []; }
+    return data;
+
+}
+
+async function rmCreateFundsachen(payload){
+
+    const propertyId = await getActivePropertyId();
+    const roomId = await getRoomIdByNumber(propertyId, payload.room_number);
+
+    const { data, error } = await supabaseClient
+        .from("lost_found_items")
+        .insert({
+            property_id: propertyId,
+            room_id: roomId,
+            item_name: payload.item_name,
+            found_by: payload.found_by || null
+        })
+        .select()
+        .single();
+
+    if(!error && data){
+        await rmLogActivity({
+            room_number: payload.room_number,
+            event_type: "FUNDSACHEN",
+            description: `Found item reported: ${data.item_name}`,
+            actor: data.found_by || null,
+            reference_type: "lost_found_items",
+            reference_id: data.id
+        });
+    }
+
+    return { data: data ? { ...data, room_number: payload.room_number } : null, error };
+
+}
+
+async function rmUpdateFundsachenStatus(id, roomNumber, itemName, status){
+
+    const { error } = await supabaseClient
+        .from("lost_found_items")
+        .update({ status })
+        .eq("id", id);
+
+    if(!error){
+        await rmLogActivity({
+            room_number: roomNumber,
+            event_type: "FUNDSACHEN",
+            description: `${itemName} marked as ${status}`,
+            reference_type: "lost_found_items",
+            reference_id: id
+        });
+    }
+
+    return { error };
+
+}
+
+const MAINTENANCE_OPEN_STATUSES = ["OPEN", "IN_PROGRESS"];
+
+async function rmFetchOpenMaintenanceCount(){
+
+    const propertyId = await getActivePropertyId();
+
+    const { count, error } = await supabaseClient
+        .from("maintenance_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("property_id", propertyId)
+        .in("status", MAINTENANCE_OPEN_STATUSES);
+
+    if(error){ console.error(error); return 0; }
+    return count ?? 0;
+
+}
+
+async function rmFetchMaintenanceForRoom(roomNumber){
+
+    const propertyId = await getActivePropertyId();
+
+    const { data, error } = await supabaseClient
+        .from("maintenance_list_view")
+        .select("*")
+        .eq("property_id", propertyId)
+        .eq("room_number", roomNumber)
+        .order("reported_at", { ascending: false });
+
+    if(error){ console.error(error); return []; }
+    return data;
+
+}
+
+async function rmCreateMaintenance(payload){
+
+    const propertyId = await getActivePropertyId();
+    const roomId = await getRoomIdByNumber(propertyId, payload.room_number);
+
+    const { data, error } = await supabaseClient
+        .from("maintenance_requests")
+        .insert({
+            property_id: propertyId,
+            room_id: roomId,
+            title: payload.title,
+            priority: payload.priority
+        })
+        .select()
+        .single();
+
+    if(!error && data){
+        await rmLogActivity({
+            room_number: payload.room_number,
+            event_type: "MAINTENANCE",
+            description: `Maintenance request created: ${data.title}`,
+            reference_type: "maintenance_requests",
+            reference_id: data.id
+        });
+    }
+
+    return { data: data ? { ...data, room_number: payload.room_number } : null, error };
+
+}
+
+async function rmUpdateMaintenanceStatus(id, roomNumber, title, status){
+
+    const payload = { status };
+    if(status === "RESOLVED") payload.resolved_at = new Date().toISOString();
+
+    const { error } = await supabaseClient
+        .from("maintenance_requests")
+        .update(payload)
+        .eq("id", id);
+
+    if(!error){
+        await rmLogActivity({
+            room_number: roomNumber,
+            event_type: "MAINTENANCE",
+            description: `${title} → ${status.replace(/_/g, " ")}`,
+            reference_type: "maintenance_requests",
+            reference_id: id
+        });
+    }
+
+    return { error };
+
+}
+
+async function rmFetchBlockedOrOOORooms(){
+
+    const propertyId = await getActivePropertyId();
+
+    const { data, error } = await supabaseClient
+        .from("room_list_view")
+        .select("*")
+        .eq("property_id", propertyId)
+        .in("status", ["BLOCKED", "OUT_OF_SERVICE"])
+        .order("updated_at", { ascending: false });
+
+    if(error){ console.error(error); return []; }
+    return data;
+
+}
+
+async function rmFetchRoomUsage(roomNumber, limit = 5){
+
+    const propertyId = await getActivePropertyId();
+
+    const { data, error } = await supabaseClient
+        .from("reservation_list_view")
+        .select("id, guest_name, arrival_date, departure_date, status, room_type, checked_in_at, checked_out_at")
+        .eq("property_id", propertyId)
+        .eq("room_number", roomNumber)
+        .order("arrival_date", { ascending: false })
+        .limit(limit);
+
+    if(error){ console.error(error); return []; }
+    return data;
+
+}
+
+async function rmLogActivity({ room_number, event_type, description, actor = null, reference_type = null, reference_id = null }){
+
+    const propertyId = await getActivePropertyId();
+
+    const { error } = await supabaseClient
+        .from("room_activity")
+        .insert({
+            property_id: propertyId,
+            room_number,
+            event_type,
+            description,
+            actor,
+            reference_type,
+            reference_id: reference_id ? String(reference_id) : null
         });
 
-    }
-
-    updateClock();
-    setInterval(updateClock, 1000);
+    if(error) console.error("Failed to log room activity:", error);
 
 }
 
+async function rmFetchGlobalActivity(limit = 30){
 
-// ======================================================
-// View state (list <-> detail), dipakai CSS di breakpoint
-// medium & mobile lewat [data-view]
-// ======================================================
+    const propertyId = await getActivePropertyId();
 
-function rmSetView(view){
+    const { data, error } = await supabaseClient
+        .from("room_activity")
+        .select("*")
+        .eq("property_id", propertyId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
 
-    const grid = document.getElementById("rmGrid");
-    if(grid) grid.dataset.view = view;
-
-}
-
-
-// ======================================================
-// Load / refresh Column 1 + Column 2 (dipanggil di init
-// dan tiap kali ada perubahan status kamar)
-// ======================================================
-
-async function rmRefreshOverviewAndList(){
-
-    const [rooms, occupiedSet, fundsachen, blockedRooms] = await Promise.all([
-        rmFetchAllRooms(),
-        rmFetchOccupiedRoomNumbers(),
-        rmFetchOpenFundsachen(5),
-        rmFetchBlockedOrOOORooms()
-    ]);
-
-    rmAllRooms = rooms;
-    rmOccupiedSet = occupiedSet;
-
-    rmRenderOverviewStats(rooms, occupiedSet);
-    rmRenderFundsachenPreview(fundsachen, rmOpenRoomDetail);
-    rmRenderBlockedList(blockedRooms, rmOpenRoomDetail);
-
-    rmRenderFilteredList();
+    if(error){ console.error(error); return []; }
+    return data;
 
 }
 
-function rmRenderFilteredList(){
+async function rmFetchActivityForRoom(roomNumber, limit = 50){
 
-    const kw = rmSearchKeyword.trim().toLowerCase();
+    const propertyId = await getActivePropertyId();
 
-    const filtered = !kw ? rmAllRooms : rmAllRooms.filter(r =>
-        String(r.room_number).toLowerCase().includes(kw)
-        || (r.room_type || "").toLowerCase().includes(kw)
-        || (r.notes || "").toLowerCase().includes(kw)
-    );
+    const { data, error } = await supabaseClient
+        .from("room_activity")
+        .select("*")
+        .eq("property_id", propertyId)
+        .eq("room_number", roomNumber)
+        .order("created_at", { ascending: false })
+        .limit(limit);
 
-    rmRenderRoomList(filtered, rmOccupiedSet, rmSelectedRoom, rmOpenRoomDetail);
-
-}
-
-
-// ======================================================
-// Column 3 default — Activity feed
-// ======================================================
-
-async function rmLoadActivityFeed(){
-
-    const [activity, reservationEvents] = await Promise.all([
-        rmFetchGlobalActivity(30),
-        rmFetchTodayReservationEvents()
-    ]);
-
-    rmRenderActivityFeed(activity, reservationEvents);
+    if(error){ console.error(error); return []; }
+    return data;
 
 }
 
+async function rmFetchTodayReservationEvents(){
 
-// ======================================================
-// Room Detail — open / back
-// ======================================================
+    const propertyId = await getActivePropertyId();
 
-async function rmOpenRoomDetail(roomNumber){
+    const { data, error } = await supabaseClient
+        .from("reservation_list_view")
+        .select("id, room_number, guest_name, status, checked_in_at, checked_out_at")
+        .eq("property_id", propertyId)
+        .or(`checked_in_at.gte.${RM_TODAY_ISO},checked_out_at.gte.${RM_TODAY_ISO}`);
 
-    if(!roomNumber) return;
+    if(error || !data) return [];
 
-    rmSelectedRoom = roomNumber;
-    rmSetView("detail");
-    rmRenderFilteredList(); // update highlight di list
+    const events = [];
 
-    const room = await rmFetchRoom(roomNumber);
+    data.forEach(res => {
 
-    if(!room){
-        rmShowMessage("Gagal memuat detail kamar", "error");
-        rmSetView("list");
-        return;
-    }
-
-    rmRenderRoomDetailShell(room);
-
-    document.getElementById("rmBackBtn").addEventListener("click", rmBackToList);
-
-    await rmLoadRoomSubData(roomNumber);
-
-}
-
-function rmBackToList(){
-
-    rmSelectedRoom = null;
-    rmSetView("list");
-    rmRenderFilteredList();
-    rmLoadActivityFeed();
-
-}
-
-async function rmLoadRoomSubData(roomNumber){
-
-    const [fundsachen, maintenance, history, usage] = await Promise.all([
-        rmFetchFundsachenForRoom(roomNumber),
-        rmFetchMaintenanceForRoom(roomNumber),
-        rmFetchActivityForRoom(roomNumber, 50),
-        rmFetchRoomUsage(roomNumber, 5)
-    ]);
-
-    rmRenderFundsachenSubcard(fundsachen, roomNumber, rmHandleFundsachenStatusChange, rmHandleAddFundsachen);
-    rmRenderMaintenanceSubcard(maintenance, roomNumber, rmHandleMaintenanceStatusChange, rmHandleAddMaintenance);
-    rmRenderHistorySubcard(history);
-    rmRenderRoomUsage(usage);
-
-}
-
-
-// ------------------------------------------------------
-// Fundsachen handlers
-// ------------------------------------------------------
-
-async function rmHandleFundsachenStatusChange(id, roomNumber, itemName, status){
-
-    const { error } = await rmUpdateFundsachenStatus(id, roomNumber, itemName, status);
-
-    if(error){
-        rmShowMessage("Gagal update status fundsachen", "error");
-        return;
-    }
-
-    rmShowMessage("Status updated", "success");
-
-    await rmLoadRoomSubData(roomNumber);
-    await rmRefreshOverviewAndList();
-
-}
-
-async function rmHandleAddFundsachen(payload){
-
-    const { error } = await rmCreateFundsachen(payload);
-
-    if(error){
-        console.error(error);
-        rmShowMessage("Gagal menyimpan laporan", "error");
-        return;
-    }
-
-    rmShowMessage("Report saved", "success");
-
-    await rmLoadRoomSubData(payload.room_number);
-    await rmRefreshOverviewAndList();
-
-}
-
-
-// ------------------------------------------------------
-// Maintenance handlers
-// ------------------------------------------------------
-
-async function rmHandleMaintenanceStatusChange(id, roomNumber, title, status){
-
-    const { error } = await rmUpdateMaintenanceStatus(id, roomNumber, title, status);
-
-    if(error){
-        rmShowMessage("Gagal update status maintenance", "error");
-        return;
-    }
-
-    rmShowMessage("Status updated", "success");
-
-    await rmLoadRoomSubData(roomNumber);
-
-}
-
-async function rmHandleAddMaintenance(payload){
-
-    const { error } = await rmCreateMaintenance(payload);
-
-    if(error){
-        console.error(error);
-        rmShowMessage("Gagal menyimpan maintenance request", "error");
-        return;
-    }
-
-    rmShowMessage("Request saved", "success");
-
-    await rmLoadRoomSubData(payload.room_number);
-
-}
-
-
-// ======================================================
-// Bulk housekeeping status (checkbox di Room List)
-// ======================================================
-
-function rmUpdateSelectionToolbar(){
-
-    const selected = document.querySelectorAll(".rm-room-checkbox:checked");
-
-    const normalToolbar = document.getElementById("rmNormalToolbar");
-    const selectionToolbar = document.getElementById("rmSelectionToolbar");
-    const selectedCount = document.getElementById("rmSelectedCount");
-
-    if(selected.length > 0){
-        normalToolbar.style.display = "none";
-        selectionToolbar.style.display = "flex";
-        selectedCount.innerText = `${selected.length} selected`;
-    } else {
-        normalToolbar.style.display = "flex";
-        selectionToolbar.style.display = "none";
-    }
-
-}
-
-async function rmSetSelectedRoomsStatus(status){
-
-    const selected = [...document.querySelectorAll(".rm-room-checkbox:checked")].map(el => el.dataset.id);
-
-    if(selected.length === 0){
-        rmShowMessage("No room selected", "error");
-        return;
-    }
-
-    const doUpdate = async () => {
-
-        const { error } = await rmUpdateRoomStatus(selected, status);
-
-        if(error){
-            rmShowMessage("Failed to update room status", "error");
-            return;
-        }
-
-        for(const roomNumber of selected){
-
-            await rmLogActivity({
-                room_number: roomNumber,
-                event_type: "STATUS_CHANGE",
-                description: `Room marked as ${status.replace(/_/g," ")}`
+        if(res.checked_in_at && res.checked_in_at.startsWith(RM_TODAY_ISO)){
+            events.push({
+                room_number: res.room_number,
+                description: `Guest checked in — ${res.guest_name || "Reservation #" + res.id}`,
+                created_at: res.checked_in_at,
+                actor: null
             });
-
         }
 
-        rmShowMessage(`Status updated to ${status.replace(/_/g," ")}`, "success");
+        if(res.checked_out_at && res.checked_out_at.startsWith(RM_TODAY_ISO)){
+            events.push({
+                room_number: res.room_number,
+                description: `Guest checked out — ${res.guest_name || "Reservation #" + res.id}`,
+                created_at: res.checked_out_at,
+                actor: null
+            });
+        }
 
-        await rmRefreshOverviewAndList();
-        await rmLoadActivityFeed();
+    });
 
-    };
-
-    if(status === "OUT_OF_SERVICE" || status === "BLOCKED"){
-
-        rmShowConfirm(
-            `Set ${selected.length} room(s) to ${status.replace(/_/g," ")}?`,
-            doUpdate,
-            () => rmShowMessage("Cancelled", "info")
-        );
-
-        return;
-
-    }
-
-    await doUpdate();
+    return events;
 
 }
-
-
-// ======================================================
-// Init
-// ======================================================
-
-document.addEventListener("DOMContentLoaded", async () => {
-
-    startClock();
-
-    document.getElementById("rmSearchInput").addEventListener("input", (e) => {
-        rmSearchKeyword = e.target.value;
-        rmRenderFilteredList();
-    });
-
-    document.body.addEventListener("change", (e) => {
-        if(e.target.classList.contains("rm-room-checkbox")){
-            rmUpdateSelectionToolbar();
-        }
-    });
-
-    document.getElementById("rmDirtyBtn").addEventListener("click", () => rmSetSelectedRoomsStatus("DIRTY"));
-    document.getElementById("rmCleanBtn").addEventListener("click", () => rmSetSelectedRoomsStatus("CLEAN"));
-    document.getElementById("rmInspectedBtn").addEventListener("click", () => rmSetSelectedRoomsStatus("INSPECTED"));
-    document.getElementById("rmOooBtn").addEventListener("click", () => rmSetSelectedRoomsStatus("OUT_OF_SERVICE"));
-    document.getElementById("rmBlockedBtn").addEventListener("click", () => rmSetSelectedRoomsStatus("BLOCKED"));
-
-    rmSetView("list");
-
-    try {
-        await rmRefreshOverviewAndList();
-        await rmLoadActivityFeed();
-    } catch(err){
-        console.error("Room Management init failed:", err);
-    }
-
-});

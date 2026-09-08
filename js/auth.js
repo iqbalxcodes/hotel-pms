@@ -62,24 +62,20 @@ async function handleAuthChange(session){
 
 async function fetchProfile(userId){
 
-    const { data, error } =
-        await supabaseClient
-        .from("profiles")
+    const { data, error } = await supabaseClient
+        .from("app_users")
         .select("*")
         .eq("id", userId)
         .single();
 
     if(error){
-
         console.error(error);
         return null;
-
     }
 
     return data;
 
 }
-
 
 // ------------------------------------------------------
 // Auth state helpers (dipakai di file lain)
