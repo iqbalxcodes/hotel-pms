@@ -291,8 +291,9 @@ function renderTableHeader(){
         });
 
         th.appendChild(handle);
+        headerRow.appendChild(th);
     });
-    headerRow.appendChild(th);
+
 
     initHeaderLabelFades(headerRow);
 }
