@@ -16,29 +16,26 @@ const TABLE_PRESETS_KEY = "hotel_pms_table_presets_v1";
 // State: current visible columns / order / widths
 // ======================================================
 
+// tableColumns.js
 function getTableState(){
     const raw = localStorage.getItem(TABLE_STATE_KEY);
+    let state;
     if(!raw){
-        return {
-            visibleOrder: [...DEFAULT_VISIBLE_COLUMNS],
-            widths: {}
-        };
+        state = { visibleOrder: [...DEFAULT_VISIBLE_COLUMNS], widths: {} };
+    } else {
+        try {
+            const parsed = JSON.parse(raw);
+            const cleanOrder = (parsed.visibleOrder || []).filter(k => COLUMN_MAP[k]);
+            state = {
+                visibleOrder: cleanOrder.length > 0 ? cleanOrder : [...DEFAULT_VISIBLE_COLUMNS],
+                widths: parsed.widths || {}
+            };
+        } catch(e){
+            state = { visibleOrder: [...DEFAULT_VISIBLE_COLUMNS], widths: {} };
+        }
     }
-    try {
-        const parsed = JSON.parse(raw);
-        return {
-            visibleOrder:
-                Array.isArray(parsed.visibleOrder) && parsed.visibleOrder.length > 0
-                ? parsed.visibleOrder
-                : [...DEFAULT_VISIBLE_COLUMNS],
-            widths: parsed.widths || {}
-        };
-    } catch(e){
-        return {
-            visibleOrder: [...DEFAULT_VISIBLE_COLUMNS],
-            widths: {}
-        };
-    }
+    saveTableState(state); // heal it, so it doesn't break again next load
+    return state;
 }
 
 function saveTableState(state){
