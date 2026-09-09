@@ -1,0 +1,462 @@
+/* ======================================================
+   reservationDetailPage.css
+   Font/spacing scale sengaja mirip reservationPage.css
+   (12-13px label, gap pendek, margin pendek) biar konsisten
+   sama reservation.html.
+   ====================================================== */
+
+.resd-page {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 6px 12px 6px;
+    box-sizing: border-box;
+}
+
+/* ---- header ---- */
+
+.resd-header-row {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.resd-header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.resd-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.resd-header-left h2 {
+    margin: 0;
+    font-size: 16px;
+    white-space: nowrap;
+}
+
+#resdConfirmationNo { color: #1565c0; }
+
+.resd-status-select {
+    border: 1px solid #ccc;
+    border-radius: 14px;
+    padding: 3px 10px;
+    font-size: 11.5px;
+    background: #fafafa;
+    color: #444;
+    cursor: pointer;
+}
+
+.resd-header-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+}
+
+.resd-header-sub {
+    font-size: 11.5px;
+    color: #666;
+}
+
+.resd-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12.5px;
+    color: #333;
+    cursor: pointer;
+}
+.resd-btn:hover { background: #f5f5f5; }
+.resd-btn svg { width: 15px; height: 15px; flex: none; }
+
+.resd-btn-primary { background: #1565c0; border-color: #1565c0; color: #fff; }
+.resd-btn-primary:hover { background: #0d47a1; }
+
+.resd-btn-confirm { border-color: #2e7d32; color: #2e7d32; }
+.resd-btn-confirm:hover { background: #e8f5e9; }
+
+.resd-icon-only { padding: 5px 7px; }
+
+@media (max-width: 700px) {
+    .resd-btn-label { display: none; }
+    .resd-btn { padding: 6px; }
+}
+
+/* ---- mini action bar ---- */
+
+.resd-mini-actions {
+    flex: none;
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+
+.resd-mini-btn {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 14px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: #555;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.resd-mini-btn:hover { background: #f2f3f5; }
+.resd-mini-btn svg { width: 13px; height: 13px; }
+
+/* ---- full action bar popover ---- */
+
+.resd-actions-popover {
+    position: fixed;
+    top: 96px;
+    right: 16px;
+    z-index: 80;
+    width: 260px;
+    max-height: 70vh;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.15);
+    padding: 8px;
+}
+
+.resd-action-group { margin-bottom: 6px; }
+.resd-action-group h5 {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #999;
+    margin: 6px 4px 4px;
+}
+
+.resd-action-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #333;
+    cursor: pointer;
+}
+.resd-action-item:hover { background: #f2f3f5; }
+.resd-action-item svg { width: 14px; height: 14px; flex: none; color: #666; }
+
+/* ---- grid: 6 equal cards + 1 folio card spanning col3 all rows ---- */
+
+.resd-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 1fr 1fr 1.15fr;
+    grid-template-rows: repeat(3, 1fr);
+    grid-template-areas:
+        "guest      stay        folio"
+        "secondary  amenities   folio"
+        "remarks    rate        folio";
+    overflow-y: auto;
+}
+
+.resd-grid > :nth-child(1) { grid-area: guest; }
+.resd-grid > :nth-child(2) { grid-area: stay; }
+.resd-grid > :nth-child(3) { grid-area: folio; }
+.resd-grid > :nth-child(4) { grid-area: secondary; }
+.resd-grid > :nth-child(5) { grid-area: amenities; }
+.resd-grid > :nth-child(6) { grid-area: remarks; }
+.resd-grid > :nth-child(7) { grid-area: rate; }
+
+.resd-card {
+    position: relative;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.resd-card h3 {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: space-between;
+}
+.resd-card h3 svg { width: 13px; height: 13px; }
+
+.resd-card label {
+    display: block;
+    font-size: 10px;
+    color: #777;
+    margin-top: 4px;
+    margin-bottom: 1px;
+}
+
+.resd-card .value {
+    font-size: 12px;
+    font-weight: 600;
+    color: #222;
+    line-height: 1.2;
+    margin-bottom: 1px;
+}
+
+.resd-card .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 1px;
+}
+
+.resd-flip-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #888;
+    display: flex;
+    padding: 2px;
+    border-radius: 4px;
+}
+.resd-flip-btn:hover { background: #f0f0f0; color: #333; }
+.resd-flip-btn svg { width: 13px; height: 13px; }
+
+/* ---- flip mechanics ---- */
+
+.resd-flip-card {
+    padding: 0;
+    perspective: 1200px;
+    overflow: visible;
+}
+
+.resd-flip-inner {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transition: transform .5s;
+}
+
+.resd-flip-card.resd-flipped .resd-flip-inner {
+    transform: rotateY(180deg);
+}
+
+.resd-flip-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.resd-flip-back {
+    transform: rotateY(180deg);
+}
+
+/* ---- folio placeholder ---- */
+
+.resd-folio-card {
+    display: flex;
+    flex-direction: column;
+}
+.resd-folio-placeholder {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #999;
+    text-align: center;
+    padding: 12px;
+}
+.resd-folio-placeholder svg { width: 28px; height: 28px; color: #ccc; }
+.resd-folio-placeholder span { font-size: 12px; }
+.resd-folio-placeholder small { font-size: 10.5px; color: #bbb; }
+
+/* ---- secondary guest list ---- */
+
+.resd-count {
+    font-size: 10.5px;
+    font-weight: 400;
+    color: #999;
+    background: #f2f3f5;
+    border-radius: 10px;
+    padding: 1px 7px;
+}
+
+.resd-guest-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+.resd-guest-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #333;
+    padding: 4px 6px;
+    background: #fafafa;
+    border-radius: 6px;
+}
+.resd-guest-item svg { width: 13px; height: 13px; color: #888; }
+
+.resd-empty-note { font-size: 11px; color: #999; padding: 4px 0; }
+
+.resd-add-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px dashed #ccc;
+    background: #fff;
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 11.5px;
+    color: #555;
+    cursor: pointer;
+    width: 100%;
+    justify-content: center;
+}
+.resd-add-btn:hover { background: #f5f5f5; }
+.resd-add-btn svg { width: 13px; height: 13px; }
+
+.resd-add-icon-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #888;
+    display: flex;
+    padding: 2px;
+    border-radius: 4px;
+}
+.resd-add-icon-btn:hover { background: #f0f0f0; color: #1565c0; }
+.resd-add-icon-btn svg { width: 13px; height: 13px; }
+
+/* ---- room & amenities badges ---- */
+
+.resd-room-line { display: flex; align-items: center; gap: 6px; }
+.resd-room-status { display: flex; color: #bbb; }
+.resd-room-status svg { width: 9px; height: 9px; }
+
+.resd-badge-row { display: flex; flex-wrap: wrap; gap: 4px; }
+.resd-attr-badge {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: #f0f0f0;
+    color: #aaa;
+    border: 1px solid #e5e5e5;
+}
+
+.resd-package-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.resd-package-list li {
+    font-size: 11.5px;
+    color: #333;
+    padding-left: 12px;
+    position: relative;
+}
+.resd-package-list li:not(.resd-empty-note)::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #1565c0;
+}
+
+/* ---- remarks / notes ---- */
+
+.resd-note-item {
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin-bottom: 6px;
+}
+.resd-note-type {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: #1565c0;
+    margin-bottom: 3px;
+}
+
+.resd-wakeup-box {
+    border: 1px dashed #ddd;
+    border-radius: 6px;
+    padding: 6px 8px;
+}
+.resd-wakeup-box label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0 0 2px;
+}
+.resd-wakeup-box label svg { width: 12px; height: 12px; color: #e65100; }
+.resd-wakeup-box .value { font-size: 11.5px; color: #999; font-weight: 400; }
+
+/* ---- edit mode input ---- */
+
+.resd-card .value input,
+.resd-card .value textarea,
+.resd-flip-face .value input,
+.resd-flip-face .value textarea {
+    width: 100%;
+    font: inherit;
+    font-weight: 600;
+    font-size: 12px;
+    border: 1px solid #999;
+    border-radius: 4px;
+    padding: 3px 5px;
+    box-sizing: border-box;
+    background: #fffef2;
+}
+.resd-card .value textarea { min-height: 60px; resize: vertical; }
+
+/* ---- responsive: stack 1 column ---- */
+
+@media (max-width: 900px) {
+    .resd-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: none;
+        grid-template-areas:
+            "guest"
+            "stay"
+            "secondary"
+            "amenities"
+            "remarks"
+            "rate"
+            "folio";
+        overflow-y: auto;
+    }
+    .resd-card { min-height: 160px; }
+    .resd-flip-card { min-height: 220px; }
+}
