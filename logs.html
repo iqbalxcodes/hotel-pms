@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- logs.html -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel PMS — Activity Log</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/pmsTopbar.css">
+    <link rel="stylesheet" href="/css/reservationPage.css">
+    <style>
+        /* small additions specific to this page, kept inline so no
+           extra css file is needed for a handful of rules */
+        .logs-category-badge {
+            display: inline-block; padding: 2px 8px; border-radius: 10px;
+            font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap;
+        }
+        .logs-cat-reservation { background: #1565c0; }
+        .logs-cat-guest { background: #6a1b9a; }
+        .logs-cat-room { background: #00838f; }
+        .logs-cat-housekeeping { background: #2e7d32; }
+        .logs-cat-maintenance { background: #ef6c00; }
+        .logs-cat-folio { background: #ad1457; }
+        .logs-cat-finance { background: #c62828; }
+        .logs-cat-security { background: #212121; }
+        .logs-cat-auth { background: #455a64; }
+        .logs-cat-system { background: #757575; }
+        .logs-role-tag { font-size: 10px; color: #888; }
+        .logs-redacted { color: #999; font-style: italic; }
+        .logs-diff-cell { max-width: 420px; font-size: 12px; }
+        #logsScopeNote {
+            display: none; background: #fff3cd; border: 1px solid #ffe58f;
+            padding: 6px 12px; border-radius: 6px; font-size: 12px; margin-bottom: 6px;
+        }
+        .rsv-field-card.logs-filter-field { width: 160px; }
+    </style>
+</head>
+<body>
+
+    <div id="pageHeaderBar" class="page-header-bar"></div>
+
+    <div id="pmsTopbar" data-page="logs" data-hide-title="true"></div>
+
+    <div class="rsv-page">
+
+        <div class="rsv-header-row">
+            <h2>Activity Log</h2>
+
+            <div class="rsv-header-actions">
+                <button id="logsDeleteBtn" class="rsv-btn" style="display:none; color:#c62828; border-color:#c62828;" onclick="deleteSelectedLogs()">
+                    <i data-lucide="trash-2"></i><span class="rsv-btn-label">Delete Selected</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="logsScopeNote"></div>
+
+        <!-- ============================================== -->
+        <!-- SEARCH / FILTER CARD -->
+        <!-- ============================================== -->
+
+        <div class="rsv-card rsv-search-card">
+            <h3>Filter</h3>
+
+            <div class="rsv-search-fields">
+                <div class="rsv-search-column">
+
+                    <div class="rsv-field-card logs-filter-field">
+                        <div class="rsv-field">
+                            <label>Category</label>
+                            <select id="logsCategory">
+                                <option value="">Any</option>
+                                <option value="RESERVATION">Reservation</option>
+                                <option value="GUEST">Guest</option>
+                                <option value="ROOM">Room</option>
+                                <option value="HOUSEKEEPING">Housekeeping</option>
+                                <option value="MAINTENANCE">Maintenance</option>
+                                <option value="FOLIO">Folio</option>
+                                <option value="FINANCE">Finance</option>
+                                <option value="SECURITY">Security</option>
+                                <option value="AUTH">Auth</option>
+                                <option value="SYSTEM">System</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="rsv-field-card logs-filter-field">
+                        <div class="rsv-field">
+                            <label>Action</label>
+                            <select id="logsAction">
+                                <option value="">Any</option>
+                                <option value="CREATE">Create</option>
+                                <option value="UPDATE">Update</option>
+                                <option value="DELETE">Delete</option>
+                                <option value="LOGIN">Login</option>
+                                <option value="PASSWORD_CHANGE">Password change</option>
+                                <option value="EMAIL_CHANGE">Email change</option>
+                            </select>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="rsv-search-column">
+
+                    <div class="rsv-field-card logs-filter-field">
+                        <div class="rsv-field">
+                            <label>From</label>
+                            <input type="date" id="logsDateFrom">
+                        </div>
+                    </div>
+
+                    <div class="rsv-field-card logs-filter-field">
+                        <div class="rsv-field">
+                            <label>To</label>
+                            <input type="date" id="logsDateTo">
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="rsv-search-column">
+
+                    <div class="rsv-field-card logs-filter-field" style="width:220px;">
+                        <div class="rsv-field">
+                            <label>Search (entity, description, actor)</label>
+                            <input type="text" id="logsKeyword" placeholder="e.g. John, Room 204, note">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="rsv-search-footer">
+                <button type="button" class="rsv-btn" onclick="logsClearFilters()">Clear</button>
+                <button type="button" class="rsv-btn rsv-btn-primary" onclick="logsApplyFilters()">
+                    <i data-lucide="search"></i><span class="rsv-btn-label">Apply</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- SHOWING CARD -->
+        <!-- ============================================== -->
+
+        <div class="rsv-card rsv-showing-card">
+
+            <div class="rsv-showing-header">
+                <span class="rsv-showing-title">Showing</span>
+                <button class="rsv-btn rsv-export-btn" onclick="exportLogs()">
+                    <i data-lucide="download"></i><span class="rsv-btn-label">Export</span>
+                </button>
+            </div>
+
+            <div id="normalToolbar"></div>
+
+            <div id="selectionToolbar" style="display:none; padding:6px 12px; border-bottom:1px solid #eee;">
+                <span id="selectedCount">0 selected</span>
+            </div>
+
+            <div class="table-scroll" id="logsTableScroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:140px;">Time</th>
+                            <th style="width:110px;">Category</th>
+                            <th style="width:90px;">Action</th>
+                            <th style="width:180px;">Entity</th>
+                            <th style="width:160px;">Actor</th>
+                            <th style="width:220px;">Description</th>
+                            <th>Details</th>
+                            <th style="width:32px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTable"></tbody>
+                </table>
+            </div>
+
+            <div class="rsv-table-footer">
+                <span id="logsPageInfo">No activity</span>
+                <div class="rsv-page-nav" id="logsPageNav"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="statusBar">
+        <div id="userArea"></div>
+        <div id="contextArea"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/activeProperty.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/logsFilter.js"></script>
+    <script src="js/logsUI.js"></script>
+    <script src="js/logs.js"></script>
+    <script src="js/pageHeader.js"></script>
+    <script>initPageHeader();</script>
+    <script src="js/sidebar.js"></script>
+    <script>initSidebar();</script>
+    <script src="js/pmsTopbar.js"></script>
+    <script src="js/export.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>if (window.lucide) lucide.createIcons();</script>
+
+</body>
+</html>
