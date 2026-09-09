@@ -70,7 +70,7 @@
         <!-- ============================================== -->
 
         <div class="rsv-card rsv-search-card">
-            <h3>Search</h3>
+            <h3>Search <span class="rsv-search-hint">(pisahkan pakai koma untuk cari beberapa nilai, mis. 101,102,103)</span></h3>
 
             <form id="rsvSearchForm">
 
@@ -159,7 +159,7 @@
 
             </div>
 
-            <div class="table-scroll">
+            <div class="table-scroll" id="rsvTableScroll">
 
                 <table>
 
@@ -173,6 +173,12 @@
 
                 </table>
 
+            </div>
+
+            <!-- footer pagination BARU, nempel bawah, MASIH di dalam card showing -->
+            <div class="rsv-table-footer">
+                <span id="rsvPageInfo">No reservations</span>
+                <div class="rsv-page-nav" id="rsvPageNav"></div>
             </div>
 
         </div>

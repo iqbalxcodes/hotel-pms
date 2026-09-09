@@ -1,41 +1,50 @@
 // ======================================================
 // reservationPage.js
-// Search fields grouped into real column <div>s (max 4/col,
-// overflow-x scroll if more), so the divider between columns
-// is one continuous border, not per-field.
+// Search fields SEKARANG generate dinamis dari RESERVATION_COLUMNS
+// (tableConfig.js) -- semua kolom yang masuk akal buat dicari
+// ikut muncul (bukan cuma sebagian hardcode). Grouped ke kolom
+// <div> max 4/kolom, overflow-x scroll kalau kepanjangan.
 // ======================================================
 
 const RSV_FIELDS_KEY = "rsv_search_fields_config";
 const RSV_COLUMN_SIZE = 4;
 
-const RSV_SEARCH_FIELDS_DEFAULT = [
-    { key: "confirmation_no", label: "Confirmation No", type: "text" },
-    { key: "guest_name", label: "Guest Name", type: "text" },
-    { key: "status", label: "Status", type: "select", options: [
-        { value: "", label: "Any" },
-        { value: "TENTATIVE", label: "Tentative" },
-        { value: "CONFIRMED", label: "Confirmed" },
-        { value: "CHECKED_IN", label: "Checked In" },
-        { value: "CHECKED_OUT", label: "Checked Out" },
-        { value: "CANCELLED", label: "Cancelled" },
-        { value: "NO_SHOW", label: "No Show" }
-    ]},
-    { key: "room_number", label: "Room", type: "text" },
-    { key: "arrival_date", label: "Arrival Date", type: "date" },
-    { key: "departure_date", label: "Departure Date", type: "date" },
-    { key: "room_type", label: "Room Type", type: "text" },
-    { key: "rate_name", label: "Rate Name", type: "text" },
-    { key: "booking_channel", label: "Booking Channel", type: "text" }
+// kolom yang gak masuk akal buat search manual (computed/internal)
+const RSV_SEARCH_EXCLUDE = [
+    "nights", "billing_items", "id", "guest_id", "room_id",
+    "created_at", "updated_at"
 ];
+
+const RSV_STATUS_OPTIONS = [
+    { value: "", label: "Any" },
+    { value: "TENTATIVE", label: "Tentative" },
+    { value: "CONFIRMED", label: "Confirmed" },
+    { value: "CHECKED_IN", label: "Checked In" },
+    { value: "CHECKED_OUT", label: "Checked Out" },
+    { value: "CANCELLED", label: "Cancelled" },
+    { value: "NO_SHOW", label: "No Show" }
+];
+
+const RSV_YESNO_OPTIONS = [
+    { value: "", label: "Any" },
+    { value: "true", label: "Yes" },
+    { value: "false", label: "No" }
+];
+
+// generate dari tableConfig.js (harus sudah ke-load duluan di HTML)
+const RSV_SEARCH_FIELDS_DEFAULT = (typeof RESERVATION_COLUMNS !== "undefined" ? RESERVATION_COLUMNS : [])
+    .filter(c => !RSV_SEARCH_EXCLUDE.includes(c.key))
+    .map(c => {
+        if(c.key === "status") return { key: c.key, label: c.label, type: "select", options: RSV_STATUS_OPTIONS };
+        if(c.type === "boolean") return { key: c.key, label: c.label, type: "select", options: RSV_YESNO_OPTIONS };
+        if(c.type === "date" || c.type === "datetime") return { key: c.key, label: c.label, type: "date" };
+        return { key: c.key, label: c.label, type: "text" };
+    });
 
 let rsvFieldsOrder = [];
 let rsvFieldsHidden = [];
 let rsvCustomizing = false;
 let rsvDragKey = null;
-
-// ------------------------------------------------------
-// config persistence
-// ------------------------------------------------------
 
 function rsvFieldDef(key) {
     return RSV_SEARCH_FIELDS_DEFAULT.find(f => f.key === key);
@@ -61,10 +70,6 @@ function rsvSaveFieldConfig() {
     localStorage.setItem(RSV_FIELDS_KEY, JSON.stringify({ order: rsvFieldsOrder, hidden: rsvFieldsHidden }));
 }
 
-// ------------------------------------------------------
-// render
-// ------------------------------------------------------
-
 function rsvIcon(name) { return `<i data-lucide="${name}"></i>`; }
 
 function rsvEsc(s) {
@@ -80,6 +85,7 @@ function rsvRenderFieldCard(key, values) {
 
     const hidden = rsvFieldsHidden.includes(key);
     const savedValue = values[key] || "";
+    const isMultiCapable = def.type === "text";
 
     let inputHtml;
     if (def.type === "select") {
@@ -87,7 +93,8 @@ function rsvRenderFieldCard(key, values) {
             `<option value="${o.value}" ${o.value === savedValue ? "selected" : ""}>${o.label}</option>`
         ).join("")}</select>`;
     } else {
-        inputHtml = `<input type="${def.type}" data-search-key="${def.key}" value="${rsvEsc(savedValue)}">`;
+        const ph = isMultiCapable ? "e.g. a,b,c" : "";
+        inputHtml = `<input type="${def.type}" data-search-key="${def.key}" value="${rsvEsc(savedValue)}" placeholder="${ph}">`;
     }
 
     const hideBtnClass = hidden ? "rsv-btn-show" : "rsv-btn-hide";
@@ -110,7 +117,6 @@ function rsvRenderFields() {
 
     container.classList.toggle("rsv-customizing", rsvCustomizing);
 
-    // simpan value yang lagi diketik user biar gak ilang pas re-render
     const values = {};
     container.querySelectorAll("[data-search-key]").forEach(el => {
         values[el.dataset.searchKey] = el.value;
@@ -195,19 +201,11 @@ function rsvBindCustomizeEvents(container) {
     });
 }
 
-// ------------------------------------------------------
-// customize toggle (dari tombol pmsTopbar)
-// ------------------------------------------------------
-
 document.addEventListener("pms:customize-toggle", (e) => {
     rsvCustomizing = e.detail.active;
     if (!rsvCustomizing) rsvSaveFieldConfig();
     rsvRenderFields();
 });
-
-// ------------------------------------------------------
-// search: gather / apply / clear / chips
-// ------------------------------------------------------
 
 function rsvLoadLucide(cb) {
     if (window.lucide) { cb(); return; }
@@ -287,10 +285,6 @@ function rsvRenderChip() {
         btn.onclick = () => rsvRemoveSearchField(btn.dataset.remove);
     });
 }
-
-// ------------------------------------------------------
-// init
-// ------------------------------------------------------
 
 document.addEventListener("DOMContentLoaded", () => {
 

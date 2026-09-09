@@ -1102,7 +1102,6 @@ h1 {
 .table-container th,
 .table-container td {
     white-space: nowrap;
-    overflow: hidden;
 }
 
 .resizable-th {

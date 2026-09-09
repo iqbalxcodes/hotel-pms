@@ -362,13 +362,25 @@ function renderTableHeader(){
         const handle = document.createElement("div");
         handle.className = "col-resize-handle";
         handle.draggable = false;
+
+        let resizeStarted = false;
+
         handle.addEventListener("pointerdown", (e) => {
             e.stopPropagation();
+            e.preventDefault();
+            resizeStarted = true;
             startColumnResize(e, key);
         });
-        th.appendChild(handle);
 
-        headerRow.appendChild(th);
+        // fallback mouse (kalau browser/device gak fire pointerdown dgn benar)
+        handle.addEventListener("mousedown", (e) => {
+            if (resizeStarted) { resizeStarted = false; return; }
+            e.stopPropagation();
+            e.preventDefault();
+            startColumnResize({ clientX: e.clientX, currentTarget: handle, pointerId: -1 }, key);
+        });
+
+        th.appendChild(handle);
 
     });
 
@@ -424,28 +436,35 @@ let resizeState = null;
 
 function startColumnResize(e, key){
 
-    e.preventDefault();
-
     const col = document.getElementById(`col-${key}`);
     if(!col) return;
 
     const handle = e.currentTarget;
+    const usePointer = e.pointerId !== -1;
 
-    try { handle.setPointerCapture(e.pointerId); } catch(err) {}
+    if(usePointer){
+        try { handle.setPointerCapture(e.pointerId); } catch(err) {}
+    }
 
     resizeState = {
         key,
         pointerId: e.pointerId,
         handle,
+        usePointer,
         startX: e.clientX,
         startWidth: col.getBoundingClientRect().width
     };
 
     document.body.classList.add("col-resizing");
 
-    handle.addEventListener("pointermove", handleColumnResizeMove);
-    handle.addEventListener("pointerup", endColumnResize);
-    handle.addEventListener("pointercancel", endColumnResize);
+    if(usePointer){
+        handle.addEventListener("pointermove", handleColumnResizeMove);
+        handle.addEventListener("pointerup", endColumnResize);
+        handle.addEventListener("pointercancel", endColumnResize);
+    } else {
+        document.addEventListener("mousemove", handleColumnResizeMove);
+        document.addEventListener("mouseup", endColumnResize);
+    }
 
 }
 
@@ -470,36 +489,34 @@ function endColumnResize(e){
     const col = document.getElementById(`col-${resizeState.key}`);
 
     if(col){
-
         const width = parseInt(col.style.width, 10);
-
         const state = getTableState();
         state.widths[resizeState.key] = width;
         saveTableState(state);
-
     }
 
-    const { handle, pointerId, key } = resizeState;
+    const { handle, pointerId, key, usePointer } = resizeState;
 
-    handle.removeEventListener("pointermove", handleColumnResizeMove);
-    handle.removeEventListener("pointerup", endColumnResize);
-    handle.removeEventListener("pointercancel", endColumnResize);
-
-    try { handle.releasePointerCapture(pointerId); } catch(err) {}
+    if(usePointer){
+        handle.removeEventListener("pointermove", handleColumnResizeMove);
+        handle.removeEventListener("pointerup", endColumnResize);
+        handle.removeEventListener("pointercancel", endColumnResize);
+        try { handle.releasePointerCapture(pointerId); } catch(err) {}
+    } else {
+        document.removeEventListener("mousemove", handleColumnResizeMove);
+        document.removeEventListener("mouseup", endColumnResize);
+    }
 
     document.body.classList.remove("col-resizing");
 
-    // width berubah -> overflow status label bisa berubah, recalc fade
     const wrap = document.querySelector(`.resizable-th[data-key="${key}"] .col-header-label-wrap`);
     if(wrap) applyHeaderLabelFade(wrap);
 
-    // kolom di-resize -> isi sel di kolom itu juga perlu recalc blur
     if (typeof refreshCellFadeForColumn === "function") refreshCellFadeForColumn(key);
 
     resizeState = null;
 
 }
-
 
 // ======================================================
 // Modify Table Popup — draft state (belum di-Apply)

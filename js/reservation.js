@@ -1,8 +1,19 @@
 // ======================================================
 // reservation.js
+// FIXED: query pertama sekarang nunggu Supabase auth session
+// selesai di-restore dulu (getSession()) sebelum fetch --
+// kalau enggak, RLS bisa nolak semua row di request PERTAMA
+// (0 hasil, no error) sampai user ganti filter & request kedua
+// jalan setelah session ready. Ditambah 1x retry kalau hasil
+// pertama 0 row tanpa error, jaga-jaga cold-start view/schema.
+// ROW_HEIGHT_PX sekarang KONSTAN (match css persis) -- dulu
+// diukur dari DOM row yang belum ke-render (fallback 41px
+// acak), bikin rows-per-page ngadat gak konsisten.
 // ======================================================
 
-async function refreshTable(){
+const ROW_HEIGHT_PX = 37; // harus match .table-container td padding+border di style.css
+
+async function refreshTable(retryOnEmpty = true){
 
     const { count, error: countError } = await buildBaseQuery(true);
 
@@ -20,6 +31,14 @@ async function refreshTable(){
     if(error){
         console.error(error);
         showMessage("Gagal memuat data reservasi", "error");
+        return;
+    }
+
+    // safety net: 0 row tanpa error di percobaan pertama -> kemungkinan
+    // race condition auth/session belum settle, coba sekali lagi
+    if(retryOnEmpty && totalCount === 0 && (data?.length ?? 0) === 0){
+        await new Promise(r => setTimeout(r, 400));
+        await refreshTable(false);
         return;
     }
 
@@ -45,9 +64,7 @@ async function loadReservations(){
 
 // ------------------------------------------------------
 // Render rows -- tiap cell (kecuali checkbox & status) dibungkus
-// span wrap+inner buat efek blur/running-text. data-key dipakai
-// endColumnResize() (tableColumns.js) buat nge-refresh status
-// blur pas kolom di-resize.
+// span wrap+inner buat efek blur/running-text.
 // ------------------------------------------------------
 
 function renderReservations(reservations){
@@ -93,12 +110,6 @@ function renderReservations(reservations){
     initCellMarquees();
 
 }
-
-// ------------------------------------------------------
-// Cell marquee: hover -> geser ke kiri reveal teks kepotong,
-// blur 2 sisi. Gak hover -> blur 1 sisi kanan doang. Sama
-// persis pola header (col-header-label-wrap) tapi buat isi tabel.
-// ------------------------------------------------------
 
 function bindCellMarquee(wrap){
 
@@ -147,13 +158,75 @@ function initCellMarquees(){
     });
 }
 
-// dipanggil dari tableColumns.js endColumnResize() -- optional
-// hook, cek typeof dulu (pola yang sama dipakai di codebase ini)
 function refreshCellFadeForColumn(key){
     document.querySelectorAll(`#reservationTable td[data-key="${key}"] .cell-text-wrap`).forEach(applyCellFade);
 }
 
+// ======================================================
+// Rows-per-page: pakai ROW_HEIGHT_PX konstan (BUKAN diukur dari
+// DOM), jadi hasilnya deterministik/konsisten tiap saat. Dipicu
+// dari resize window DAN ResizeObserver di .table-scroll -- yang
+// kedua ini penting kalau container berubah ukuran TANPA window
+// resize (sidebar dibuka/ditutup, tab lain, dll).
+// ======================================================
+
+function calculateRowsPerPage(){
+
+    const scrollContainer = document.getElementById("rsvTableScroll");
+    if(!scrollContainer) return rowsPerPage;
+
+    const thead = scrollContainer.querySelector("thead");
+    const containerHeight = scrollContainer.clientHeight;
+    const theadHeight = thead ? thead.getBoundingClientRect().height : 37;
+
+    const available = containerHeight - theadHeight;
+    const computed = Math.floor(available / ROW_HEIGHT_PX);
+
+    return Math.max(5, computed);
+
+}
+
+function debounce(fn, delay){
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
+}
+
+async function adjustRowsPerPageAndRefresh(){
+
+    if(userSetRowsPerPage) return;
+
+    const newRowsPerPage = calculateRowsPerPage();
+
+    if(newRowsPerPage !== rowsPerPage && newRowsPerPage > 0){
+        rowsPerPage = newRowsPerPage;
+        currentPage = 1;
+        await refreshTable();
+    }
+
+}
+
+// ------------------------------------------------------
+// Auth-ready guard: pastikan session Supabase udah di-restore
+// sebelum fetch pertama. Kalau gagal (network dll), tetap lanjut
+// -- jangan block halaman selamanya.
+// ------------------------------------------------------
+
+async function waitForAuthReady(){
+    try {
+        if(window.supabaseClient && supabaseClient.auth && supabaseClient.auth.getSession){
+            await supabaseClient.auth.getSession();
+        }
+    } catch(e){
+        console.warn("waitForAuthReady failed, lanjut anyway:", e);
+    }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
+
+    await waitForAuthReady();
 
     if (typeof simulateReservationStatus === "function") {
         await simulateReservationStatus();
@@ -177,6 +250,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.addEventListener("resize", debounce(async () => {
         await adjustRowsPerPageAndRefresh();
     }, 300));
+
+    const scrollContainer = document.getElementById("rsvTableScroll");
+    if(scrollContainer && window.ResizeObserver){
+        const ro = new ResizeObserver(debounce(() => {
+            adjustRowsPerPageAndRefresh();
+        }, 300));
+        ro.observe(scrollContainer);
+    }
 
 });
 
