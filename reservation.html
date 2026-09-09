@@ -70,7 +70,12 @@
         <!-- ============================================== -->
 
         <div class="rsv-card rsv-search-card">
-            <h3>Search <span class="rsv-search-hint">(pisahkan pakai koma untuk cari beberapa nilai, mis. 101,102,103)</span></h3>
+            <h3>
+                <span>Search</span>
+                <button type="button" class="rsv-btn rsv-reset-btn" id="rsvSearchResetBtn" title="Reset to default">
+                    <i data-lucide="rotate-ccw"></i><span class="rsv-btn-label">Reset</span>
+                </button>
+            </h3>
 
             <form id="rsvSearchForm">
 
@@ -122,9 +127,15 @@
 
                 </div>
 
-                <button class="rsv-btn rsv-export-btn" onclick="exportReservations()">
-                    <i data-lucide="download"></i><span class="rsv-btn-label">Export</span>
-                </button>
+                <div class="rsv-showing-right-group">
+                    <button type="button" class="rsv-btn rsv-reset-btn" id="rsvShowingResetBtn" title="Reset to default">
+                        <i data-lucide="rotate-ccw"></i><span class="rsv-btn-label">Reset</span>
+                    </button>
+
+                    <button class="rsv-btn rsv-export-btn" onclick="exportReservations()">
+                        <i data-lucide="download"></i><span class="rsv-btn-label">Export</span>
+                    </button>
+                </div>
 
             </div>
 
@@ -175,10 +186,22 @@
 
             </div>
 
-            <!-- footer pagination BARU, nempel bawah, MASIH di dalam card showing -->
+            <!-- footer pagination -- non-customize: "xxxx reservations · Page x/x" +
+                 Prev/Next. Mode customize: "xxxx reservations" (page pindah ke
+                 pill di grup kanan) + checkbox Pagination + page-pill + Prev/Next. -->
             <div class="rsv-table-footer">
                 <span id="rsvPageInfo">No reservations</span>
-                <div class="rsv-page-nav" id="rsvPageNav"></div>
+
+                <div class="rsv-table-footer-right">
+                    <label class="rsv-pagination-toggle" title="Toggle pagination">
+                        <input type="checkbox" id="rsvPaginationToggle" checked>
+                        <span>Pagination</span>
+                    </label>
+
+                    <span class="rsv-page-pill" id="rsvPagePill"></span>
+
+                    <div class="rsv-page-nav" id="rsvPageNav"></div>
+                </div>
             </div>
 
         </div>
@@ -216,7 +239,11 @@
     <script src="js/reservationPage.js"></script>
 
     <script src="js/export.js"></script>
-    <script src="js/developmentStatusSimulator.js"></script>
+    <!-- developmentStatusSimulator.js DICABUT -- query ke tabel "reservation"
+         (singular) + enum status lama, udah gak match skema baru
+         ("reservations" + TENTATIVE dll). Selalu gagal tiap load,
+         cuma buang request & bikin noise console. Update dulu file-nya
+         ke skema baru kalau mau dipakai lagi. -->
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-XSST5HZ5L9"></script>
     <script>

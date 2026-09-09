@@ -1,17 +1,28 @@
 // ======================================================
 // reservation.js
-// FIXED: query pertama sekarang nunggu Supabase auth session
-// selesai di-restore dulu (getSession()) sebelum fetch --
-// kalau enggak, RLS bisa nolak semua row di request PERTAMA
-// (0 hasil, no error) sampai user ganti filter & request kedua
-// jalan setelah session ready. Ditambah 1x retry kalau hasil
-// pertama 0 row tanpa error, jaga-jaga cold-start view/schema.
-// ROW_HEIGHT_PX sekarang KONSTAN (match css persis) -- dulu
-// diukur dari DOM row yang belum ke-render (fallback 41px
-// acak), bikin rows-per-page ngadat gak konsisten.
+// FIXED (root cause "harus trigger manual"): waitForAuthReady()
+// dulu nunggu supabase.auth.getSession() TANPA batas waktu --
+// kalau promise itu nyangkut (known supabase-js v2 issue, lock
+// kepake tab lain / cold start), SELURUH initial load ikut
+// nyangkut: renderTableHeader() & loadReservations() gak pernah
+// kepanggil otomatis. Sekarang dibungkus Promise.race timeout
+// 1.5 detik -- max nunggu segitu, abis itu tetep lanjut.
+//
+// Dibuang juga: panggilan simulateReservationStatus() -- file
+// developmentStatusSimulator.js query ke tabel "reservation"
+// (singular) yang udah gak ada pasca migrasi ke "reservations"
+// + enum status baru. Selalu gagal, buang-buang request tiap
+// load. Script tag-nya juga dicabut dari reservation.html.
+//
+// BARU: dukungan toggle pagination on/off (dari card Showing
+// mode customize) -- kalau off, rowsPerPage jadi "all", semua
+// baris tampil, scroll manual.
 // ======================================================
 
 const ROW_HEIGHT_PX = 37; // harus match .table-container td padding+border di style.css
+
+let paginationEnabled = localStorage.getItem("rsv_pagination_enabled");
+paginationEnabled = paginationEnabled === null ? true : paginationEnabled === "true";
 
 async function refreshTable(retryOnEmpty = true){
 
@@ -163,11 +174,10 @@ function refreshCellFadeForColumn(key){
 }
 
 // ======================================================
-// Rows-per-page: pakai ROW_HEIGHT_PX konstan (BUKAN diukur dari
-// DOM), jadi hasilnya deterministik/konsisten tiap saat. Dipicu
-// dari resize window DAN ResizeObserver di .table-scroll -- yang
-// kedua ini penting kalau container berubah ukuran TANPA window
-// resize (sidebar dibuka/ditutup, tab lain, dll).
+// Rows-per-page: pakai ROW_HEIGHT_PX konstan. Kalau pagination
+// di-OFF (rsvSetPaginationEnabled(false)), fungsi ini gak boleh
+// nimpa rowsPerPage="all" -- makanya adjustRowsPerPageAndRefresh
+// tetep di-guard sama userSetRowsPerPage yang udah ada.
 // ======================================================
 
 function calculateRowsPerPage(){
@@ -209,15 +219,42 @@ async function adjustRowsPerPageAndRefresh(){
 }
 
 // ------------------------------------------------------
-// Auth-ready guard: pastikan session Supabase udah di-restore
-// sebelum fetch pertama. Kalau gagal (network dll), tetap lanjut
-// -- jangan block halaman selamanya.
+// Toggle pagination on/off (checkbox di footer, mode customize)
+// ------------------------------------------------------
+
+function rsvSetPaginationEnabled(enabled){
+
+    paginationEnabled = enabled;
+    localStorage.setItem("rsv_pagination_enabled", String(enabled));
+
+    if(enabled){
+        userSetRowsPerPage = false;
+        rowsPerPage = calculateRowsPerPage();
+    } else {
+        userSetRowsPerPage = true;
+        rowsPerPage = "all";
+    }
+
+    currentPage = 1;
+    refreshTable();
+
+}
+
+// ------------------------------------------------------
+// Auth-ready guard -- FIX: dibungkus timeout race, max 1.5s.
+// Sebelumnya await ini bisa nyangkut TANPA BATAS kalau
+// getSession() gak pernah resolve -> initial load (header +
+// data) gak pernah otomatis muncul, cuma muncul kalau user
+// trigger manual (ganti filter dsb, yang punya jalur sendiri).
 // ------------------------------------------------------
 
 async function waitForAuthReady(){
     try {
         if(window.supabaseClient && supabaseClient.auth && supabaseClient.auth.getSession){
-            await supabaseClient.auth.getSession();
+            await Promise.race([
+                supabaseClient.auth.getSession(),
+                new Promise(resolve => setTimeout(resolve, 1500))
+            ]);
         }
     } catch(e){
         console.warn("waitForAuthReady failed, lanjut anyway:", e);
@@ -228,10 +265,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await waitForAuthReady();
 
-    if (typeof simulateReservationStatus === "function") {
-        await simulateReservationStatus();
-    }
-
     renderTableHeader();
     updateToolbar();
 
@@ -239,13 +272,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         renderUserArea();
     }
 
-    rowsPerPage = calculateRowsPerPage();
+    if(!paginationEnabled){
+        rowsPerPage = "all";
+        userSetRowsPerPage = true;
+    } else {
+        rowsPerPage = calculateRowsPerPage();
+    }
 
     try { await loadReservations(); }
     catch (err) { console.error("loadReservations failed:", err); }
 
-    try { await adjustRowsPerPageAndRefresh(); }
-    catch (err) { console.error("adjustRowsPerPageAndRefresh failed:", err); }
+    if(paginationEnabled){
+        try { await adjustRowsPerPageAndRefresh(); }
+        catch (err) { console.error("adjustRowsPerPageAndRefresh failed:", err); }
+    }
 
     window.addEventListener("resize", debounce(async () => {
         await adjustRowsPerPageAndRefresh();

@@ -1,9 +1,18 @@
 // ======================================================
 // reservationPage.js
-// Search fields SEKARANG generate dinamis dari RESERVATION_COLUMNS
-// (tableConfig.js) -- semua kolom yang masuk akal buat dicari
-// ikut muncul (bukan cuma sebagian hardcode). Grouped ke kolom
-// <div> max 4/kolom, overflow-x scroll kalau kepanjangan.
+// Search fields generate dinamis dari RESERVATION_COLUMNS
+// (tableConfig.js). Grouped ke kolom <div> max 4/kolom,
+// overflow-x scroll kalau kepanjangan.
+//
+// BARU:
+// - Reset button (Search card & Showing card) -- keliatan
+//   cuma pas mode customize, klik = balikin urutan/hidden
+//   field pencarian ke default.
+// - Toggle class .rsv-page-customizing di .rsv-page pas
+//   customize mode nyala/mati -- dipakai CSS buat nampilin
+//   reset button, page-pill, checkbox Pagination di footer.
+// - Checkbox Pagination (footer, mode customize) -- wiring ke
+//   rsvSetPaginationEnabled() di reservation.js.
 // ======================================================
 
 const RSV_FIELDS_KEY = "rsv_search_fields_config";
@@ -68,6 +77,21 @@ function rsvLoadFieldConfig() {
 
 function rsvSaveFieldConfig() {
     localStorage.setItem(RSV_FIELDS_KEY, JSON.stringify({ order: rsvFieldsOrder, hidden: rsvFieldsHidden }));
+}
+
+// ------------------------------------------------------
+// Reset ke default -- dipakai tombol reset di Search DAN
+// Showing (dua-duanya reset hal yang sama: konfigurasi field
+// pencarian, satu-satunya "customizable state" yang ada
+// sekarang).
+// ------------------------------------------------------
+
+function rsvResetFieldsToDefault(){
+    rsvFieldsOrder = RSV_SEARCH_FIELDS_DEFAULT.map(f => f.key);
+    rsvFieldsHidden = [];
+    rsvSaveFieldConfig();
+    rsvRenderFields();
+    showMessage && showMessage("Search fields reset ke default", "success");
 }
 
 function rsvIcon(name) { return `<i data-lucide="${name}"></i>`; }
@@ -201,10 +225,22 @@ function rsvBindCustomizeEvents(container) {
     });
 }
 
+// ------------------------------------------------------
+// pms:customize-toggle -- dispatch dari pmsTopbar.js. Sekarang
+// juga toggle class .rsv-page-customizing (dipakai CSS buat
+// nampilin reset button / page-pill / checkbox pagination),
+// dan minta renderPaginationBar() re-render footer sesuai mode.
+// ------------------------------------------------------
+
 document.addEventListener("pms:customize-toggle", (e) => {
     rsvCustomizing = e.detail.active;
     if (!rsvCustomizing) rsvSaveFieldConfig();
+
+    document.querySelector(".rsv-page")?.classList.toggle("rsv-page-customizing", rsvCustomizing);
+
     rsvRenderFields();
+
+    if (typeof renderPaginationBar === "function") renderPaginationBar();
 });
 
 function rsvLoadLucide(cb) {
@@ -304,6 +340,21 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             rsvApplySearch(fields);
+        });
+    }
+
+    // ---- reset buttons (Search card + Showing card) ----
+    document.getElementById("rsvSearchResetBtn")?.addEventListener("click", rsvResetFieldsToDefault);
+    document.getElementById("rsvShowingResetBtn")?.addEventListener("click", rsvResetFieldsToDefault);
+
+    // ---- checkbox Pagination (footer, mode customize) ----
+    const pagToggle = document.getElementById("rsvPaginationToggle");
+    if (pagToggle) {
+        pagToggle.checked = (typeof paginationEnabled !== "undefined") ? paginationEnabled : true;
+        pagToggle.addEventListener("change", (e) => {
+            if (typeof rsvSetPaginationEnabled === "function") {
+                rsvSetPaginationEnabled(e.target.checked);
+            }
         });
     }
 
