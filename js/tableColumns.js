@@ -842,14 +842,25 @@ function loadSelectedPreset(name){
 
 }
 
-
 // ======================================================
 // Init
 // ======================================================
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    setupListContainerDragDrop(document.getElementById("columnShowingList"), "showing");
-    setupListContainerDragDrop(document.getElementById("columnHidingList"), "hiding");
+    // Render header tabel reservation
+    // HARUS dilakukan setelah DOM tersedia.
+    renderTableHeader();
+
+    // Setup drag & drop pada popup Modify Table
+    setupListContainerDragDrop(
+        document.getElementById("columnShowingList"),
+        "showing"
+    );
+
+    setupListContainerDragDrop(
+        document.getElementById("columnHidingList"),
+        "hiding"
+    );
 
 });
