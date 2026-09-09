@@ -1437,3 +1437,200 @@ h1 {
     white-space: nowrap; display: flex; gap: 6px;
 }
 .page-greeting { font-size: 18px; font-weight: 600; color: #222; }
+
+/* ======================================================
+   CSS untuk table header features (resize, drag, sort, label fade)
+   Tambahkan ke reservationPage.css atau style.css
+   ====================================================== */
+
+/* ---- Header cell ---- */
+.resizable-th {
+    position: relative;
+    user-select: none;
+    white-space: nowrap;
+    overflow: hidden;
+    padding: 8px 10px;
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #444;
+    background: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    cursor: default;
+}
+
+/* ---- Label wrap (viewport untuk marquee) ---- */
+.col-header-label-wrap {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    vertical-align: bottom;
+    cursor: grab;
+}
+
+.col-header-label {
+    display: inline-block;
+    white-space: nowrap;
+    transition: transform 0.3s ease;
+}
+
+/* Sortable indicator */
+.col-header-sortable {
+    cursor: pointer;
+}
+.col-header-sortable:hover {
+    color: #1565c0;
+}
+
+.col-sort-indicator {
+    font-size: 10px;
+    color: #1565c0;
+    margin-left: 4px;
+}
+
+/* ---- Fade effect untuk label panjang ---- */
+.col-label-fade {
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
+}
+
+.col-label-fade-both {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+}
+
+/* ---- Resize handle ---- */
+.col-resize-handle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: col-resize;
+    z-index: 2;
+    background: transparent;
+}
+
+.col-resize-handle:hover,
+.col-resizing .col-resize-handle {
+    background: rgba(21, 101, 192, 0.25);
+}
+
+body.col-resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+
+body.col-resizing * {
+    user-select: none;
+}
+
+/* ---- Drag & drop indicator ---- */
+.col-dragging {
+    opacity: 0.4;
+}
+
+.col-drop-before {
+    border-left: 2px solid #1565c0;
+}
+
+.col-drop-after {
+    border-right: 2px solid #1565c0;
+}
+
+/* ---- Cell text wrap (running text) ---- */
+.cell-text-wrap {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    vertical-align: bottom;
+}
+
+.cell-text-inner {
+    display: inline-block;
+    white-space: nowrap;
+    transition: transform 0.3s ease;
+}
+
+.cell-fade {
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
+}
+
+.cell-fade-both {
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
+}
+
+/* ---- Status badge ---- */
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.status-confirmed { background: #e3f2fd; color: #1565c0; }
+.status-checked_in { background: #e8f5e9; color: #2e7d32; }
+.status-checked_out { background: #f3e5f5; color: #7b1fa2; }
+.status-cancelled { background: #ffebee; color: #c62828; }
+.status-tentative { background: #fff3e0; color: #ef6c00; }
+.status-no_show { background: #eceff1; color: #546e7a; }
+.status-pending { background: #fff8e1; color: #f9a825; }
+
+/* ---- Modify Table Popup ---- */
+#modifyTablePopup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    padding: 20px;
+    z-index: 100;
+    min-width: 400px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    display: none;
+}
+
+.column-list-item {
+    padding: 8px 12px;
+    margin: 2px 0;
+    background: #f5f5f5;
+    border-radius: 6px;
+    cursor: pointer;
+    list-style: none;
+    font-size: 13px;
+    transition: background 0.15s;
+}
+
+.column-list-item:hover {
+    background: #e3f2fd;
+}
+
+.column-list-item.dragging {
+    opacity: 0.5;
+}
+
+.column-list-item.drop-before {
+    border-top: 2px solid #1565c0;
+}
+
+.column-list-item.drop-after {
+    border-bottom: 2px solid #1565c0;
+}
+
+#columnShowingList,
+#columnHidingList {
+    min-height: 120px;
+    padding: 8px;
+    border: 1px dashed #ccc;
+    border-radius: 8px;
+    margin: 8px 0;
+}
