@@ -171,27 +171,22 @@
 .rsv-field { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
 .rsv-field label { font-size: 10px; color: #777; white-space: nowrap; }
 
+/* height FIX + font-size SERAGAM buat text/select/date -- sebelumnya
+   font-size beda-beda per tipe bikin browser render tinggi native
+   control beda-beda (gak ada height eksplisit). */
 .rsv-field input,
 .rsv-field select {
+    height: 26px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    padding: 3px 5px;
-    font-size: 10px;
+    padding: 0 6px;
+    font-size: 12px;
     font: inherit;
     box-sizing: border-box;
     width: 100%;
 }
 
-/* placeholder field BIASA (text/number) -- digedein dikit */
-.rsv-field input::placeholder { font-size: 11px; color: #aaa; }
-
-/* "placeholder" versi select (opsi "Any" dsb) & datepicker --
-   dikecilin, BEDA dari field biasa */
-.rsv-field select,
-.rsv-field select option,
-.rsv-field input[type="date"] {
-    font-size: 9px;
-}
+.rsv-field input::placeholder { font-size: 12px; color: #aaa; }
 
 .rsv-search-footer {
     display: flex;

@@ -2,9 +2,22 @@
 // reservation.js
 // FIXED: Konsolidasi inisialisasi, data muncul langsung,
 // header render terjamin, better error handling.
+//
+// BUG KEFIX: init sebelumnya manggil initTableColumns() yang
+// GAK ADA di tableColumns.js (yang ada renderTableHeader()) --
+// jadi header tabel gak pernah ke-render di awal load, cuma
+// nongol kalau ada aksi lain yang manggil ulang. Sekarang
+// manggil renderTableHeader() yang bener.
+//
+// BUG KEFIX: ROW_HEIGHT_PX konstan (37) gak pernah match tinggi
+// baris ASLI dari CSS -> rowsPerPage selalu keitung salah ->
+// sisa ruang kosong permanen di card Showing. Sekarang diukur
+// dari DOM (measureActualRowHeight), konstanta cuma fallback
+// sebelum ada baris ke-render sama sekali. Ditambah 1x self-
+// correction pass di refreshTable() abis render pertama.
 // ======================================================
 
-const ROW_HEIGHT_PX = 37;
+const ROW_HEIGHT_PX = 37; // fallback doang, sebelum ada baris ke-render
 
 let paginationEnabled = localStorage.getItem("rsv_pagination_enabled");
 paginationEnabled = paginationEnabled === null ? true : paginationEnabled === "true";
@@ -13,13 +26,13 @@ paginationEnabled = paginationEnabled === null ? true : paginationEnabled === "t
 // Core: refresh table data
 // ------------------------------------------------------
 
-async function refreshTable(retryOnEmpty = true){
+async function refreshTable(retryOnEmpty = true, adjustPass = true){
     // Guard: supabaseClient harus ready
     if(typeof supabaseClient === "undefined" || !supabaseClient){
         console.warn("[reservation] supabaseClient belum siap, retry dalam 500ms...");
         if(retryOnEmpty){
             await new Promise(r => setTimeout(r, 500));
-            return refreshTable(false);
+            return refreshTable(false, adjustPass);
         }
         showMessage("Koneksi database belum siap", "error");
         return;
@@ -60,7 +73,7 @@ async function refreshTable(retryOnEmpty = true){
     if(retryOnEmpty && totalCount === 0 && (data?.length ?? 0) === 0){
         console.log("[reservation] 0 row di percobaan pertama, retry...");
         await new Promise(r => setTimeout(r, 600));
-        await refreshTable(false);
+        await refreshTable(false, adjustPass);
         return;
     }
 
@@ -68,6 +81,24 @@ async function refreshTable(retryOnEmpty = true){
     updateToolbar();
     updateFilterCount();
     renderPaginationBar();
+
+    // self-correction: sekarang udah ada baris ke-render, ukur tinggi
+    // ASLI-nya, bandingin sama rowsPerPage yang tadi dipakai buat fetch.
+    // Kalau beda (dan pagination hidup, user gak override manual),
+    // refetch SEKALI pakai angka yang bener -- biar rows-per-page
+    // ngepas ke tinggi layar tanpa nunggu resize/debounce.
+    if(adjustPass && paginationEnabled && !userSetRowsPerPage){
+
+        const measured = calculateRowsPerPage();
+
+        if(measured > 0 && measured !== rowsPerPage){
+            rowsPerPage = measured;
+            currentPage = 1;
+            await refreshTable(false, false);
+            return;
+        }
+
+    }
 }
 
 async function loadReservations(){
@@ -174,8 +205,18 @@ function refreshCellFadeForColumn(key){
 }
 
 // ======================================================
-// Rows-per-page
+// Rows-per-page -- ukur tinggi baris ASLI dari DOM kalau ada,
+// konstanta cuma fallback sebelum ada baris ke-render sama sekali.
 // ======================================================
+
+function measureActualRowHeight(){
+    const sampleRow = document.querySelector("#reservationTable tr");
+    if(sampleRow){
+        const h = sampleRow.getBoundingClientRect().height;
+        if(h > 0) return h;
+    }
+    return ROW_HEIGHT_PX;
+}
 
 function calculateRowsPerPage(){
     const scrollContainer = document.getElementById("rsvTableScroll");
@@ -183,8 +224,9 @@ function calculateRowsPerPage(){
     const thead = scrollContainer.querySelector("thead");
     const containerHeight = scrollContainer.clientHeight;
     const theadHeight = thead ? thead.getBoundingClientRect().height : 37;
+    const rowHeight = measureActualRowHeight();
     const available = containerHeight - theadHeight;
-    const computed = Math.floor(available / ROW_HEIGHT_PX);
+    const computed = Math.floor(available / rowHeight);
     return Math.max(5, computed);
 }
 
@@ -249,11 +291,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("[reservation] DOMContentLoaded — mulai inisialisasi");
 
     // 1. Render header tabel (tidak butuh auth)
-    if(typeof initTableColumns === "function"){
-        initTableColumns();
-        console.log("[reservation] initTableColumns() OK");
+    // FIXED: dulu manggil initTableColumns() yang gak ada di
+    // tableColumns.js -- fungsi yang bener namanya renderTableHeader().
+    if(typeof renderTableHeader === "function"){
+        renderTableHeader();
+        console.log("[reservation] renderTableHeader() OK");
     } else {
-        console.warn("[reservation] initTableColumns() tidak ditemukan — pastikan tableColumns.js diload sebelum reservation.js");
+        console.warn("[reservation] renderTableHeader() tidak ditemukan — pastikan tableColumns.js diload sebelum reservation.js");
     }
 
     // 2. Tunggu auth (max 1.5s)

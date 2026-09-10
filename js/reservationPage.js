@@ -107,7 +107,6 @@ function rsvRenderFieldCard(key, values) {
     const def = rsvFieldDef(key);
     if (!def) return "";
 
-    const hidden = rsvFieldsHidden.includes(key);
     const savedValue = values[key] || "";
     const isMultiCapable = def.type === "text";
 
@@ -117,8 +116,8 @@ function rsvRenderFieldCard(key, values) {
             `<option value="${o.value}" ${o.value === savedValue ? "selected" : ""}>${o.label}</option>`
         ).join("")}</select>`;
     } else {
-        const ph = isMultiCapable ? "e.g. a,b,c" : "";
-        inputHtml = `<input type="${def.type}" data-search-key="${def.key}" value="${rsvEsc(savedValue)}" placeholder="${ph}">`;
+        const langAttr = def.type === "date" ? `lang="en-GB"` : "";
+        inputHtml = `<input type="${def.type}" data-search-key="${def.key}" value="${rsvEsc(savedValue)}" ${langAttr}>`;
     }
 
     const hideBtnClass = hidden ? "rsv-btn-show" : "rsv-btn-hide";
