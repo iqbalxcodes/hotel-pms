@@ -108,8 +108,7 @@ function rsvRenderFieldCard(key, values) {
     if (!def) return "";
 
     const savedValue = values[key] || "";
-    const isMultiCapable = def.type === "text";
-
+    const hidden = rsvFieldsHidden.includes(def.key);
     let inputHtml;
     if (def.type === "select") {
         inputHtml = `<select data-search-key="${def.key}">${def.options.map(o =>
