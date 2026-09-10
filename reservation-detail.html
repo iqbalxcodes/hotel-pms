@@ -21,7 +21,7 @@
     <div class="resd-page">
 
         <!-- ============================================== -->
-        <!-- HEADER: number+status (left) | empty (center) | edit+more (right) -->
+        <!-- HEADER: number+status (left) | empty (center) | edit (right) -->
         <!-- ============================================== -->
 
         <div class="resd-header-row">
@@ -39,6 +39,8 @@
                     </select>
                 </div>
 
+                <!-- FIX: More button dipindah ke action bar card, di sini
+                     cuma Edit Reservation -->
                 <div class="resd-header-actions">
 
                     <button id="editBtn" class="resd-btn resd-btn-primary" onclick="enterEditMode()">
@@ -54,10 +56,6 @@
                         </button>
                     </span>
 
-                    <button class="resd-btn resd-icon-only" id="resdMoreBtn" onclick="resdToggleActions()" title="More actions">
-                        <i data-lucide="ellipsis-vertical"></i>
-                    </button>
-
                 </div>
 
             </div>
@@ -67,16 +65,25 @@
         </div>
 
         <!-- ============================================== -->
-        <!-- MINI ACTION BAR (default subset, always visible) -->
+        <!-- ACTION BAR -- dibungkus card garis tipis, More di
+             ujung kanan card ini (bukan di header) -->
         <!-- ============================================== -->
 
-        <div class="resd-mini-actions">
-            <button class="resd-mini-btn" onclick="duplicateReservation()" title="Duplicate Reservation"><i data-lucide="copy-plus"></i><span>Duplicate</span></button>
-            <button class="resd-mini-btn" onclick="showDevMessage('Print Registration Form')" title="Registration Form"><i data-lucide="file-text"></i><span>Reg. Form</span></button>
-            <button class="resd-mini-btn" onclick="showDevMessage('Print/Send Confirmation')" title="Confirmation"><i data-lucide="mail-check"></i><span>Confirmation</span></button>
-            <button class="resd-mini-btn" onclick="showDevMessage('Make/Encode Room Card')" title="Room Card"><i data-lucide="key-round"></i><span>Room Card</span></button>
-            <button class="resd-mini-btn" onclick="showDevMessage('Add Trace')" title="Add Trace"><i data-lucide="clipboard-list"></i><span>Add Trace</span></button>
-            <button class="resd-mini-btn" onclick="showDevMessage('Folio')" title="Folio"><i data-lucide="receipt"></i><span>Folio</span></button>
+        <div class="resd-actionbar-card">
+
+            <div class="resd-mini-actions">
+                <button class="resd-mini-btn" onclick="duplicateReservation()" title="Duplicate Reservation"><i data-lucide="copy-plus"></i><span>Duplicate</span></button>
+                <button class="resd-mini-btn" onclick="showDevMessage('Print Registration Form')" title="Registration Form"><i data-lucide="file-text"></i><span>Reg. Form</span></button>
+                <button class="resd-mini-btn" onclick="showDevMessage('Print/Send Confirmation')" title="Confirmation"><i data-lucide="mail-check"></i><span>Confirmation</span></button>
+                <button class="resd-mini-btn" onclick="showDevMessage('Make/Encode Room Card')" title="Room Card"><i data-lucide="key-round"></i><span>Room Card</span></button>
+                <button class="resd-mini-btn" onclick="showDevMessage('Add Trace')" title="Add Trace"><i data-lucide="clipboard-list"></i><span>Add Trace</span></button>
+                <button class="resd-mini-btn" onclick="showDevMessage('Folio')" title="Folio"><i data-lucide="receipt"></i><span>Folio</span></button>
+            </div>
+
+            <button class="resd-btn resd-icon-only" id="resdMoreBtn" onclick="resdToggleActions()" title="More actions">
+                <i data-lucide="ellipsis-vertical"></i>
+            </button>
+
         </div>
 
         <!-- ============================================== -->
@@ -104,6 +111,7 @@
             <div class="resd-action-group">
                 <h5>Documents</h5>
                 <div class="resd-action-item" onclick="showDevMessage('Confirmation'); resdCloseActions();"><i data-lucide="mail-check"></i>Confirmation</div>
+                <div class="resd-action-item" onclick="showDevMessage('Registration Form'); resdCloseActions();"><i data-lucide="file-text"></i>Registration Form</div>
                 <div class="resd-action-item" onclick="showDevMessage('Invoice'); resdCloseActions();"><i data-lucide="receipt"></i>Invoice</div>
                 <div class="resd-action-item" onclick="showDevMessage('Proforma'); resdCloseActions();"><i data-lucide="file-spreadsheet"></i>Proforma</div>
             </div>
@@ -133,41 +141,51 @@
         </div>
 
         <!-- ============================================== -->
-        <!-- CARD GRID -->
+        <!-- CARD GRID -- 3 baris x 6 kolom, folio spans kolom
+             5-6 x 3 baris, tiap info-card span 2 kolom x 1 baris.
+             Class based (bukan nth-child) biar gak fragile. -->
         <!-- ============================================== -->
 
         <div class="resd-grid">
 
             <!-- ---- GUEST (flip -> Identification) ---- -->
-            <div class="resd-card resd-flip-card" id="resdGuestCard">
+            <div class="resd-card resd-card-guest resd-flip-card" id="resdGuestCard">
                 <div class="resd-flip-inner">
 
                     <div class="resd-flip-face resd-flip-front">
                         <h3>Main Guest <button class="resd-flip-btn" onclick="resdFlip('resdGuestCard')" title="Identification"><i data-lucide="arrow-right"></i></button></h3>
+
+                        <div class="field-row">
+                            <div><label>Guest ID</label><div class="value" id="det_guest_id">-</div></div>
+                            <div><label>Salutation</label><div class="value" id="det_salutation">-</div></div>
+                        </div>
+
                         <label>First Name</label>
                         <div class="value" id="det_first_name">-</div>
                         <label>Last Name</label>
                         <div class="value" id="det_last_name">-</div>
+
                         <div class="field-row">
                             <div><label>Loyalty</label><div class="value" id="det_loyalty">-</div></div>
-                            <div><label>Salutation</label><div class="value" id="det_salutation">-</div></div>
-                        </div>
-                        <div class="field-row">
                             <div><label>Language</label><div class="value" id="det_language">-</div></div>
+                        </div>
+                        <div class="field-row">
                             <div><label>Country</label><div class="value" id="det_country">-</div></div>
-                        </div>
-                        <div class="field-row">
                             <div><label>Contact</label><div class="value" id="det_contact">-</div></div>
-                            <div><label>Company</label><div class="value" id="det_company">-</div></div>
                         </div>
                         <div class="field-row">
+                            <div><label>Company</label><div class="value" id="det_company">-</div></div>
                             <div><label>Booker Name</label><div class="value" id="det_booker_name">-</div></div>
-                            <div><label>Travel Agent</label><div class="value" id="det_travel_agent">-</div></div>
                         </div>
+
+                        <label>Travel Agent</label>
+                        <div class="value" id="det_travel_agent">-</div>
                     </div>
 
+                    <!-- FIX: header sekarang judul-kiri/tombol-kanan, sama
+                         kayak front (sebelumnya kebalik tombol-kiri/judul-kanan) -->
                     <div class="resd-flip-face resd-flip-back">
-                        <h3><button class="resd-flip-btn" onclick="resdFlip('resdGuestCard')" title="Back"><i data-lucide="arrow-left"></i></button> Identification</h3>
+                        <h3>Identification <button class="resd-flip-btn" onclick="resdFlip('resdGuestCard')" title="Back"><i data-lucide="arrow-left"></i></button></h3>
                         <div class="field-row">
                             <div><label>ID Type</label><div class="value" id="det_id_type">-</div></div>
                             <div><label>ID Number</label><div class="value" id="det_id_number">-</div></div>
@@ -194,7 +212,7 @@
             </div>
 
             <!-- ---- STAY DETAILS ---- -->
-            <div class="resd-card">
+            <div class="resd-card resd-card-stay">
                 <h3>Stay Details</h3>
                 <div class="field-row">
                     <div><label>Arrival</label><div class="value" id="det_arrival">-</div></div>
@@ -202,7 +220,10 @@
                 </div>
                 <div class="field-row">
                     <div><label>Departure</label><div class="value" id="det_departure">-</div></div>
-                    <div><label>External</label><div class="value" id="det_external_no">-</div></div>
+                    <div>
+                        <label>External / OTA Ref</label>
+                        <div class="value"><span id="det_external_no">-</span><span class="resd-dash-sep"> - </span><span id="det_ota_no">-</span></div>
+                    </div>
                 </div>
                 <div class="field-row">
                     <div><label>Nights</label><div class="value" id="det_nights">-</div></div>
@@ -217,7 +238,7 @@
             </div>
 
             <!-- ---- FOLIO PLACEHOLDER (no logic yet, sizing only) ---- -->
-            <div class="resd-card resd-folio-card">
+            <div class="resd-card resd-card-folio resd-folio-card">
                 <h3><i data-lucide="receipt"></i> Folio Workspace</h3>
                 <div class="resd-folio-placeholder">
                     <i data-lucide="layout-grid"></i>
@@ -226,8 +247,8 @@
                 </div>
             </div>
 
-            <!-- ---- SECONDARY GUESTS (list style) ---- -->
-            <div class="resd-card">
+            <!-- ---- SECONDARY GUESTS (compact list) ---- -->
+            <div class="resd-card resd-card-secondary">
                 <h3>Secondary Guests <span class="resd-count" id="det_sg_count">0</span></h3>
                 <div class="resd-guest-list" id="resdSecondaryGuestList">
                     <div class="resd-empty-note">No secondary guest</div>
@@ -237,24 +258,16 @@
                 </button>
             </div>
 
-            <!-- ---- ROOM & AMENITIES ---- -->
-            <div class="resd-card">
+            <!-- ---- ROOM & AMENITIES (bed type dibuang, attribute
+                 nempel kecil di Room Type kalau ada datanya) ---- -->
+            <div class="resd-card resd-card-amenities">
                 <h3>Room &amp; Amenities</h3>
-                <div class="field-row">
-                    <div><label>Room Type</label><div class="value" id="det_room_type">-</div></div>
-                    <div><label>Bed Type</label><div class="value" id="det_bed_type">-</div></div>
-                </div>
 
-                <label style="margin-top:6px;">Attributes</label>
-                <div class="resd-badge-row">
-                    <span class="resd-attr-badge" title="Connecting">CNN</span>
-                    <span class="resd-attr-badge" title="Accessible">ACC</span>
-                    <span class="resd-attr-badge" title="Non-Smoking">NS</span>
-                    <span class="resd-attr-badge" title="High Floor">HF</span>
-                    <span class="resd-attr-badge" title="View">SV</span>
-                    <span class="resd-attr-badge" title="Crib">CRB</span>
-                    <span class="resd-attr-badge" title="Extra Bed">EB</span>
-                </div>
+                <label>Room Type</label>
+                <div class="value" id="det_room_type">-<span class="resd-room-type-attrs" id="det_room_attrs"></span></div>
+
+                <label style="margin-top:6px;">Meal Plan</label>
+                <div class="value" id="det_meal_plan">-</div>
 
                 <label style="margin-top:6px;">Package</label>
                 <ul class="resd-package-list" id="resdPackageList">
@@ -262,21 +275,16 @@
                 </ul>
             </div>
 
-            <!-- ---- REMARKS (note + wake-up call) ---- -->
-            <div class="resd-card">
+            <!-- ---- REMARKS -- satu baris multi-kolom (mini-card),
+                 scroll horizontal kalau kepanjangan, bukan melebar
+                 vertikal ---- -->
+            <div class="resd-card resd-card-remarks">
                 <h3>Remarks <button class="resd-add-icon-btn" onclick="showDevMessage('Add Note/Trace')" title="Add"><i data-lucide="plus"></i></button></h3>
-                <div class="resd-note-item">
-                    <div class="resd-note-type">NOTE</div>
-                    <div class="value" id="det_remarks" style="min-height:60px; white-space:pre-wrap;">-</div>
-                </div>
-                <div class="resd-wakeup-box">
-                    <label><i data-lucide="sunrise"></i> Wake-up Call</label>
-                    <div class="value">Not scheduled</div>
-                </div>
+                <div class="resd-remarks-row" id="resdRemarksRow"></div>
             </div>
 
-            <!-- ---- RATE & STATISTICS (flip -> extended) ---- -->
-            <div class="resd-card resd-flip-card" id="resdRateCard">
+            <!-- ---- RATE & STATISTICS (flip -> extended, field lengkap) ---- -->
+            <div class="resd-card resd-card-rate resd-flip-card" id="resdRateCard">
                 <div class="resd-flip-inner">
 
                     <div class="resd-flip-face resd-flip-front">
@@ -295,23 +303,36 @@
                         </div>
                     </div>
 
+                    <!-- FIX: header judul-kiri/tombol-kanan konsisten sama front -->
                     <div class="resd-flip-face resd-flip-back">
-                        <h3><button class="resd-flip-btn" onclick="resdFlip('resdRateCard')" title="Back"><i data-lucide="arrow-left"></i></button> Rate Extended</h3>
+                        <h3>Rate Extended <button class="resd-flip-btn" onclick="resdFlip('resdRateCard')" title="Back"><i data-lucide="arrow-left"></i></button></h3>
                         <div class="field-row">
                             <div><label>Rate Code</label><div class="value" id="det_rate_code">-</div></div>
-                            <div><label>Currency</label><div class="value" id="det_currency">-</div></div>
+                            <div><label>Rate Plan</label><div class="value" id="det_rate_plan">-</div></div>
                         </div>
                         <div class="field-row">
+                            <div><label>Currency</label><div class="value" id="det_currency">-</div></div>
                             <div><label>Tax</label><div class="value" id="det_tax">-</div></div>
+                        </div>
+                        <div class="field-row">
                             <div><label>Discount</label><div class="value" id="det_discount">-</div></div>
+                            <div><label>Discount Reason</label><div class="value" id="det_discount_reason">-</div></div>
                         </div>
                         <div class="field-row">
                             <div><label>Commission</label><div class="value" id="det_commission">-</div></div>
-                            <div><label>ADR</label><div class="value" id="det_adr">-</div></div>
+                            <div><label>Commission %</label><div class="value" id="det_commission_pct">-</div></div>
                         </div>
                         <div class="field-row">
+                            <div><label>ADR</label><div class="value" id="det_adr">-</div></div>
                             <div><label>Length of Stay</label><div class="value" id="det_los">-</div></div>
+                        </div>
+                        <div class="field-row">
                             <div><label>Lead Time</label><div class="value" id="det_lead_time">-</div></div>
+                            <div><label>Total Accommodation</label><div class="value" id="det_total_accommodation">-</div></div>
+                        </div>
+                        <div class="field-row">
+                            <div><label>Total Taxes</label><div class="value" id="det_total_taxes">-</div></div>
+                            <div><label>Total Stay Value</label><div class="value" id="det_total_stay_value">-</div></div>
                         </div>
                     </div>
 
@@ -335,12 +356,12 @@
     <script src="js/folioService.js"></script>
     <script src="js/folio.js"></script>
     <script src="js/folioUI.js"></script>
-    <script src="js/reservationDetail.js"></script>
     <script src="js/pageHeader.js"></script>
     <script>initPageHeader();</script>
     <script src="js/sidebar.js"></script>
     <script>initSidebar();</script>
     <script src="js/pmsTopbar.js"></script>
+    <script src="js/reservationDetail.js"></script>
 
 </body>
 </html>

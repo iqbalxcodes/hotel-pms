@@ -11,7 +11,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin: 6px 12px 6px;
+    margin: 6px 8px;
     box-sizing: border-box;
 }
 
@@ -96,15 +96,30 @@
     .resd-btn { padding: 6px; }
 }
 
-/* ---- mini action bar ---- */
+/* ---- action bar: dibungkus card garis tipis, More nempel
+   ujung kanan card ini (BUKAN di sebelah Edit Reservation) ---- */
+
+.resd-actionbar-card {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 4px 6px;
+    background: #fff;
+    box-sizing: border-box;
+}
 
 .resd-mini-actions {
-    flex: none;
+    flex: 1 1 auto;
+    min-width: 0;
     display: flex;
     gap: 4px;
     overflow-x: auto;
-    padding-bottom: 2px;
 }
+
+#resdMoreBtn { flex: none; margin-left: auto; }
 
 .resd-mini-btn {
     flex: none;
@@ -162,29 +177,31 @@
 .resd-action-item:hover { background: #f2f3f5; }
 .resd-action-item svg { width: 14px; height: 14px; flex: none; color: #666; }
 
-/* ---- grid: 6 equal cards + 1 folio card spanning col3 all rows ---- */
+/* ======================================================
+   GRID -- 3 baris x 6 kolom SUNGGUHAN (bukan cuma keliatan
+   3x3 di semua ukuran layar kayak sebelumnya). Tiap info-card
+   span 2 kolom x 1 baris, folio span 2 kolom x 3 baris.
+   Ditempatin lewat class per-card (bukan nth-child) biar gak
+   fragile kalau urutan HTML berubah.
+   ====================================================== */
 
 .resd-grid {
     flex: 1 1 auto;
     min-height: 0;
     display: grid;
-    gap: 8px;
-    grid-template-columns: 1fr 1fr 1.15fr;
+    gap: 6px;
+    grid-template-columns: repeat(6, 1fr);
     grid-template-rows: repeat(3, 1fr);
-    grid-template-areas:
-        "guest      stay        folio"
-        "secondary  amenities   folio"
-        "remarks    rate        folio";
     overflow-y: auto;
 }
 
-.resd-grid > :nth-child(1) { grid-area: guest; }
-.resd-grid > :nth-child(2) { grid-area: stay; }
-.resd-grid > :nth-child(3) { grid-area: folio; }
-.resd-grid > :nth-child(4) { grid-area: secondary; }
-.resd-grid > :nth-child(5) { grid-area: amenities; }
-.resd-grid > :nth-child(6) { grid-area: remarks; }
-.resd-grid > :nth-child(7) { grid-area: rate; }
+.resd-card-guest      { grid-column: 1 / span 2; grid-row: 1; }
+.resd-card-stay       { grid-column: 3 / span 2; grid-row: 1; }
+.resd-card-folio      { grid-column: 5 / span 2; grid-row: 1 / span 3; }
+.resd-card-secondary  { grid-column: 1 / span 2; grid-row: 2; }
+.resd-card-amenities  { grid-column: 3 / span 2; grid-row: 2; }
+.resd-card-remarks    { grid-column: 1 / span 2; grid-row: 3; }
+.resd-card-rate       { grid-column: 3 / span 2; grid-row: 3; }
 
 .resd-card {
     position: relative;
@@ -232,6 +249,9 @@
     margin-bottom: 1px;
 }
 
+/* separator "-" di field gabungan (External / OTA) */
+.resd-dash-sep { color: #bbb; font-weight: 400; padding: 0 2px; }
+
 .resd-flip-btn {
     border: none;
     background: none;
@@ -240,11 +260,14 @@
     display: flex;
     padding: 2px;
     border-radius: 4px;
+    flex: none;
 }
 .resd-flip-btn:hover { background: #f0f0f0; color: #333; }
 .resd-flip-btn svg { width: 13px; height: 13px; }
 
-/* ---- flip mechanics ---- */
+/* ---- flip mechanics -- header title/tombol posisinya SAMA di
+   kedua sisi (h3: justify-content space-between di atas sudah
+   nanganin ini, HTML front & back sama-sama title-lalu-tombol) ---- */
 
 .resd-flip-card {
     padding: 0;
@@ -299,7 +322,7 @@
 .resd-folio-placeholder span { font-size: 12px; }
 .resd-folio-placeholder small { font-size: 10.5px; color: #bbb; }
 
-/* ---- secondary guest list ---- */
+/* ---- secondary guest list (name + relationship) ---- */
 
 .resd-count {
     font-size: 10.5px;
@@ -321,7 +344,10 @@
     background: #fafafa;
     border-radius: 6px;
 }
-.resd-guest-item svg { width: 13px; height: 13px; color: #888; }
+.resd-guest-item svg { width: 13px; height: 13px; color: #888; flex: none; }
+.resd-guest-item-body { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.resd-guest-item-name { font-weight: 600; }
+.resd-guest-item-relation { font-size: 10px; color: #999; font-weight: 400; }
 
 .resd-empty-note { font-size: 11px; color: #999; padding: 4px 0; }
 
@@ -354,22 +380,17 @@
 .resd-add-icon-btn:hover { background: #f0f0f0; color: #1565c0; }
 .resd-add-icon-btn svg { width: 13px; height: 13px; }
 
-/* ---- room & amenities badges ---- */
+/* ---- room & amenities: attribute nempel kecil di Room Type,
+   kosong kalau gak ada data (bukan bug) ---- */
 
 .resd-room-line { display: flex; align-items: center; gap: 6px; }
 .resd-room-status { display: flex; color: #bbb; }
 .resd-room-status svg { width: 9px; height: 9px; }
 
-.resd-badge-row { display: flex; flex-wrap: wrap; gap: 4px; }
-.resd-attr-badge {
-    font-size: 9.5px;
-    font-weight: 700;
-    letter-spacing: .02em;
-    padding: 2px 7px;
-    border-radius: 10px;
-    background: #f0f0f0;
-    color: #aaa;
-    border: 1px solid #e5e5e5;
+.resd-room-type-attrs {
+    font-size: 10px;
+    font-weight: 400;
+    color: #999;
 }
 
 .resd-package-list {
@@ -393,35 +414,38 @@
     color: #1565c0;
 }
 
-/* ---- remarks / notes ---- */
+/* ---- remarks: SATU BARIS horizontal, mini-card per item,
+   scroll-x kalau kepanjangan -- bukan stack vertikal ---- */
 
-.resd-note-item {
+.resd-card-remarks { display: flex; flex-direction: column; }
+
+.resd-remarks-row {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.resd-mini-remark-card {
+    flex: none;
+    width: 140px;
     border: 1px solid #eee;
     border-radius: 6px;
     padding: 6px 8px;
-    margin-bottom: 6px;
+    box-sizing: border-box;
+    overflow-y: auto;
 }
-.resd-note-type {
+
+.resd-mini-remark-type {
     font-size: 9.5px;
     font-weight: 700;
     letter-spacing: .04em;
     color: #1565c0;
     margin-bottom: 3px;
+    text-transform: uppercase;
 }
-
-.resd-wakeup-box {
-    border: 1px dashed #ddd;
-    border-radius: 6px;
-    padding: 6px 8px;
-}
-.resd-wakeup-box label {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin: 0 0 2px;
-}
-.resd-wakeup-box label svg { width: 12px; height: 12px; color: #e65100; }
-.resd-wakeup-box .value { font-size: 11.5px; color: #999; font-weight: 400; }
 
 /* ---- edit mode input ---- */
 
@@ -441,22 +465,30 @@
 }
 .resd-card .value textarea { min-height: 60px; resize: vertical; }
 
-/* ---- responsive: stack 1 column ---- */
+/* ---- responsive: stack 1 kolom, order eksplisit per class
+   (bukan nth-child) ---- */
 
 @media (max-width: 900px) {
+
     .resd-grid {
         grid-template-columns: 1fr;
         grid-template-rows: none;
-        grid-template-areas:
-            "guest"
-            "stay"
-            "secondary"
-            "amenities"
-            "remarks"
-            "rate"
-            "folio";
-        overflow-y: auto;
     }
+
+    .resd-grid > .resd-card {
+        grid-column: 1 / -1;
+        grid-row: auto;
+    }
+
+    .resd-card-guest      { order: 1; }
+    .resd-card-stay       { order: 2; }
+    .resd-card-secondary  { order: 3; }
+    .resd-card-amenities  { order: 4; }
+    .resd-card-remarks    { order: 5; }
+    .resd-card-rate       { order: 6; }
+    .resd-card-folio      { order: 7; }
+
     .resd-card { min-height: 160px; }
     .resd-flip-card { min-height: 220px; }
+
 }

@@ -1,17 +1,20 @@
 // ======================================================
 // reservationDetail.js
-// POLISH: header sekarang punya nomor reservasi + status
-// dropdown di kiri, edit + more di kanan, sub-info di bawahnya.
-// Guest card & Rate card sekarang flip-card (Identification /
-// Rate Extended -- field baru, belum ada sumber data, default "-").
-// Secondary Guest jadi list style. Room & Amenities: breakfast/
-// dinner/parking/shuttle dipetakan jadi Package bullet list,
-// attribute badges (connecting/accessible/dst) masih placeholder
-// statis (data room belum di-fetch di halaman ini). Remarks jadi
-// note-card style + Wake-up Call placeholder.
-// Folio SENGAJA belum dikerjakan (cuma placeholder ukuran card),
-// sesuai arahan -- mountPrimaryFolio/mountSecondaryFolios TIDAK
-// dipanggil dulu.
+// POLISH ROUND 2:
+// - Field yang kemarin ke-skip sekarang lengkap: Guest ID,
+//   External/OTA (digabung 1 baris), Meal Plan, Rate Plan,
+//   Discount Reason, Commission %, Total Accommodation,
+//   Total Taxes, Total Stay Value.
+// - Bed Type DIBUANG (ketauan dari kode Room Type).
+// - Room attributes sekarang nempel kecil di sebelah Room Type
+//   (cuma muncul kalau ADA datanya -- sekarang belum ada
+//   sumber data jadi kosong terus, itu benar, bukan bug).
+// - Secondary Guest render sekarang include baris Relationship.
+// - Remarks sekarang render sebagai baris horizontal mini-card
+//   (Note/Trace/Wake-up), bukan stack vertikal.
+// - Breadcrumb: pmsSetSubPath() dipanggil pas reservasi kemuat,
+//   path jadi "/Reservation/Reservation {nomor}".
+// - Folio SENGAJA belum dikerjakan (placeholder ukuran doang).
 // ======================================================
 
 let currentReservation = null;
@@ -20,13 +23,12 @@ let isNewReservation = false;
 
 
 // ------------------------------------------------------
-// Field configuration (dipakai buat enter/save edit mode --
-// field baru yang belum ada sumber data ditandai editable:false
-// biar gak ikut ke-render sebagai input kosong pas edit mode)
+// Field configuration
 // ------------------------------------------------------
 
 const FIELD_CONFIG = [
 
+    { id: "det_guest_id",       column: "guest_id",      editable: false, type: "text" },
     { id: "det_first_name",     column: null,   group: "guest_name",          part: "first", type: "text" },
     { id: "det_last_name",      column: null,   group: "guest_name",          part: "last",  type: "text" },
     { id: "det_loyalty",        column: "loyalty",       type: "text" },
@@ -42,6 +44,7 @@ const FIELD_CONFIG = [
     { id: "det_confirmation_no",column: "confirmation_no", type: "text", editable: false },
     { id: "det_departure",      column: "departure_date", type: "date" },
     { id: "det_external_no",    column: "external_reservation_no", type: "text" },
+    { id: "det_ota_no",         column: null, editable: false, type: "text" },
     { id: "det_nights",         column: null,   type: "text", editable: false },
     { id: "det_room_number",    column: "room_number",   type: "text" },
 
@@ -53,7 +56,7 @@ const FIELD_CONFIG = [
     { id: "det_travel_reason",  column: "travel_reason", type: "text" },
 
     { id: "det_room_type",      column: "room_type",     type: "text" },
-    { id: "det_bed_type",       column: "bed_type",      type: "text" },
+    { id: "det_meal_plan",      column: "meal_plan",     type: "text" },
 
     { id: "det_sg_first_name",  column: null,   group: "secondary_guest_name", part: "first", type: "text" },
     { id: "det_sg_last_name",   column: null,   group: "secondary_guest_name", part: "last",  type: "text" },
@@ -61,8 +64,7 @@ const FIELD_CONFIG = [
     { id: "det_remarks",        column: "remarks",       type: "textarea" },
 
     // field baru, belum ada sumber data -> editable:false biar
-    // enterEditMode/saveEditMode skip aman (container-nya juga
-    // masih nampilin "-", gak dibikin editable dulu)
+    // enterEditMode/saveEditMode skip aman
     { id: "det_id_type", column: null, editable: false, type: "text" },
     { id: "det_id_number", column: null, editable: false, type: "text" },
     { id: "det_id_exp", column: null, editable: false, type: "text" },
@@ -74,13 +76,19 @@ const FIELD_CONFIG = [
     { id: "det_addr_region", column: null, editable: false, type: "text" },
     { id: "det_addr_country", column: null, editable: false, type: "text" },
     { id: "det_rate_code", column: null, editable: false, type: "text" },
+    { id: "det_rate_plan", column: null, editable: false, type: "text" },
     { id: "det_currency", column: null, editable: false, type: "text" },
     { id: "det_tax", column: null, editable: false, type: "text" },
     { id: "det_discount", column: null, editable: false, type: "text" },
+    { id: "det_discount_reason", column: null, editable: false, type: "text" },
     { id: "det_commission", column: null, editable: false, type: "text" },
+    { id: "det_commission_pct", column: null, editable: false, type: "text" },
     { id: "det_adr", column: null, editable: false, type: "text" },
     { id: "det_los", column: null, editable: false, type: "text" },
-    { id: "det_lead_time", column: null, editable: false, type: "text" }
+    { id: "det_lead_time", column: null, editable: false, type: "text" },
+    { id: "det_total_accommodation", column: null, editable: false, type: "text" },
+    { id: "det_total_taxes", column: null, editable: false, type: "text" },
+    { id: "det_total_stay_value", column: null, editable: false, type: "text" }
 
 ];
 
@@ -209,7 +217,6 @@ function setDisplay(id, value){
 // ======================================================
 
 function updateStatusBadge(status){
-    const key = (status || "RESERVED").toLowerCase();
     const select = document.getElementById("statusFlowSelect");
     if(select) select.value = status || "RESERVED";
 }
@@ -257,16 +264,11 @@ async function performStatusChange(newStatus){
 
 
 // ======================================================
-// Folio -- SENGAJA BELUM DIKERJAKAN. Fungsi tetap ada (dari
-// folio.js/folioUI.js/folioService.js) tapi TIDAK dipanggil
-// dari renderDetail() dulu, folio card cuma placeholder ukuran.
+// Folio -- SENGAJA BELUM DIKERJAKAN.
 // ======================================================
-
-let folio2And3Loaded = false;
 
 function mountPrimaryFolio(reservationId){
     // TODO: aktifkan lagi kalau folio workspace sudah digarap
-    // openFolio({ containerId: "folioMount1", reservationId, backAction: "toggleFolioMode()" });
 }
 
 async function mountSecondaryFolios(reservationId){
@@ -302,6 +304,11 @@ function updateHeaderSub(res){
     el.textContent = parts.length ? parts.join(" · ") : "-";
 }
 
+// ------------------------------------------------------
+// Secondary guest -- sekarang termasuk baris Relationship
+// (placeholder "-", belum ada kolom DB buat ini)
+// ------------------------------------------------------
+
 function renderSecondaryGuestList(res){
     const container = document.getElementById("resdSecondaryGuestList");
     const countEl = document.getElementById("det_sg_count");
@@ -313,11 +320,44 @@ function renderSecondaryGuestList(res){
     if(countEl) countEl.textContent = hasGuest ? "1" : "0";
 
     container.innerHTML = hasGuest
-        ? `<div class="resd-guest-item"><i data-lucide="user"></i><span>${escapeHtml(sg.first)} ${escapeHtml(sg.last)}</span></div>`
+        ? `
+            <div class="resd-guest-item">
+                <i data-lucide="user"></i>
+                <div class="resd-guest-item-body">
+                    <span class="resd-guest-item-name">${escapeHtml(sg.first)} ${escapeHtml(sg.last)}</span>
+                    <span class="resd-guest-item-relation">Relationship: -</span>
+                </div>
+            </div>
+        `
         : `<div class="resd-empty-note">No secondary guest</div>`;
 
     if(window.lucide) lucide.createIcons();
 }
+
+// ------------------------------------------------------
+// Room type + attributes (nempel kecil, cuma muncul kalau ADA
+// datanya -- belum ada sumber data attribute sekarang, jadi
+// span-nya sengaja kosong, itu benar bukan bug)
+// ------------------------------------------------------
+
+function renderRoomTypeWithAttrs(res){
+
+    setDisplay("det_room_type", res.room_type);
+
+    const attrsEl = document.getElementById("det_room_attrs");
+    if(!attrsEl) return;
+
+    // TODO: kalau nanti ada kolom/relasi room attributes, isi array
+    // di sini, mis. res.room_attributes = ["CNN","ACC","NS"]
+    const attrs = Array.isArray(res.room_attributes) ? res.room_attributes : [];
+
+    attrsEl.textContent = attrs.length ? ` (${attrs.join(" · ")})` : "";
+
+}
+
+// ------------------------------------------------------
+// Package list (Stay Package bullet)
+// ------------------------------------------------------
 
 function renderPackageList(res){
     const ul = document.getElementById("resdPackageList");
@@ -334,10 +374,52 @@ function renderPackageList(res){
         : `<li class="resd-empty-note">No package components</li>`;
 }
 
+// ------------------------------------------------------
+// Remarks -- sekarang satu baris horizontal mini-card
+// (Note / Trace / Wake-up Call), scroll-x kalau kepanjangan,
+// bukan stack vertikal yang bikin card membengkak.
+// ------------------------------------------------------
+
+function renderRemarksRow(res){
+
+    const row = document.getElementById("resdRemarksRow");
+    if(!row) return;
+
+    const hasNote = !!(res.remarks && res.remarks.trim());
+
+    row.innerHTML = `
+        <div class="resd-mini-remark-card">
+            <div class="resd-mini-remark-type">Note</div>
+            <div class="value" id="det_remarks" style="white-space:pre-wrap;">${hasNote ? escapeHtml(res.remarks) : "-"}</div>
+        </div>
+        <div class="resd-mini-remark-card">
+            <div class="resd-mini-remark-type">Trace</div>
+            <div class="resd-empty-note">No trace</div>
+        </div>
+        <div class="resd-mini-remark-card">
+            <div class="resd-mini-remark-type">Wake-up Call</div>
+            <div class="resd-empty-note">Not scheduled</div>
+        </div>
+    `;
+
+}
+
+// ------------------------------------------------------
+// Breadcrumb -- "/Reservation/Reservation {nomor}" lewat
+// pmsSetSubPath() (lihat pmsTopbar.js)
+// ------------------------------------------------------
+
+function updateBreadcrumb(res){
+    if(typeof window.pmsSetSubPath === "function" && res.confirmation_no){
+        window.pmsSetSubPath("Reservation " + res.confirmation_no);
+    }
+}
+
 function renderDetail(res){
 
     const guestName = splitName(res.guest_name);
 
+    setDisplay("det_guest_id", res.guest_id);
     setDisplay("det_first_name", guestName.first);
     setDisplay("det_last_name", guestName.last);
     setDisplay("det_loyalty", res.loyalty);
@@ -353,6 +435,7 @@ function renderDetail(res){
     setDisplay("det_confirmation_no", res.confirmation_no);
     setDisplay("det_departure", formatDisplayDate(res.departure_date));
     setDisplay("det_external_no", res.external_reservation_no);
+    setDisplay("det_ota_no", null); // belum ada kolom OTA no
 
     const nights = calcNights(res);
     setDisplay("det_nights", nights > 0 ? nights : "-");
@@ -365,20 +448,20 @@ function renderDetail(res){
     setDisplay("det_market_segment", res.market_segment);
     setDisplay("det_travel_reason", res.travel_reason);
 
-    setDisplay("det_room_type", res.room_type);
-    setDisplay("det_bed_type", res.bed_type);
-
-    setDisplay("det_remarks", res.remarks);
+    renderRoomTypeWithAttrs(res);
+    setDisplay("det_meal_plan", res.meal_plan);
 
     renderSecondaryGuestList(res);
     renderPackageList(res);
+    renderRemarksRow(res);
 
     // Header
     const confEl = document.getElementById("resdConfirmationNo");
     if(confEl) confEl.textContent = res.confirmation_no || "-";
     updateHeaderSub(res);
+    updateBreadcrumb(res);
 
-    // Folio SENGAJA belum di-mount (lihat mountPrimaryFolio di atas)
+    // Folio SENGAJA belum di-mount
     if(res.id){
         mountPrimaryFolio(res.id);
     }
