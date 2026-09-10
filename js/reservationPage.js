@@ -59,6 +59,39 @@ function rsvFieldDef(key) {
     return RSV_SEARCH_FIELDS_DEFAULT.find(f => f.key === key);
 }
 
+function rsvParseFlexibleDate(raw) {
+    const s = (raw || "").trim();
+    if (!s) return null;
+
+    let d, m, y;
+
+    if (s.includes("/") || s.includes(".")) {
+        const parts = s.split(/[./]/).filter(Boolean);
+        if (parts.length !== 3) return null;
+        [d, m, y] = parts;
+    } else {
+        const digits = s.replace(/\D/g, "");
+        if (digits.length === 6) { d = digits.slice(0, 2); m = digits.slice(2, 4); y = digits.slice(4, 6); }
+        else if (digits.length === 8) { d = digits.slice(0, 2); m = digits.slice(2, 4); y = digits.slice(4, 8); }
+        else return null;
+    }
+
+    if (!/^\d+$/.test(d) || !/^\d+$/.test(m) || !/^\d+$/.test(y)) return null;
+
+    let yNum = parseInt(y, 10);
+    if (y.length === 2) yNum = yNum < 50 ? 2000 + yNum : 1900 + yNum;
+    else if (y.length !== 4) return null;
+
+    const dNum = parseInt(d, 10);
+    const mNum = parseInt(m, 10);
+    if (mNum < 1 || mNum > 12) return null;
+    const maxDay = new Date(yNum, mNum, 0).getDate();
+    if (dNum < 1 || dNum > maxDay) return null;
+
+    const pad = n => String(n).padStart(2, "0");
+    return `${yNum}-${pad(mNum)}-${pad(dNum)}`;
+}
+
 function rsvLoadFieldConfig() {
     try {
         const saved = JSON.parse(localStorage.getItem(RSV_FIELDS_KEY));
@@ -115,8 +148,11 @@ function rsvRenderFieldCard(key, values) {
             `<option value="${o.value}" ${o.value === savedValue ? "selected" : ""}>${o.label}</option>`
         ).join("")}</select>`;
     } else {
-        const langAttr = def.type === "date" ? `lang="en-GB"` : "";
-        inputHtml = `<input type="${def.type}" data-search-key="${def.key}" value="${rsvEsc(savedValue)}" ${langAttr}>`;
+        if (def.type === "date") {
+            inputHtml = `<input type="text" data-search-key="${def.key}" value="${rsvEsc(savedValue)}" placeholder="dd/mm/yyyy">`;
+        } else {
+            inputHtml = `<input type="${def.type}" data-search-key="${def.key}" value="${rsvEsc(savedValue)}">`;
+        }
     }
 
     const hideBtnClass = hidden ? "rsv-btn-show" : "rsv-btn-hide";
@@ -253,7 +289,19 @@ function rsvGatherSearchFields() {
     const fields = {};
     document.querySelectorAll('#rsvSearchForm [data-search-key]').forEach(el => {
         const v = el.value.trim();
-        if (v) fields[el.dataset.searchKey] = v;
+        if (!v) return;
+
+        const def = rsvFieldDef(el.dataset.searchKey);
+        if (def && def.type === "date") {
+            const parsed = rsvParseFlexibleDate(v);
+            if (!parsed) {
+                showMessage(`Format tanggal "${v}" tidak dikenali di ${def.label}`, "error");
+                throw new Error("invalid date");
+            }
+            fields[el.dataset.searchKey] = parsed;
+        } else {
+            fields[el.dataset.searchKey] = v;
+        }
     });
     return fields;
 }
@@ -261,6 +309,15 @@ function rsvGatherSearchFields() {
 function rsvFieldLabel(key) {
     const def = rsvFieldDef(key);
     return def ? def.label : key;
+}
+
+function rsvFormatFieldValue(key, value) {
+    const def = rsvFieldDef(key);
+    if (def && def.type === "date" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        const [y, m, d] = value.split("-");
+        return `${d}/${m}/${y}`;
+    }
+    return value;
 }
 
 function rsvApplySearch(fields) {
@@ -308,7 +365,7 @@ function rsvRenderChip() {
 
     wrap.innerHTML = keys.map(k => `
         <span class="rsv-search-chip" data-key="${k}">
-            <span>${rsvEsc(rsvFieldLabel(k))}: ${rsvEsc(activeSearchFields[k])}</span>
+            <span>${rsvEsc(rsvFieldLabel(k))}: ${rsvEsc(rsvFormatFieldValue(k, activeSearchFields[k]))}</span>
             <button data-remove="${k}" title="Remove"><i data-lucide="x"></i></button>
         </span>
     `).join("");
@@ -330,7 +387,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (form) {
         form.addEventListener("submit", (e) => {
             e.preventDefault();
-            const fields = rsvGatherSearchFields();
+            let fields;
+            try {
+                fields = rsvGatherSearchFields();
+            } catch (err) {
+                return; // showMessage udah muncul dari parser
+            }
 
             if (Object.keys(fields).length === 0) {
                 showMessage("Isi minimal satu field pencarian", "error");
