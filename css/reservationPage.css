@@ -403,8 +403,7 @@
 
 .rsv-showing-card .table-scroll table {
     table-layout: fixed;
-    width: max-content;
-    min-width: 100%;
+    width: 100%;
     border-collapse: collapse;
 }
 
@@ -421,10 +420,17 @@
     box-sizing: border-box;
 }
 
+/* ---- cell content: truncate + fade-blur kanan, marquee + fade
+   dua-sisi pas hover (dipicu class dari reservation.js:
+   bindCellMarquee / applyCellFade -- JS-nya udah ada dari awal,
+   ini cuma nambahin definisi visualnya). ---- */
+
 .rsv-showing-card #reservationTable td {
     border-bottom: 1px solid #eee;
     font-size: 14px;
     box-sizing: border-box;
+    max-width: 0;
+    overflow: hidden;
 }
 
 .rsv-showing-card #reservationTable tr:last-child td {
@@ -435,6 +441,81 @@
     background-color: #f5f5f5;
     cursor: pointer;
 }
+
+.cell-text-wrap {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.cell-text-inner {
+    display: inline-block;
+    white-space: nowrap;
+    transition: transform .3s ease;
+    will-change: transform;
+}
+
+.cell-fade::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 22px;
+    pointer-events: none;
+    background: linear-gradient(to right, transparent, #fff 85%);
+    backdrop-filter: blur(1px);
+}
+
+.rsv-showing-card #reservationTable tr:hover .cell-fade::after {
+    background: linear-gradient(to right, transparent, #f5f5f5 85%);
+}
+
+.cell-fade-both::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 22px;
+    pointer-events: none;
+    z-index: 1;
+    background: linear-gradient(to left, transparent, #fff 85%);
+    backdrop-filter: blur(1px);
+}
+
+.cell-fade-both::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 22px;
+    pointer-events: none;
+    z-index: 1;
+    background: linear-gradient(to right, transparent, #fff 85%);
+    backdrop-filter: blur(1px);
+}
+
+.rsv-showing-card #reservationTable tr:hover .cell-fade-both::before {
+    background-image: linear-gradient(to left, transparent, #f5f5f5 85%);
+}
+.rsv-showing-card #reservationTable tr:hover .cell-fade-both::after {
+    background-image: linear-gradient(to right, transparent, #f5f5f5 85%);
+}
+
+/* ---- lebar kolom -- SESUAIKAN key ke COLUMN_MAP di
+   tableColumns.js / RESERVATION_COLUMNS di tableConfig.js.
+   Tanpa ini, table-layout:fixed bagi rata semua kolom sama
+   besar; kasih width eksplisit biar kolom bisa lebih pendek
+   dari isinya (efek fade di atas yang nutupin sisanya). ---- */
+
+/*
+.rsv-showing-card #reservationTable td[data-key="guest_name"] { width: 160px; }
+.rsv-showing-card #reservationTable td[data-key="status"] { width: 110px; }
+*/
 
 /* ---- responsive: layar kecil -- pill/dropdown diperpendek + gap dikecilin ---- */
 
