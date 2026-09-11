@@ -250,7 +250,7 @@ async function changeReservationStatus(newStatus){
 }
 
 async function performStatusChange(newStatus){
-    const { error } = await supabaseClient.from("reservation").update({ status: newStatus }).eq("id", currentReservation.id);
+    const { error } = await supabaseClient.from("reservations").update({ status: newStatus }).eq("id", currentReservation.id);
     if(error){
         console.error(error);
         showMessage("Failed to update status", "error");
@@ -604,7 +604,7 @@ async function saveEditMode(){
 
     if(isNewReservation){
         const { data: insertedData, error: insertError } = await supabaseClient
-            .from("reservation").insert(payload).select().single();
+            .from("reservations").insert(payload).select().single();
         error = insertError;
         if(!error && insertedData){
             currentReservation = insertedData;
@@ -613,7 +613,7 @@ async function saveEditMode(){
         }
     } else {
         const { error: updateError } = await supabaseClient
-            .from("reservation").update(payload).eq("id", currentReservation.id);
+            .from("reservations").update(payload).eq("id", currentReservation.id);
         error = updateError;
     }
 
@@ -708,7 +708,7 @@ async function loadReservationDetail(redirectOnMissingId = true){
         return;
     }
 
-    const { data: res, error } = await supabaseClient.from("reservation").select("*").eq("id", id).single();
+    const { data: res, error } = await supabaseClient.from("reservations").select("*").eq("id", id).single();
 
     if(error || !res){
         console.error(error);

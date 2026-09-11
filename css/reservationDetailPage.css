@@ -178,11 +178,10 @@
 .resd-action-item svg { width: 14px; height: 14px; flex: none; color: #666; }
 
 /* ======================================================
-   GRID -- 3 baris x 6 kolom SUNGGUHAN (bukan cuma keliatan
-   3x3 di semua ukuran layar kayak sebelumnya). Tiap info-card
-   span 2 kolom x 1 baris, folio span 2 kolom x 3 baris.
-   Ditempatin lewat class per-card (bukan nth-child) biar gak
-   fragile kalau urutan HTML berubah.
+   GRID -- default (tablet/layar kotak) tetep 3 baris x 6
+   kolom, tiap card span 2 kolom -> visual 3x3. Di atas
+   1200px berubah jadi 6-kolom beneran (lihat media query
+   min-width:1200px di bawah), di bawah 700px stack 1 kolom.
    ====================================================== */
 
 .resd-grid {
@@ -465,10 +464,32 @@
 }
 .resd-card .value textarea { min-height: 60px; resize: vertical; }
 
+/* ---- desktop lebar (>=1200px): 6 kolom BENERAN kepake --
+   4 kartu biasa sejajar row 1 (masing2 1 kolom), folio geser
+   jadi span 2 baris aja (bukan 3), remarks+rate turun row 2.
+   Ganti angka 1200px sesuka lo kalau breakpoint-nya kerasa
+   ketinggian/kependekan. ---- */
+
+@media (min-width: 1200px) {
+
+    .resd-grid {
+        grid-template-rows: repeat(2, 1fr);
+    }
+
+    .resd-card-guest      { grid-column: 1; grid-row: 1; }
+    .resd-card-stay       { grid-column: 2; grid-row: 1; }
+    .resd-card-secondary  { grid-column: 3; grid-row: 1; }
+    .resd-card-amenities  { grid-column: 4; grid-row: 1; }
+    .resd-card-remarks    { grid-column: 1; grid-row: 2; }
+    .resd-card-rate       { grid-column: 2; grid-row: 2; }
+    .resd-card-folio      { grid-column: 5 / span 2; grid-row: 1 / span 2; }
+
+}
+
 /* ---- responsive: stack 1 kolom, order eksplisit per class
    (bukan nth-child) ---- */
 
-@media (max-width: 900px) {
+@media (max-width: 700px) {
 
     .resd-grid {
         grid-template-columns: 1fr;
