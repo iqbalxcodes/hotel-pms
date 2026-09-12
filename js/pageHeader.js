@@ -50,7 +50,7 @@ const PH_ITEMS = {
     },
     messages: {
         width: "34px",
-        html: `<button class="ph-icon-btn ph-messages-btn" title="Messages" onclick="rsCycleMode()"><i data-lucide="message-square"></i></button>`
+        html: `<button class="ph-icon-btn ph-messages-btn" title="Messages" onclick="rsCycleMode()" style="position:relative;"><i data-lucide="message-square"></i>${phRenderMsgBadgeHtml()}</button>`
     }
 };
 
@@ -77,6 +77,15 @@ function phInjectStyle() {
         :root { --ph-header-height: 48px; }
 
         #pageHeaderBar { flex: none; }
+
+        .ph-badge {
+            position: absolute; top: 4px; right: 4px;
+            min-width: 15px; height: 15px; padding: 0 3px;
+            border-radius: 8px; background: #c62828; color: #fff;
+            font-size: 9.5px; font-weight: 700; line-height: 15px;
+            align-items: center; justify-content: center;
+            display: none;
+        }
 
         .ph-header {
             position: relative;

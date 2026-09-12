@@ -1,22 +1,27 @@
 // ======================================================
 // rsidebar.js — right sidebar: messaging / operational channels
-// FRONT-END ONLY. rsChannels = mock data, ganti nanti ke hasil
-// fetch dari backend (Supabase dll) pas backend digarap.
+// Persisted in localStorage. Swap RS_KEY_DATA load/save for
+// backend fetch later.
 // ======================================================
 
 const RS_KEY_MODE = "ph_rsidebar_mode";
 const RS_KEY_WIDTH = "ph_rsidebar_width";
-const RS_KEY_ORDER = "ph_rsidebar_order";
+const RS_KEY_DATA = "ph_rsidebar_data";
 
-let rsMode = "hidden";       // hidden | full | icon
+let rsMode = "hidden";
 let rsWidth = 320;
-let rsFilter = "all";        // all | unread
+let rsFilter = "all";
 let rsSearchTerm = "";
-let rsCurrentView = { mode: "list" }; // { mode:'list' } atau { mode:'detail', channelId }
+let rsShowNewForm = false;
+let rsCurrentView = { mode: "list" };
 
-// ------------------------------------------------------
-// MOCK DATA — nanti tinggal diganti fetch backend
-// ------------------------------------------------------
+const RS_DEPTS = {
+    "Front Office": { icon: "concierge-bell", color: "#1565c0" },
+    "Housekeeping": { icon: "spray-can", color: "#2e7d32" },
+    "Maintenance": { icon: "wrench", color: "#c62828" },
+    "Lost & Found": { icon: "package-search", color: "#6a1b9a" },
+    "General": { icon: "message-circle", color: "#455a64" }
+};
 
 const rsChannels = [
     {
@@ -102,18 +107,25 @@ function rsLoad() {
     rsMode = localStorage.getItem(RS_KEY_MODE) || "hidden";
     rsWidth = Number(localStorage.getItem(RS_KEY_WIDTH)) || 320;
     try {
-        const order = JSON.parse(localStorage.getItem(RS_KEY_ORDER));
-        if (Array.isArray(order)) {
-            rsChannels.sort((a, b) => {
-                const ai = order.indexOf(a.id), bi = order.indexOf(b.id);
-                return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
-            });
+        const saved = JSON.parse(localStorage.getItem(RS_KEY_DATA));
+        if (Array.isArray(saved) && saved.length) {
+            rsChannels.length = 0;
+            rsChannels.push(...saved);
+            return;
         }
     } catch (e) {}
+    rsSaveData(); // first run: persist the mock seed so it's stable across reloads
 }
 function rsSaveMode() { localStorage.setItem(RS_KEY_MODE, rsMode); }
 function rsSaveWidth() { localStorage.setItem(RS_KEY_WIDTH, String(rsWidth)); }
-function rsSaveOrder() { localStorage.setItem(RS_KEY_ORDER, JSON.stringify(rsChannels.map(c => c.id))); }
+function rsSaveData() { localStorage.setItem(RS_KEY_DATA, JSON.stringify(rsChannels)); }
+
+// ------------------------------------------------------
+// unread badge (topbar icon)
+// ------------------------------------------------------
+
+function rsUnreadCount() { return rsChannels.filter(c => c.unread).length; }
+function rsUpdateBadge() { if (window.phSetMessagesBadge) phSetMessagesBadge(rsUnreadCount()); }
 
 // ------------------------------------------------------
 // filter
@@ -131,7 +143,7 @@ function rsFilterChannels() {
 }
 
 // ------------------------------------------------------
-// render — full rebuild pattern (sama kayak sidebar.js kiri)
+// render
 // ------------------------------------------------------
 
 function rsRenderPanel() {
@@ -179,8 +191,21 @@ function rsListHtml() {
             </div>
         </div>
         <div class="rs-list" id="rsList">${rsChannelCardsHtml()}</div>
-        <div class="rs-new-btn-wrap">
-            <button class="rs-new-btn" id="rsNewBtn">+ New message</button>
+        <div class="rs-new-btn-wrap">${rsShowNewForm ? rsNewFormHtml() : `<button class="rs-new-btn" id="rsNewBtn">+ New message</button>`}</div>
+    `;
+}
+
+function rsNewFormHtml() {
+    const opts = Object.keys(RS_DEPTS).map(d => `<option value="${d}">${d}</option>`).join("");
+    return `
+        <div class="rs-new-form" id="rsNewForm">
+            <select id="rsNewDept">${opts}</select>
+            <input type="text" id="rsNewTitle" placeholder="Subject...">
+            <textarea id="rsNewText" placeholder="Message..."></textarea>
+            <div class="rs-new-form-actions">
+                <button id="rsNewCancelBtn">Cancel</button>
+                <button id="rsNewSendBtn" class="rs-new-send">Send</button>
+            </div>
         </div>
     `;
 }
@@ -273,12 +298,49 @@ function rsBindListEvents() {
             rsRenderPanel();
         });
     });
-    document.getElementById("rsNewBtn")?.addEventListener("click", () => rsToast("New message — coming soon"));
+
+    if (rsShowNewForm) {
+        document.getElementById("rsNewCancelBtn")?.addEventListener("click", () => {
+            rsShowNewForm = false;
+            rsRenderPanel();
+        });
+        document.getElementById("rsNewSendBtn")?.addEventListener("click", rsSubmitNewMessage);
+    } else {
+        document.getElementById("rsNewBtn")?.addEventListener("click", () => {
+            rsShowNewForm = true;
+            rsRenderPanel();
+        });
+    }
+
     rsBindCardClicks();
     rsBindCardDrag();
 }
 
-// partial re-render (biar input search gak kehilangan fokus tiap ketik)
+function rsSubmitNewMessage() {
+    const deptEl = document.getElementById("rsNewDept");
+    const titleEl = document.getElementById("rsNewTitle");
+    const textEl = document.getElementById("rsNewText");
+    const text = textEl.value.trim();
+    if (!text) { textEl.focus(); return; }
+
+    const dept = deptEl.value;
+    const preset = RS_DEPTS[dept] || RS_DEPTS.General;
+    const title = titleEl.value.trim() || "(no subject)";
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    rsChannels.unshift({
+        id: "ch-" + Date.now(),
+        dept, icon: preset.icon, color: preset.color, urgent: false,
+        title, contextLabel: null, contextUrl: null,
+        lastAuthor: "You", lastText: text, lastTime: "now", unread: false,
+        messages: [{ author: "You", time, text, self: true }]
+    });
+
+    rsSaveData();
+    rsShowNewForm = false;
+    rsRenderPanel();
+}
+
 function rsRenderListOnly() {
     const listEl = document.getElementById("rsList");
     if (!listEl) return;
@@ -295,6 +357,8 @@ function rsBindCardClicks() {
             const ch = rsChannels.find(c => c.id === el.dataset.id);
             if (!ch) return;
             ch.unread = false;
+            rsSaveData();
+            rsUpdateBadge();
             rsCurrentView = { mode: "detail", channelId: ch.id };
             rsRenderPanel();
         });
@@ -335,15 +399,19 @@ function rsBindCardDrag() {
 function rsSyncOrderFromDom() {
     const ids = [...document.querySelectorAll("#rsList .rs-card")].map(el => el.dataset.id);
     rsChannels.sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
-    rsSaveOrder();
+    rsSaveData();
 }
 
 // ------------------------------------------------------
-// bind — icon mode (hover preview + click force full)
+// bind — icon mode
 // ------------------------------------------------------
 
 function rsBindIconEvents() {
-    document.getElementById("rsNewBtn")?.addEventListener("click", () => rsToast("New message — coming soon"));
+    document.getElementById("rsNewBtn")?.addEventListener("click", () => {
+        rsMode = "full"; rsSaveMode(); rsShowNewForm = true;
+        rsRenderPanel();
+        if (window.phUpdateMessagesIcon) phUpdateMessagesIcon(rsMode);
+    });
     document.querySelectorAll(".rs-icon-item").forEach(el => {
         const ch = rsChannels.find(c => c.id === el.dataset.id);
         if (!ch) return;
@@ -352,6 +420,8 @@ function rsBindIconEvents() {
         el.addEventListener("click", () => {
             rsHideHoverPopup();
             ch.unread = false;
+            rsSaveData();
+            rsUpdateBadge();
             rsMode = "full"; rsSaveMode();
             rsCurrentView = { mode: "detail", channelId: ch.id };
             rsRenderPanel();
@@ -403,6 +473,7 @@ function rsBindDetailEvents() {
         const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
         ch.messages.push({ author: "You", time, text, self: true });
         ch.lastAuthor = "You"; ch.lastText = text; ch.lastTime = "now";
+        rsSaveData();
         input.value = "";
         rsRenderPanel();
     };
@@ -417,7 +488,7 @@ function rsBindDetailEvents() {
 }
 
 // ------------------------------------------------------
-// resize (drag dari sisi kiri panel)
+// resize
 // ------------------------------------------------------
 
 function rsBindResize() {
@@ -457,7 +528,7 @@ function rsBindResize() {
 }
 
 // ------------------------------------------------------
-// push content (mirror sidebar kiri, pakai marginRight)
+// push content
 // ------------------------------------------------------
 
 function rsApplyContentPush() {
@@ -473,14 +544,14 @@ function rsApplyContentPush() {
 }
 
 // ------------------------------------------------------
-// cycle (dipanggil dari tombol header): hidden -> full -> icon -> hidden
+// cycle
 // ------------------------------------------------------
 
 function rsCycleMode() {
     rsHideHoverPopup();
     if (rsMode === "hidden") rsMode = "full";
     else if (rsMode === "full") rsMode = "icon";
-    else { rsMode = "hidden"; rsCurrentView = { mode: "list" }; }
+    else { rsMode = "hidden"; rsCurrentView = { mode: "list" }; rsShowNewForm = false; }
 
     rsSaveMode();
     rsRenderPanel();
@@ -493,10 +564,11 @@ window.rsCycleMode = rsCycleMode;
 // ------------------------------------------------------
 
 function initRightSidebar() {
-    if (window.self !== window.top) return; // di dalam iframe, shell yang render
+    if (window.self !== window.top) return;
 
     rsLoad();
     rsRenderPanel();
+    rsUpdateBadge();
     if (window.phUpdateMessagesIcon) phUpdateMessagesIcon(rsMode);
 
     window.addEventListener("resize", rsApplyContentPush);
