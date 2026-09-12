@@ -15,7 +15,6 @@
 //   rsvSetPaginationEnabled() di reservation.js.
 // ======================================================
 
-let activeSearchFields = {};
 
 const RSV_FIELDS_KEY = "rsv_search_fields_config";
 const RSV_COLUMN_SIZE = 4;
