@@ -42,11 +42,11 @@ const PH_ITEMS = {
     },
     add: {
         width: "34px",
-        html: `<button class="ph-icon-btn" title="Add" onclick="phAction('add')"><i data-lucide="plus"></i></button>`
+        html: `<button class="ph-icon-btn ph-add-btn" title="Add" onclick="toggleQuickAddBubble()"><i data-lucide="plus"></i></button>`
     },
     notification: {
         width: "34px",
-        html: `<button class="ph-icon-btn" title="Notifications" onclick="phAction('notification')"><i data-lucide="bell"></i></button>`
+        html: `<button class="ph-icon-btn ph-notification-btn" title="Notifications" onclick="phAction('notification')"><i data-lucide="bell"></i></button>`
     },
     messages: {
         width: "34px",
@@ -430,6 +430,96 @@ function phAction(name) {
         showDevMessage(name[0].toUpperCase() + name.slice(1));
     }
 }
+
+// ======================================================
+// Quick Add bubble -- popup nempel di bawah tombol "+"
+// PageHeader. Item yang halamannya udah ada -> navigasi
+// beneran lewat Workspace.openTab(). Item yang backend-nya
+// belum digarap -> toast "coming soon", biar list-nya
+// lengkap tapi jujur soal status pengerjaan.
+// ======================================================
+
+const QUICK_ADD_ITEMS = [
+    { label: "Add Reservation", icon: "calendar-plus", action: () => {
+        Workspace.openTab({ title: "New Reservation", url: "reservation-detail.html?new=true", page: "nav-reservations" });
+    }},
+    { label: "Add Bulk Reservation", icon: "copy-plus", action: () => {
+        Workspace.openTab({ title: "Reservations", url: "reservation.html?bulk=true", page: "nav-reservations" });
+    }},
+    { label: "Add Guest", icon: "user-plus", action: () => phToast("Add Guest — coming soon") },
+    { label: "Add Room", icon: "door-open", action: () => phToast("Add Room — coming soon") },
+    { label: "Add Payment", icon: "credit-card", action: () => phToast("Add Payment — coming soon (folio belum digarap)") },
+    { label: "Add Maintenance Request", icon: "wrench", action: () => phToast("Add Maintenance Request — coming soon") },
+    { label: "Add Housekeeping Task", icon: "spray-can", action: () => phToast("Add Housekeeping Task — coming soon") },
+    { label: "Add Lost & Found Item", icon: "package-search", action: () => phToast("Add Lost & Found Item — coming soon") },
+    { label: "Add Trace / Note", icon: "clipboard-list", action: () => phToast("Add Trace — coming soon") }
+];
+
+function phToast(text) {
+    const t = document.createElement("div");
+    t.textContent = text;
+    t.style.cssText = "position:fixed;left:50%;bottom:32px;transform:translateX(-50%);background:#333;color:#fff;padding:8px 16px;border-radius:18px;font-size:13px;z-index:300;opacity:0;transition:opacity .2s;white-space:nowrap;";
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.style.opacity = "1");
+    setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 200); }, 2200);
+}
+
+function quickAddHtml() {
+    return `
+        <div class="phadd-bubble-card">
+            ${QUICK_ADD_ITEMS.map((item, i) => `
+                <div class="phadd-item" data-idx="${i}">
+                    <i data-lucide="${item.icon}"></i>
+                    <span>${item.label}</span>
+                </div>
+            `).join("")}
+        </div>
+    `;
+}
+
+function closeQuickAddBubble() {
+    document.getElementById("quickAddBubble")?.remove();
+    document.removeEventListener("click", quickAddOutsideClick);
+}
+
+function quickAddOutsideClick(e) {
+    const bubble = document.getElementById("quickAddBubble");
+    const btn = document.querySelector(".ph-add-btn");
+    if (bubble && !bubble.contains(e.target) && e.target !== btn && !btn?.contains(e.target)) {
+        closeQuickAddBubble();
+    }
+}
+
+function toggleQuickAddBubble() {
+    const existing = document.getElementById("quickAddBubble");
+    if (existing) { closeQuickAddBubble(); return; }
+
+    const anchor = document.querySelector(".ph-add-btn");
+    if (!anchor) return;
+
+    const bubble = document.createElement("div");
+    bubble.id = "quickAddBubble";
+    bubble.className = "phadd-bubble";
+    bubble.innerHTML = quickAddHtml();
+    document.body.appendChild(bubble);
+
+    const rect = anchor.getBoundingClientRect();
+    bubble.style.top = (rect.bottom + 8) + "px";
+    bubble.style.left = Math.max(8, rect.right - 240) + "px";
+
+    if (window.lucide) lucide.createIcons();
+
+    bubble.querySelectorAll(".phadd-item").forEach(el => {
+        el.addEventListener("click", () => {
+            const item = QUICK_ADD_ITEMS[el.dataset.idx];
+            closeQuickAddBubble();
+            item.action();
+        });
+    });
+
+    setTimeout(() => document.addEventListener("click", quickAddOutsideClick), 0);
+}
+window.toggleQuickAddBubble = toggleQuickAddBubble;
 
 function isInIframe() { return window.self !== window.top; }
 

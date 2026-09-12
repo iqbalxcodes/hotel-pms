@@ -1737,3 +1737,32 @@ body.col-resizing * {
     from { opacity: 0; transform: translateY(-6px); }
     to   { opacity: 1; transform: none; }
 }
+
+.phadd-bubble {
+    position: fixed;
+    z-index: 150;
+    width: 240px;
+}
+
+.phadd-bubble-card {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.18);
+    padding: 6px;
+    box-sizing: border-box;
+    animation: authBubbleIn .15s ease-out;
+}
+
+.phadd-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #333;
+    cursor: pointer;
+}
+.phadd-item:hover { background: #f2f3f5; }
+.phadd-item svg { width: 15px; height: 15px; flex: none; color: #666; }

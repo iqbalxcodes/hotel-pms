@@ -419,6 +419,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    if (new URLSearchParams(location.search).get("bulk") === "true") {
+        document.getElementById("addReservationPanel").style.display = "block";
+    }
+
     rsvLoadLucide(() => lucide.createIcons());
 
 });
