@@ -196,11 +196,18 @@
 
 .resd-card-guest      { grid-column: 1 / span 2; grid-row: 1; }
 .resd-card-stay       { grid-column: 3 / span 2; grid-row: 1; }
-.resd-card-folio      { grid-column: 5 / span 2; grid-row: 1 / span 3; }
 .resd-card-secondary  { grid-column: 1 / span 2; grid-row: 2; }
 .resd-card-amenities  { grid-column: 3 / span 2; grid-row: 2; }
 .resd-card-remarks    { grid-column: 1 / span 2; grid-row: 3; }
 .resd-card-rate       { grid-column: 3 / span 2; grid-row: 3; }
+
+.resd-card-folio-1,
+.resd-card-folio-2,
+.resd-card-folio-3,
+.resd-card-folio-4 {
+    grid-column: span 2;
+    grid-row: 1 / span 3;
+}
 
 .resd-card {
     position: relative;
@@ -485,7 +492,10 @@
     .resd-card-rate       { grid-column: 2; grid-row: 2; }
     .resd-card-amenities  { grid-column: 2; grid-row: 3; }
 
-    .resd-card-folio      { grid-column: 3 / span 4; grid-row: 1 / span 3; }
+    .resd-card-folio-1 { grid-column: 3; grid-row: 1 / span 3; }
+    .resd-card-folio-2 { grid-column: 4; grid-row: 1 / span 3; }
+    .resd-card-folio-3 { grid-column: 5; grid-row: 1 / span 3; }
+    .resd-card-folio-4 { grid-column: 6; grid-row: 1 / span 3; }
 
 }
 
@@ -510,7 +520,10 @@
     .resd-card-amenities  { order: 4; }
     .resd-card-remarks    { order: 5; }
     .resd-card-rate       { order: 6; }
-    .resd-card-folio      { order: 7; }
+    .resd-card-folio-1    { order: 7; }
+    .resd-card-folio-2    { order: 8; }
+    .resd-card-folio-3    { order: 9; }
+    .resd-card-folio-4    { order: 10; }
 
     .resd-card { min-height: 160px; }
     .resd-flip-card { min-height: 220px; }
