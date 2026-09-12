@@ -103,6 +103,86 @@ const STATUS_LABELS = {
 };
 
 
+// build once: nama negara (lowercase) -> ISO2, cover SEMUA negara
+const COUNTRY_NAME_TO_CODE = (() => {
+    const map = {};
+    const dn = new Intl.DisplayNames(["en"], { type: "region" });
+    for(let i = 65; i <= 90; i++){
+        for(let j = 65; j <= 90; j++){
+            const code = String.fromCharCode(i) + String.fromCharCode(j);
+            try {
+                const name = dn.of(code);
+                if(name && name !== code) map[name.toLowerCase()] = code;
+            } catch(e){}
+        }
+    }
+    return map;
+})();
+
+function codeFromCountryName(name){
+    if(!name) return null;
+    const key = name.trim().toLowerCase();
+    if(key.length === 2) return name.toUpperCase();
+    return COUNTRY_NAME_TO_CODE[key] || null;
+}
+
+// nama bahasa (lowercase, English) -> ISO 639-1 code, auto dari browser
+const LANGUAGE_NAME_TO_ISO = (() => {
+    const map = {};
+    const dn = new Intl.DisplayNames(["en"], { type: "language" });
+    const iso639_1 = ["ab","aa","af","ak","sq","am","ar","an","hy","as","av","ae","ay","az","bm","ba","eu","be","bn","bh","bi","bs","br","bg","my","ca","ch","ce","ny","zh","cv","kw","co","cr","hr","cs","da","dv","nl","dz","en","eo","et","ee","fo","fj","fi","fr","ff","gl","ka","de","el","gn","gu","ht","ha","he","hz","hi","ho","hu","ia","id","ie","ga","ig","ik","io","is","it","iu","ja","jv","kl","kn","kr","ks","kk","km","ki","rw","ky","kv","kg","ko","ku","kj","la","lb","lg","li","ln","lo","lt","lu","lv","gv","mk","mg","ms","ml","mt","mi","mr","mh","mn","na","nv","nd","ne","ng","nb","nn","no","ii","nr","oc","oj","or","om","os","pa","pi","fa","pl","ps","pt","qu","rm","rn","ro","ru","sa","sc","sd","se","sm","sg","sr","gd","sn","si","sk","sl","so","st","es","su","sw","ss","sv","ta","te","tg","th","ti","bo","tk","tl","tn","to","tr","ts","tt","tw","ty","ug","uk","ur","uz","ve","vi","vo","wa","cy","wo","xh","yi","yo","za","zu"];
+    iso639_1.forEach(code => {
+        try {
+            const name = dn.of(code);
+            if(name) map[name.toLowerCase()] = code;
+        } catch(e){}
+    });
+    return map;
+})();
+
+// ISO 639-1 -> representative country code (buat flag). Bahasa != negara,
+// jadi ini pilihan "negara paling representatif" per bahasa, bukan mapping absolut.
+const LANG_CODE_TO_COUNTRY = {
+    en:"GB", id:"ID", ms:"MY", zh:"CN", ja:"JP", ko:"KR", th:"TH", vi:"VN",
+    ar:"SA", de:"DE", fr:"FR", nl:"NL", es:"ES", it:"IT", pt:"PT", hi:"IN",
+    tl:"PH", ru:"RU", tr:"TR", pl:"PL", uk:"UA", el:"GR", he:"IL", fa:"IR",
+    ur:"PK", bn:"BD", ta:"IN", te:"IN", ml:"IN", mr:"IN", gu:"IN", pa:"IN",
+    sw:"KE", am:"ET", ha:"NG", yo:"NG", ig:"NG", zu:"ZA", af:"ZA", xh:"ZA",
+    ro:"RO", hu:"HU", cs:"CZ", sk:"SK", bg:"BG", hr:"HR", sr:"RS", sl:"SI",
+    fi:"FI", sv:"SE", da:"DK", no:"NO", nb:"NO", nn:"NO", is:"IS", et:"EE",
+    lv:"LV", lt:"LT", ka:"GE", hy:"AM", az:"AZ", kk:"KZ", uz:"UZ", ky:"KG",
+    mn:"MN", km:"KH", lo:"LA", my:"MM", ne:"NP", si:"LK", ps:"AF", ku:"IQ",
+    so:"SO", mg:"MG", rw:"RW", eu:"ES", ca:"ES", gl:"ES", cy:"GB", ga:"IE",
+    gd:"GB", mt:"MT", sq:"AL", mk:"MK", bs:"BA", lb:"LU", rm:"CH", eo:"EU"
+};
+
+function codeFromLanguageName(name){
+    if(!name) return null;
+    const key = name.trim().toLowerCase();
+    if(key.length === 2) return LANG_CODE_TO_COUNTRY[key] || null; // udah ISO code
+    const iso = LANGUAGE_NAME_TO_ISO[key];
+    if(!iso) return null;
+    return LANG_CODE_TO_COUNTRY[iso] || null;
+}
+
+function flagEmoji(code){
+    if(!code || code.length !== 2) return "";
+    const A = 0x1F1E6;
+    return String.fromCodePoint(...[...code.toUpperCase()].map(c => A + c.charCodeAt(0) - 65));
+}
+function codeFromCountryName(name){
+    if(!name) return null;
+    const key = name.trim().toLowerCase();
+    if(key.length === 2) return name.toUpperCase();
+    return COUNTRY_NAME_TO_CODE[key] || null;
+}
+function codeFromLanguageName(name){
+    if(!name) return null;
+    const key = name.trim().toLowerCase();
+    if(key.length === 2) return name.toUpperCase();
+    return LANGUAGE_TO_CODE[key] || null;
+}
+
 // ======================================================
 // Status Bar helpers (message / confirm / clock)
 // ======================================================
@@ -294,14 +374,24 @@ function updateHeaderSub(res){
     const el = document.getElementById("resdHeaderSub");
     if(!el) return;
     const parts = [];
-    if(res.guest_name) parts.push(`Guest: ${res.guest_name}`);
-    if(res.room_number) parts.push(`Room ${res.room_number}`);
+
+    if(res.guest_name){
+        const salut = res.salutation ? res.salutation + " " : "";
+        const code = codeFromLanguageName(res.language);
+        const flag = code ? ` <span class="resd-flag">${flagEmoji(code)}</span>` : "";
+        parts.push(`<span class="resd-sub-item"><i data-lucide="user" class="resd-sub-icon"></i>${escapeHtml(salut + res.guest_name)}${flag}</span>`);
+    }
+    if(res.room_number){
+        parts.push(`<span class="resd-sub-item"><i data-lucide="bed" class="resd-sub-icon"></i>${escapeHtml(res.room_number)}</span>`);
+    }
     if(res.arrival_date && res.departure_date){
         parts.push(`${formatDisplayDate(res.arrival_date)} – ${formatDisplayDate(res.departure_date)}`);
     }
     const nights = calcNights(res);
     if(nights > 0) parts.push(`${nights} Night${nights > 1 ? "s" : ""}`);
-    el.textContent = parts.length ? parts.join(" · ") : "-";
+
+    el.innerHTML = parts.length ? parts.join(" · ") : "-";
+    if(window.lucide) lucide.createIcons();
 }
 
 // ------------------------------------------------------
@@ -424,8 +514,7 @@ function renderDetail(res){
     setDisplay("det_last_name", guestName.last);
     setDisplay("det_loyalty", res.loyalty);
     setDisplay("det_salutation", res.salutation);
-    setDisplay("det_language", res.language);
-    setDisplay("det_country", res.country);
+    renderLangCountry(res);
     setDisplay("det_contact", res.contact);
     setDisplay("det_company", res.company);
     setDisplay("det_booker_name", res.booker_name);
@@ -781,6 +870,19 @@ function resdShowFolioIndex(index){
 
     });
 
+}
+
+function renderLangCountry(res){
+    const langEl = document.getElementById("det_language");
+    if(langEl){
+        const code = codeFromLanguageName(res.language);
+        langEl.innerHTML = `${escapeHtml(res.language || "-")}${code ? ` <span class="resd-flag">${flagEmoji(code)}</span>` : ""}`;
+    }
+    const countryEl = document.getElementById("det_country");
+    if(countryEl){
+        const code = codeFromCountryName(res.country);
+        countryEl.innerHTML = `${escapeHtml(res.country || "-")}${code ? ` <span class="resd-flag">${flagEmoji(code)}</span>` : ""}`;
+    }
 }
 
 function resdInitFolioCarousel(){

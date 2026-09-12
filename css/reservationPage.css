@@ -566,3 +566,7 @@
     .rsv-pill-select { max-width: 68px; }
     .rsv-pill-date { width: 96px !important; }
 }
+
+.resd-sub-item{ display:inline-flex; align-items:center; gap:2px; }
+.resd-sub-icon{ width:11.5px; height:11.5px; vertical-align:-1px; margin-right:1px; }
+.resd-flag{ font-size:inherit; }
