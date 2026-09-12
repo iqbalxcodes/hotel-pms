@@ -379,6 +379,23 @@ function phToggleMobileSearch(show) {
 
 }
 
+function phRenderMsgBadgeHtml() {
+    return `<span class="ph-badge" id="phMsgBadge"></span>`;
+}
+
+function phSetMessagesBadge(count) {
+    const el = document.getElementById("phMsgBadge");
+    if (!el) return;
+    if (count > 0) {
+        el.textContent = count > 99 ? "99+" : String(count);
+        el.style.display = "flex";
+    } else {
+        el.textContent = "";
+        el.style.display = "none";
+    }
+}
+window.phSetMessagesBadge = phSetMessagesBadge;
+
 function phUpdateMessagesIcon(rsMode) {
     const btn = document.querySelector(".ph-messages-btn");
     if (!btn) return;
