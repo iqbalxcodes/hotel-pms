@@ -1,17 +1,18 @@
 // ======================================================
 // statusBar.js
-// Handles: login/logout, message/notification system,
-// pagination rendering (bottom status bar)
+// CLEANED: bagian login/logout/isLoggedIn DICABUT -- itu udah
+// jadi tanggung jawab auth.js (Supabase Auth beneran). Dulu
+// dua-duanya define ulang hal yang sama (isLoggedIn sbg
+// `let` di sini vs `function` di auth.js) -> kalau kedua file
+// keload di HTML yang sama, SyntaxError redeclaration, seluruh
+// script abis itu gak jalan.
+//
+// renderPaginationInfo() SENGAJA dikosongin (stub) atas
+// permintaan -- bar #paginationInfo TETEP ada di DOM, cuma
+// gak diisi apa-apa lagi. Dibiarin gitu buat dipake lagi nanti.
 // ======================================================
 
-// ------------------------------------------------------
-// Session state
-// ------------------------------------------------------
-
-let isLoggedIn = true;
-let currentUsername = "Iqbal";
-
-// contextMode: "message" | "logoutConfirm" | "loginForm" | "confirm"
+// contextMode: "message" | "confirm"
 let contextMode = "message";
 
 let lastMessage = { text: "Ready", type: "info" };
@@ -19,142 +20,13 @@ let messageCount = 0;
 
 
 // ======================================================
-// User Area
-// ======================================================
-
-function renderUserArea(){
-
-    const el = document.getElementById("userArea");
-
-    if(isLoggedIn){
-
-        el.innerHTML = `👤 <span id="usernameLabel">${currentUsername}</span>`;
-        el.onclick = handleUserClick;
-
-    }
-    else{
-
-        el.innerHTML = `👤 Login`;
-        el.onclick = null;
-
-    }
-
-}
-
-function handleUserClick(){
-
-    if(!isLoggedIn){
-
-        return;
-
-    }
-
-    contextMode = "logoutConfirm";
-
-    renderContextArea();
-
-}
-
-function confirmLogout(willLogout){
-
-    if(willLogout){
-
-        isLoggedIn = false;
-        currentUsername = null;
-
-        renderUserArea();
-
-        contextMode = "loginForm";
-
-        renderContextArea();
-
-        return;
-
-    }
-
-    contextMode = "message";
-
-    renderContextArea();
-
-}
-
-function submitLogin(){
-
-    const userInput = document.getElementById("loginUsername");
-    const passInput = document.getElementById("loginPassword");
-
-    const username = userInput.value.trim();
-    const password = passInput.value.trim();
-
-    if(username === "" || password === ""){
-
-        showMessage("Username / password tidak boleh kosong", "error");
-        return;
-
-    }
-
-    // NOTE: this is a placeholder auth check (no real backend auth wired up).
-    isLoggedIn = true;
-    currentUsername = username;
-
-    renderUserArea();
-
-    showMessage(`Login successful as ${username}`, "success");
-
-}
-
-
-// ======================================================
-// Context Area (message / confirm / login form)
+// Context Area (message / confirm)
 // ======================================================
 
 function renderContextArea(){
 
     const el = document.getElementById("contextArea");
-
-    if(contextMode === "logoutConfirm"){
-
-        el.innerHTML = `
-            <span class="logout-confirm">
-                Logout?
-                <button onclick="confirmLogout(true)">Yes</button>
-                <button onclick="confirmLogout(false)">No</button>
-            </span>
-        `;
-
-        return;
-
-    }
-
-    if(contextMode === "loginForm"){
-
-        el.innerHTML = `
-            <span class="login-form">
-                User: <input type="text" id="loginUsername" placeholder="Username">
-                Password: <input type="password" id="loginPassword" placeholder="Password">
-                <button onclick="submitLogin()">Login</button>
-            </span>
-        `;
-
-        const passInput = document.getElementById("loginPassword");
-
-        if(passInput){
-
-            passInput.addEventListener("keydown", (e) => {
-
-                if(e.key === "Enter"){
-
-                    submitLogin();
-
-                }
-
-            });
-
-        }
-
-        return;
-
-    }
+    if(!el) return;
 
     if(contextMode === "confirm" && activeConfirm){
 
@@ -260,176 +132,26 @@ function resolveConfirm(answer){
 
 
 // ======================================================
-// Pagination Info + Nav
+// Pagination Info -- STUB. Bar #paginationInfo dibiarin ada
+// di DOM (jangan dihapus dari HTML), tapi gak diisi apa-apa.
+// Efek samping: rows-per-page hover popover (yang nempel di
+// elemen ini) ikut nonaktif buat sementara -- itu udah
+// diketahui & diterima, bukan bug.
 // ======================================================
 
 function renderPaginationInfo(){
-
-    const el = document.getElementById("paginationInfo");
-
-    if(rowsPerPageHover){
-
-        el.innerHTML = renderRowsPerPagePopover();
-        return;
-
-    }
-
-    if(totalCount === 0){
-
-        el.innerText = "Showing 0 of 0";
-        return;
-
-    }
-
-    if(rowsPerPage === "all"){
-
-        el.innerText = `Showing 1–${totalCount} of ${totalCount}`;
-        return;
-
-    }
-
-    const from = (currentPage - 1) * rowsPerPage + 1;
-    const to = Math.min(currentPage * rowsPerPage, totalCount);
-
-    el.innerText = `Showing ${from}–${to} of ${totalCount}`;
-
-    attachPaginationHover();
-
+    // sengaja kosong
 }
 
-let rowsPerPageHover = false;
-let customRowsMode = false;
 
-function attachPaginationHover(){
-
-    const el = document.getElementById("paginationInfo");
-
-    el.onmouseenter = () => {
-
-        rowsPerPageHover = true;
-        renderPaginationInfo();
-
-    };
-
-    el.onmouseleave = () => {
-
-        if(customRowsMode){
-
-            return;
-
-        }
-
-        rowsPerPageHover = false;
-        renderPaginationInfo();
-
-    };
-
-}
-
-function renderRowsPerPagePopover(){
-
-    if(customRowsMode){
-
-        return `
-            <span class="rows-per-page-popover" onmouseleave="handlePopoverLeave()">
-                Rows:
-                <input type="number" id="customRowsInput" min="1" placeholder="e.g. 75">
-                <button onclick="applyCustomRows()">Apply</button>
-            </span>
-        `;
-
-    }
-
-    const options = [25, 50, 100];
-
-    const buttons = options
-        .map(n => `<button onclick="changeRowsPerPage(${n})">${n}</button>`)
-        .join("");
-
-    return `
-        <span class="rows-per-page-popover" onmouseleave="handlePopoverLeave()">
-            Rows per page:
-            ${buttons}
-            <button onclick="changeRowsPerPage('all')">All</button>
-            <button onclick="enterCustomRowsMode()">Custom</button>
-        </span>
-    `;
-
-}
-
-function handlePopoverLeave(){
-
-    if(customRowsMode){
-
-        return;
-
-    }
-
-    rowsPerPageHover = false;
-    renderPaginationInfo();
-
-}
-
-function enterCustomRowsMode(){
-
-    customRowsMode = true;
-    renderPaginationInfo();
-
-    const input = document.getElementById("customRowsInput");
-
-    if(input){
-
-        input.focus();
-
-        input.addEventListener("keydown", (e) => {
-
-            if(e.key === "Enter"){
-
-                applyCustomRows();
-
-            }
-
-        });
-
-    }
-
-}
-
-function applyCustomRows(){
-
-    const input = document.getElementById("customRowsInput");
-
-    const value = parseInt(input.value, 10);
-
-    if(!value || value < 1){
-
-        showMessage("Rows per page harus lebih dari 0", "error");
-        return;
-
-    }
-
-    customRowsMode = false;
-    rowsPerPageHover = false;
-
-    changeRowsPerPage(value);
-
-}
-
-function changeRowsPerPage(value){
-
-    rowsPerPage = value;
-    currentPage = 1;
-
-    rowsPerPageHover = false;
-    customRowsMode = false;
-
-    refreshTable();
-
-}
+// ======================================================
+// Pagination Nav
+// ======================================================
 
 function renderPaginationNav(){
 
     const el = document.getElementById("paginationNav");
+    if(!el) return;
 
     const totalPages = getTotalPages();
 
@@ -488,12 +210,12 @@ function renderPaginationBar(){
 
 
 // ======================================================
-// Init
+// Init -- renderUserArea() DICABUT dari sini, itu tanggung
+// jawab auth.js (dipanggil dari initAuth -> handleAuthChange).
 // ======================================================
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    renderUserArea();
     renderContextArea();
     renderPaginationInfo();
     renderPaginationNav();

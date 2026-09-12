@@ -413,6 +413,10 @@ function phToggleNav() {
 }
 
 function phAvatarClick() {
+    if (typeof window.toggleAuthBubble === "function") {
+        window.toggleAuthBubble();
+        return;
+    }
     document.dispatchEvent(new CustomEvent("ph:avatar-click"));
 }
 

@@ -1634,3 +1634,106 @@ body.col-resizing * {
     border-radius: 8px;
     margin: 8px 0;
 }
+
+/* ---- avatar login bubble (popup, klik avatar di PageHeader) ---- */
+
+.auth-bubble {
+    position: fixed;
+    z-index: 150;
+    width: 280px;
+    max-width: 92vw;
+}
+
+.auth-bubble-card {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.18);
+    padding: 14px 16px;
+    box-sizing: border-box;
+    animation: authBubbleIn .15s ease-out;
+}
+
+.auth-bubble-card h3 { margin: 0 0 8px; font-size: 14px; text-align: center; }
+.auth-bubble-role { text-align: center; font-size: 11px; color: #888; margin: -4px 0 10px; }
+
+.auth-bubble-card label {
+    display: block;
+    font-size: 12px;
+    color: #777;
+    margin-top: 10px;
+    margin-bottom: 4px;
+}
+
+.auth-bubble-card input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 13px;
+}
+
+.auth-pass-row { display: flex; gap: 6px; }
+.auth-pass-row input { flex: 1 1 auto; }
+
+.auth-eye {
+    flex: none;
+    width: 34px;
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.auth-eye:hover { background: #f0f0f0; }
+
+.auth-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #444; }
+.auth-check input { width: auto !important; }
+
+.auth-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.auth-actions-row button.primary {
+    border: 1px solid #1565c0;
+    background: #1565c0;
+    color: #fff;
+    border-radius: 4px;
+    padding: 6px 16px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.auth-actions-row button.primary:hover { background: #0d47a1; }
+
+.auth-error {
+    margin-top: 10px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background: #ffebee;
+    color: #c62828;
+    font-size: 12.5px;
+}
+
+.auth-hint { margin: 10px 0 0; font-size: 11.5px; color: #888; text-align: center; }
+.auth-hint a { color: #1565c0; }
+
+.auth-forgot-row { display: flex; gap: 6px; margin-top: 4px; }
+.auth-forgot-row input { flex: 1 1 auto; }
+.auth-forgot-row button {
+    border: 1px solid #1565c0;
+    background: #1565c0;
+    color: #fff;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 12.5px;
+}
+
+@keyframes authBubbleIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: none; }
+}
