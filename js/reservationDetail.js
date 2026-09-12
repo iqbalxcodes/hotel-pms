@@ -708,7 +708,12 @@ async function loadReservationDetail(redirectOnMissingId = true){
         return;
     }
 
-    const { data: res, error } = await supabaseClient.from("reservations").select("*").eq("id", id).single();
+    // FIXED: baca dari reservation_list_view (bukan tabel "reservations"
+    // mentah) -- skema baru gak nyimpen guest_name/room_number/rate_name
+    // dsb langsung di "reservations" (itu FK guest_id/room_id sekarang),
+    // field-field itu cuma ada hasil JOIN di view. reservationFilter.js
+    // (list page) udah bener pakai view ini, detail page kelewat.
+    const { data: res, error } = await supabaseClient.from("reservation_list_view").select("*").eq("id", id).single();
 
     if(error || !res){
         console.error(error);
@@ -721,7 +726,6 @@ async function loadReservationDetail(redirectOnMissingId = true){
     if(window.lucide) lucide.createIcons();
 
 }
-
 
 // ======================================================
 // Reservation Number Generator
