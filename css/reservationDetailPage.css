@@ -529,3 +529,53 @@
     .resd-flip-card { min-height: 220px; }
 
 }
+
+/* ======================================================
+   FOLIO CAROUSEL -- cuma aktif mode "tablet" (701-1199px,
+   di antara mobile stack & desktop 4-kolom). Di luar rentang
+   itu nav panah disembunyikan & display:none gak dipasang,
+   jadi 4 card tetep tampil normal kayak breakpoint lain.
+   ====================================================== */
+
+.resd-folio-nav {
+    display: none;
+    align-items: center;
+    gap: 2px;
+    flex: none;
+}
+.resd-folio-nav button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #888;
+    display: flex;
+    padding: 2px;
+    border-radius: 4px;
+    flex: none;
+}
+.resd-folio-nav button:hover { background: #f0f0f0; color: #333; }
+.resd-folio-nav button:disabled { opacity: .3; cursor: default; }
+.resd-folio-nav button:disabled:hover { background: none; }
+.resd-folio-nav button svg { width: 14px; height: 14px; }
+
+@media (min-width: 701px) and (max-width: 1199px) {
+
+    .resd-card-folio-1,
+    .resd-card-folio-2,
+    .resd-card-folio-3,
+    .resd-card-folio-4 {
+        display: none;
+        grid-column: 5 / span 2;
+        grid-row: 1 / span 3;
+    }
+
+    .resd-card-folio-1.resd-folio-active,
+    .resd-card-folio-2.resd-folio-active,
+    .resd-card-folio-3.resd-folio-active,
+    .resd-card-folio-4.resd-folio-active {
+        display: flex;
+    }
+
+    .resd-folio-nav { display: flex; }
+
+}

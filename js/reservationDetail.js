@@ -752,3 +752,55 @@ document.addEventListener("DOMContentLoaded", () => {
     loadReservationDetail(true);
     if(window.lucide) lucide.createIcons();
 });
+
+// ======================================================
+// Folio carousel (mode tablet) -- toggle satu card folio aktif
+// lewat data-folio-index, panah prev/next di header masing2 card.
+// TODO: default folio aktif sekarang selalu index 0 (Folio 1).
+// Ganti ke folio yang punya outstanding balance begitu logic
+// folio beneran ada datanya.
+// ======================================================
+
+const RESD_FOLIO_COUNT = 4;
+
+function resdShowFolioIndex(index){
+
+    index = Math.max(0, Math.min(RESD_FOLIO_COUNT - 1, index));
+
+    document.querySelectorAll("[data-folio-index]").forEach(card => {
+
+        const i = Number(card.dataset.folioIndex);
+
+        card.classList.toggle("resd-folio-active", i === index);
+
+        const prevBtn = card.querySelector(".resd-folio-prev");
+        const nextBtn = card.querySelector(".resd-folio-next");
+
+        if(prevBtn) prevBtn.disabled = i === 0;
+        if(nextBtn) nextBtn.disabled = i === RESD_FOLIO_COUNT - 1;
+
+    });
+
+}
+
+function resdInitFolioCarousel(){
+
+    document.querySelectorAll(".resd-folio-prev").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const idx = Number(btn.closest("[data-folio-index]").dataset.folioIndex);
+            resdShowFolioIndex(idx - 1);
+        });
+    });
+
+    document.querySelectorAll(".resd-folio-next").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const idx = Number(btn.closest("[data-folio-index]").dataset.folioIndex);
+            resdShowFolioIndex(idx + 1);
+        });
+    });
+
+    resdShowFolioIndex(0);
+
+}
+
+document.addEventListener("DOMContentLoaded", resdInitFolioCarousel);

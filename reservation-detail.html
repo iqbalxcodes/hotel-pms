@@ -237,34 +237,60 @@
                 </div>
             </div>
 
-            <!-- ---- FOLIO PLACEHOLDER (no logic yet, sizing only) ---- -->
-            <!-- ---- FOLIO PLACEHOLDER x4 (no logic yet, sizing only) ---- -->
-            <div class="resd-card resd-card-folio-1 resd-folio-card">
-                <h3><i data-lucide="receipt"></i> Folio 1</h3>
+            <!-- ---- FOLIO PLACEHOLDER x4 -- data-folio-index dipakai JS
+                 carousel (mode tablet 701-1199px, lihat reservationDetail.js
+                 resdInitFolioCarousel). Class resd-folio-active di folio-1
+                 statis di HTML biar gak kedip kosong sebelum JS jalan. ---- -->
+            <div class="resd-card resd-card-folio-1 resd-folio-card resd-folio-active" data-folio-index="0">
+                <h3>
+                    <span><i data-lucide="receipt"></i> Folio 1</span>
+                    <span class="resd-folio-nav">
+                        <button class="resd-folio-prev" title="Previous folio" disabled><i data-lucide="chevron-left"></i></button>
+                        <button class="resd-folio-next" title="Next folio"><i data-lucide="chevron-right"></i></button>
+                    </span>
+                </h3>
                 <div class="resd-folio-placeholder">
                     <i data-lucide="layout-grid"></i>
                     <small>Coming soon</small>
                 </div>
             </div>
 
-            <div class="resd-card resd-card-folio-2 resd-folio-card">
-                <h3><i data-lucide="receipt"></i> Folio 2</h3>
+            <div class="resd-card resd-card-folio-2 resd-folio-card" data-folio-index="1">
+                <h3>
+                    <span><i data-lucide="receipt"></i> Folio 2</span>
+                    <span class="resd-folio-nav">
+                        <button class="resd-folio-prev" title="Previous folio"><i data-lucide="chevron-left"></i></button>
+                        <button class="resd-folio-next" title="Next folio"><i data-lucide="chevron-right"></i></button>
+                    </span>
+                </h3>
                 <div class="resd-folio-placeholder">
                     <i data-lucide="layout-grid"></i>
                     <small>Coming soon</small>
                 </div>
             </div>
 
-            <div class="resd-card resd-card-folio-3 resd-folio-card">
-                <h3><i data-lucide="receipt"></i> Folio 3</h3>
+            <div class="resd-card resd-card-folio-3 resd-folio-card" data-folio-index="2">
+                <h3>
+                    <span><i data-lucide="receipt"></i> Folio 3</span>
+                    <span class="resd-folio-nav">
+                        <button class="resd-folio-prev" title="Previous folio"><i data-lucide="chevron-left"></i></button>
+                        <button class="resd-folio-next" title="Next folio"><i data-lucide="chevron-right"></i></button>
+                    </span>
+                </h3>
                 <div class="resd-folio-placeholder">
                     <i data-lucide="layout-grid"></i>
                     <small>Coming soon</small>
                 </div>
             </div>
 
-            <div class="resd-card resd-card-folio-4 resd-folio-card">
-                <h3><i data-lucide="receipt"></i> Folio 4</h3>
+            <div class="resd-card resd-card-folio-4 resd-folio-card" data-folio-index="3">
+                <h3>
+                    <span><i data-lucide="receipt"></i> Folio 4</span>
+                    <span class="resd-folio-nav">
+                        <button class="resd-folio-prev" title="Previous folio"><i data-lucide="chevron-left"></i></button>
+                        <button class="resd-folio-next" title="Next folio" disabled><i data-lucide="chevron-right"></i></button>
+                    </span>
+                </h3>
                 <div class="resd-folio-placeholder">
                     <i data-lucide="layout-grid"></i>
                     <small>Coming soon</small>
