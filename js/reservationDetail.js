@@ -1,20 +1,24 @@
 // ======================================================
 // reservationDetail.js
-// POLISH ROUND 2:
-// - Field yang kemarin ke-skip sekarang lengkap: Guest ID,
-//   External/OTA (digabung 1 baris), Meal Plan, Rate Plan,
-//   Discount Reason, Commission %, Total Accommodation,
-//   Total Taxes, Total Stay Value.
-// - Bed Type DIBUANG (ketauan dari kode Room Type).
-// - Room attributes sekarang nempel kecil di sebelah Room Type
-//   (cuma muncul kalau ADA datanya -- sekarang belum ada
-//   sumber data jadi kosong terus, itu benar, bukan bug).
-// - Secondary Guest render sekarang include baris Relationship.
-// - Remarks sekarang render sebagai baris horizontal mini-card
-//   (Note/Trace/Wake-up), bukan stack vertikal.
-// - Breadcrumb: pmsSetSubPath() dipanggil pas reservasi kemuat,
-//   path jadi "/Reservation/Reservation {nomor}".
-// - Folio SENGAJA belum dikerjakan (placeholder ukuran doang).
+// POLISH ROUND 3:
+// - FIXED: skema DB baru relational (guests terpisah dari
+//   reservations). saveEditMode sekarang split payload:
+//   kolom reservations -> tabel reservations,
+//   kolom guest (first_name/last_name/country_code/phone)
+//   -> tabel guests via guest_id. Field yang belum ada
+//   tabel/kolom real (booker_name, company, salutation,
+//   language, rate_name, room_type, meal_plan, dst) di-set
+//   editable:false -- tampil tapi gak coba nulis ke DB
+//   (butuh join/flow terpisah, next-phase, bukan bug).
+// - FIXED: ini yang bikin error PGRST204 "Could not find
+//   the 'booker_name' column of 'reservations'" -- field2
+//   itu emang gak ada di tabel reservations lagi.
+// - Header sub: user icon, salutation+nama, flag bahasa,
+//   bed icon buat room.
+// - Language & Country: field kode 2 huruf polos,
+//   case-insensitive (de/DE/dE -> DE), auto render flag.
+// - First Name & Last Name sekarang satu baris (field-row).
+// - Flip button icon: pake "repeat" (bukan arrow kanan/kiri).
 // ======================================================
 
 let currentReservation = null;
@@ -25,45 +29,53 @@ let isNewReservation = false;
 // ------------------------------------------------------
 // Field configuration
 // ------------------------------------------------------
+// table: "guest" -> field ini ditulis ke tabel guests (pakai
+// currentReservation.guest_id), bukan ke reservations.
+// Kalau table gak diisi, default ke reservations.
+// prefillFrom: buat isi awal input dari field lain kalau
+// kolom aslinya kosong (misal first_name kosong tapi ada
+// guest_name gabungan dari view).
 
 const FIELD_CONFIG = [
 
     { id: "det_guest_id",       column: "guest_id",      editable: false, type: "text" },
-    { id: "det_first_name",     column: null,   group: "guest_name",          part: "first", type: "text" },
-    { id: "det_last_name",      column: null,   group: "guest_name",          part: "last",  type: "text" },
-    { id: "det_loyalty",        column: "loyalty",       type: "text" },
-    { id: "det_salutation",     column: "salutation",    type: "text" },
-    { id: "det_language",       column: "language",      type: "text" },
-    { id: "det_country",        column: "country",       type: "text" },
-    { id: "det_contact",        column: "contact",       type: "text" },
-    { id: "det_company",        column: "company",       type: "text" },
-    { id: "det_booker_name",    column: "booker_name",   type: "text" },
-    { id: "det_travel_agent",   column: "travel_agent",  type: "text" },
+
+    { id: "det_first_name",     column: "first_name", table: "guest", prefillFrom: "guest_name", part: "first", type: "text" },
+    { id: "det_last_name",      column: "last_name",  table: "guest", prefillFrom: "guest_name", part: "last",  type: "text" },
+
+    { id: "det_loyalty",        column: null, editable: false, type: "text" },
+    { id: "det_salutation",     column: null, editable: false, type: "text" },
+    { id: "det_language",       column: null, editable: false, type: "text" }, // belum ada kolom bahasa di DB
+    { id: "det_country",        column: "country_code", table: "guest", type: "text" },
+    { id: "det_contact",        column: "phone", table: "guest", type: "text" },
+    { id: "det_company",        column: null, editable: false, type: "text" },
+    { id: "det_booker_name",    column: null, editable: false, type: "text" },
+    { id: "det_travel_agent",   column: null, editable: false, type: "text" },
 
     { id: "det_arrival",        column: "arrival_date",  type: "date" },
     { id: "det_confirmation_no",column: "confirmation_no", type: "text", editable: false },
     { id: "det_departure",      column: "departure_date", type: "date" },
-    { id: "det_external_no",    column: "external_reservation_no", type: "text" },
+    { id: "det_external_no",    column: null, editable: false, type: "text" },
     { id: "det_ota_no",         column: null, editable: false, type: "text" },
     { id: "det_nights",         column: null,   type: "text", editable: false },
-    { id: "det_room_number",    column: "room_number",   type: "text" },
+    { id: "det_room_number",    column: null, editable: false, type: "text" }, // rooms.room_number, butuh flow assign room
 
-    { id: "det_rate",           column: "rate_name",     type: "text" },
-    { id: "det_price",          column: "price",         type: "number", step: "0.01" },
-    { id: "det_cancel_policy",  column: "cancel_policy", type: "text" },
-    { id: "det_source",         column: "source",        type: "text" },
+    { id: "det_rate",           column: null, editable: false, type: "text" }, // rate_plans.name
+    { id: "det_price",          column: "room_rate",     type: "number", step: "0.01" },
+    { id: "det_cancel_policy",  column: null, editable: false, type: "text" },
+    { id: "det_source",         column: "booking_channel", type: "text" },
     { id: "det_market_segment", column: "market_segment",type: "text" },
-    { id: "det_travel_reason",  column: "travel_reason", type: "text" },
+    { id: "det_travel_reason",  column: null, editable: false, type: "text" },
 
-    { id: "det_room_type",      column: "room_type",     type: "text" },
-    { id: "det_meal_plan",      column: "meal_plan",     type: "text" },
+    { id: "det_room_type",      column: null, editable: false, type: "text" }, // room_types.name
+    { id: "det_meal_plan",      column: null, editable: false, type: "text" }, // rate_plans.meal_plan
 
-    { id: "det_sg_first_name",  column: null,   group: "secondary_guest_name", part: "first", type: "text" },
-    { id: "det_sg_last_name",   column: null,   group: "secondary_guest_name", part: "last",  type: "text" },
+    { id: "det_sg_first_name",  column: null, editable: false, group: "secondary_guest_name", part: "first", type: "text" },
+    { id: "det_sg_last_name",   column: null, editable: false, group: "secondary_guest_name", part: "last",  type: "text" },
 
-    { id: "det_remarks",        column: "remarks",       type: "textarea" },
+    { id: "det_remarks",        column: "special_requests", type: "textarea" },
 
-    // field baru, belum ada sumber data -> editable:false biar
+    // field belum ada sumber data -> editable:false biar
     // enterEditMode/saveEditMode skip aman
     { id: "det_id_type", column: null, editable: false, type: "text" },
     { id: "det_id_number", column: null, editable: false, type: "text" },
@@ -102,86 +114,6 @@ const STATUS_LABELS = {
     NO_SHOW: "No Show"
 };
 
-
-// build once: nama negara (lowercase) -> ISO2, cover SEMUA negara
-const COUNTRY_NAME_TO_CODE = (() => {
-    const map = {};
-    const dn = new Intl.DisplayNames(["en"], { type: "region" });
-    for(let i = 65; i <= 90; i++){
-        for(let j = 65; j <= 90; j++){
-            const code = String.fromCharCode(i) + String.fromCharCode(j);
-            try {
-                const name = dn.of(code);
-                if(name && name !== code) map[name.toLowerCase()] = code;
-            } catch(e){}
-        }
-    }
-    return map;
-})();
-
-function codeFromCountryName(name){
-    if(!name) return null;
-    const key = name.trim().toLowerCase();
-    if(key.length === 2) return name.toUpperCase();
-    return COUNTRY_NAME_TO_CODE[key] || null;
-}
-
-// nama bahasa (lowercase, English) -> ISO 639-1 code, auto dari browser
-const LANGUAGE_NAME_TO_ISO = (() => {
-    const map = {};
-    const dn = new Intl.DisplayNames(["en"], { type: "language" });
-    const iso639_1 = ["ab","aa","af","ak","sq","am","ar","an","hy","as","av","ae","ay","az","bm","ba","eu","be","bn","bh","bi","bs","br","bg","my","ca","ch","ce","ny","zh","cv","kw","co","cr","hr","cs","da","dv","nl","dz","en","eo","et","ee","fo","fj","fi","fr","ff","gl","ka","de","el","gn","gu","ht","ha","he","hz","hi","ho","hu","ia","id","ie","ga","ig","ik","io","is","it","iu","ja","jv","kl","kn","kr","ks","kk","km","ki","rw","ky","kv","kg","ko","ku","kj","la","lb","lg","li","ln","lo","lt","lu","lv","gv","mk","mg","ms","ml","mt","mi","mr","mh","mn","na","nv","nd","ne","ng","nb","nn","no","ii","nr","oc","oj","or","om","os","pa","pi","fa","pl","ps","pt","qu","rm","rn","ro","ru","sa","sc","sd","se","sm","sg","sr","gd","sn","si","sk","sl","so","st","es","su","sw","ss","sv","ta","te","tg","th","ti","bo","tk","tl","tn","to","tr","ts","tt","tw","ty","ug","uk","ur","uz","ve","vi","vo","wa","cy","wo","xh","yi","yo","za","zu"];
-    iso639_1.forEach(code => {
-        try {
-            const name = dn.of(code);
-            if(name) map[name.toLowerCase()] = code;
-        } catch(e){}
-    });
-    return map;
-})();
-
-// ISO 639-1 -> representative country code (buat flag). Bahasa != negara,
-// jadi ini pilihan "negara paling representatif" per bahasa, bukan mapping absolut.
-const LANG_CODE_TO_COUNTRY = {
-    en:"GB", id:"ID", ms:"MY", zh:"CN", ja:"JP", ko:"KR", th:"TH", vi:"VN",
-    ar:"SA", de:"DE", fr:"FR", nl:"NL", es:"ES", it:"IT", pt:"PT", hi:"IN",
-    tl:"PH", ru:"RU", tr:"TR", pl:"PL", uk:"UA", el:"GR", he:"IL", fa:"IR",
-    ur:"PK", bn:"BD", ta:"IN", te:"IN", ml:"IN", mr:"IN", gu:"IN", pa:"IN",
-    sw:"KE", am:"ET", ha:"NG", yo:"NG", ig:"NG", zu:"ZA", af:"ZA", xh:"ZA",
-    ro:"RO", hu:"HU", cs:"CZ", sk:"SK", bg:"BG", hr:"HR", sr:"RS", sl:"SI",
-    fi:"FI", sv:"SE", da:"DK", no:"NO", nb:"NO", nn:"NO", is:"IS", et:"EE",
-    lv:"LV", lt:"LT", ka:"GE", hy:"AM", az:"AZ", kk:"KZ", uz:"UZ", ky:"KG",
-    mn:"MN", km:"KH", lo:"LA", my:"MM", ne:"NP", si:"LK", ps:"AF", ku:"IQ",
-    so:"SO", mg:"MG", rw:"RW", eu:"ES", ca:"ES", gl:"ES", cy:"GB", ga:"IE",
-    gd:"GB", mt:"MT", sq:"AL", mk:"MK", bs:"BA", lb:"LU", rm:"CH", eo:"EU"
-};
-
-function codeFromLanguageName(name){
-    if(!name) return null;
-    const key = name.trim().toLowerCase();
-    if(key.length === 2) return LANG_CODE_TO_COUNTRY[key] || null; // udah ISO code
-    const iso = LANGUAGE_NAME_TO_ISO[key];
-    if(!iso) return null;
-    return LANG_CODE_TO_COUNTRY[iso] || null;
-}
-
-function flagEmoji(code){
-    if(!code || code.length !== 2) return "";
-    const A = 0x1F1E6;
-    return String.fromCodePoint(...[...code.toUpperCase()].map(c => A + c.charCodeAt(0) - 65));
-}
-function codeFromCountryName(name){
-    if(!name) return null;
-    const key = name.trim().toLowerCase();
-    if(key.length === 2) return name.toUpperCase();
-    return COUNTRY_NAME_TO_CODE[key] || null;
-}
-function codeFromLanguageName(name){
-    if(!name) return null;
-    const key = name.trim().toLowerCase();
-    if(key.length === 2) return name.toUpperCase();
-    return LANGUAGE_TO_CODE[key] || null;
-}
 
 // ======================================================
 // Status Bar helpers (message / confirm / clock)
@@ -291,6 +223,37 @@ function setDisplay(id, value){
     if(el) el.innerText = (value === null || value === undefined || value === "") ? "-" : value;
 }
 
+// ------------------------------------------------------
+// Flag / country-code helpers -- field Language & Country
+// sekarang murni kode 2 huruf, case-insensitive.
+// ------------------------------------------------------
+
+function normalizeCode(val){
+    if(!val) return null;
+    const v = String(val).trim();
+    return v.length === 2 ? v.toUpperCase() : null;
+}
+
+function flagEmoji(code){
+    if(!code || code.length !== 2) return "";
+    const A = 0x1F1E6;
+    return String.fromCodePoint(...[...code.toUpperCase()].map(c => A + c.charCodeAt(0) - 65));
+}
+
+function renderLangCountry(res){
+    const langEl = document.getElementById("det_language");
+    if(langEl){
+        const code = normalizeCode(res.language);
+        langEl.innerHTML = `${escapeHtml(code || res.language || "-")}${code ? ` <span class="resd-flag">${flagEmoji(code)}</span>` : ""}`;
+    }
+    const countryEl = document.getElementById("det_country");
+    if(countryEl){
+        const raw = res.country_code || res.country;
+        const code = normalizeCode(raw);
+        countryEl.innerHTML = `${escapeHtml(code || raw || "-")}${code ? ` <span class="resd-flag">${flagEmoji(code)}</span>` : ""}`;
+    }
+}
+
 
 // ======================================================
 // Status Badge + Status Flow Select
@@ -370,6 +333,7 @@ function calcNights(res){
     return 0;
 }
 
+// Header sub: [user icon] Salutation Nama [flag bahasa] · [bed icon] Room · dates · nights
 function updateHeaderSub(res){
     const el = document.getElementById("resdHeaderSub");
     if(!el) return;
@@ -377,7 +341,7 @@ function updateHeaderSub(res){
 
     if(res.guest_name){
         const salut = res.salutation ? res.salutation + " " : "";
-        const code = codeFromLanguageName(res.language);
+        const code = normalizeCode(res.language);
         const flag = code ? ` <span class="resd-flag">${flagEmoji(code)}</span>` : "";
         parts.push(`<span class="resd-sub-item"><i data-lucide="user" class="resd-sub-icon"></i>${escapeHtml(salut + res.guest_name)}${flag}</span>`);
     }
@@ -395,7 +359,7 @@ function updateHeaderSub(res){
 }
 
 // ------------------------------------------------------
-// Secondary guest -- sekarang termasuk baris Relationship
+// Secondary guest -- termasuk baris Relationship
 // (placeholder "-", belum ada kolom DB buat ini)
 // ------------------------------------------------------
 
@@ -465,7 +429,7 @@ function renderPackageList(res){
 }
 
 // ------------------------------------------------------
-// Remarks -- sekarang satu baris horizontal mini-card
+// Remarks -- satu baris horizontal mini-card
 // (Note / Trace / Wake-up Call), scroll-x kalau kepanjangan,
 // bukan stack vertikal yang bikin card membengkak.
 // ------------------------------------------------------
@@ -568,8 +532,10 @@ function renderDetail(res){
 // ======================================================
 
 function getRawValue(field, res){
-    if(field.group === "guest_name"){
-        const { first, last } = splitName(res.guest_name);
+    if(field.prefillFrom){
+        const direct = res[field.column];
+        if(direct !== undefined && direct !== null && direct !== "") return direct;
+        const { first, last } = splitName(res[field.prefillFrom]);
         return field.part === "first" ? first : last;
     }
     if(field.group === "secondary_guest_name"){
@@ -636,6 +602,13 @@ function exitEditMode(){
 
 // ======================================================
 // Save Edit Mode
+// FIXED: skema baru relational -- reservations gak lagi
+// nyimpen guest_name/booker_name/company/dst langsung.
+// Sekarang payload di-split dua:
+//   - reservationPayload -> tabel reservations
+//   - guestPayload       -> tabel guests (via guest_id)
+// Field yang gak punya tabel/kolom real (booker_name, company,
+// language, dst) editable:false, jadi otomatis gak ikut ke-loop.
 // ======================================================
 
 async function saveEditMode(){
@@ -661,49 +634,61 @@ async function saveEditMode(){
         return;
     }
 
-    const payload = {};
+    const reservationPayload = {};
+    const guestPayload = {};
 
     FIELD_CONFIG.forEach(field => {
-        if(field.group || !field.column) return;
+        if(field.editable === false || field.group || !field.column) return;
         let value = rawValues[field.id];
         if(value === undefined) return;
 
         if(field.type === "number") value = value === "" ? null : Number(value);
         else if(field.type === "date") value = value === "" ? null : value;
         else if(field.type === "boolean") value = Boolean(value);
+        else if(field.column === "country_code"){
+            value = value === "" ? null : (value.trim().length === 2 ? value.trim().toUpperCase() : value.trim());
+        }
         else if(field.type === "text" || field.type === "textarea") value = value === "" ? null : value;
 
-        payload[field.column] = value;
+        const target = field.table === "guest" ? guestPayload : reservationPayload;
+        target[field.column] = value;
     });
 
     if(isNewReservation){
-        payload.confirmation_no = currentReservation.confirmation_no;
-        payload.status = currentReservation.status || "RESERVED";
+        reservationPayload.confirmation_number = currentReservation.confirmation_no || generateReservationNumber();
+        reservationPayload.status = currentReservation.status || "TENTATIVE";
     }
-
-    const guestFirst = rawValues["det_first_name"] ?? "";
-    const guestLast = rawValues["det_last_name"] ?? "";
-    payload.guest_name = [guestFirst, guestLast].filter(p => p && p.trim() !== "").join(" ");
-
-    const sgFirst = rawValues["det_sg_first_name"] ?? "";
-    const sgLast = rawValues["det_sg_last_name"] ?? "";
-    payload.secondary_guest_name = [sgFirst, sgLast].filter(p => p && p.trim() !== "").join(" ");
 
     let error;
 
     if(isNewReservation){
+
         const { data: insertedData, error: insertError } = await supabaseClient
-            .from("reservations").insert(payload).select().single();
+            .from("reservations").insert(reservationPayload).select().single();
         error = insertError;
         if(!error && insertedData){
             currentReservation = insertedData;
             isNewReservation = false;
             window.history.replaceState(null, "", `reservation-detail.html?id=${insertedData.id}`);
         }
+        // NOTE: guest baru (first/last name dkk) belum di-create di sini --
+        // reservasi baru butuh guest_id valid dulu, ini flow terpisah
+        // (search-or-create guest), belum ada di skope fix ini.
+
     } else {
-        const { error: updateError } = await supabaseClient
-            .from("reservations").update(payload).eq("id", currentReservation.id);
-        error = updateError;
+
+        if(Object.keys(reservationPayload).length > 0){
+            const { error: updateError } = await supabaseClient
+                .from("reservations").update(reservationPayload).eq("id", currentReservation.id);
+            error = updateError;
+        }
+
+        if(!error && Object.keys(guestPayload).length > 0 && currentReservation.guest_id){
+            const { error: guestError } = await supabaseClient
+                .from("guests").update(guestPayload).eq("id", currentReservation.guest_id);
+            error = guestError;
+        }
+
     }
 
     if(error){
@@ -797,11 +782,11 @@ async function loadReservationDetail(redirectOnMissingId = true){
         return;
     }
 
-    // FIXED: baca dari reservation_list_view (bukan tabel "reservations"
-    // mentah) -- skema baru gak nyimpen guest_name/room_number/rate_name
-    // dsb langsung di "reservations" (itu FK guest_id/room_id sekarang),
-    // field-field itu cuma ada hasil JOIN di view. reservationFilter.js
-    // (list page) udah bener pakai view ini, detail page kelewat.
+    // baca dari reservation_list_view (bukan tabel "reservations"
+    // mentah) -- skema relational baru gak nyimpen guest_name/
+    // room_number/rate_name dsb langsung di "reservations" (itu FK
+    // guest_id/room_id sekarang), field-field itu cuma ada hasil
+    // JOIN di view.
     const { data: res, error } = await supabaseClient.from("reservation_list_view").select("*").eq("id", id).single();
 
     if(error || !res){
@@ -870,19 +855,6 @@ function resdShowFolioIndex(index){
 
     });
 
-}
-
-function renderLangCountry(res){
-    const langEl = document.getElementById("det_language");
-    if(langEl){
-        const code = codeFromLanguageName(res.language);
-        langEl.innerHTML = `${escapeHtml(res.language || "-")}${code ? ` <span class="resd-flag">${flagEmoji(code)}</span>` : ""}`;
-    }
-    const countryEl = document.getElementById("det_country");
-    if(countryEl){
-        const code = codeFromCountryName(res.country);
-        countryEl.innerHTML = `${escapeHtml(res.country || "-")}${code ? ` <span class="resd-flag">${flagEmoji(code)}</span>` : ""}`;
-    }
 }
 
 function resdInitFolioCarousel(){

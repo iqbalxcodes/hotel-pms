@@ -153,13 +153,14 @@
                 <div class="resd-flip-inner">
 
                     <div class="resd-flip-face resd-flip-front">
-                        <h3>Main Guest <button class="resd-flip-btn" onclick="resdFlip('resdGuestCard')" title="Identification"><i data-lucide="arrow-right"></i></button></h3>
+                        <h3>Main Guest <button class="resd-flip-btn" onclick="resdFlip('resdGuestCard')" title="Identification"><i data-lucide="repeat"></i></button></h3>
 
                         <div class="field-row">
                             <div><label>Guest ID</label><div class="value" id="det_guest_id">-</div></div>
                             <div><label>Salutation</label><div class="value" id="det_salutation">-</div></div>
                         </div>
 
+                        <!-- First & Last Name sekarang satu baris -->
                         <div class="field-row">
                             <div><label>First Name</label><div class="value" id="det_first_name">-</div></div>
                             <div><label>Last Name</label><div class="value" id="det_last_name">-</div></div>
@@ -182,10 +183,8 @@
                         <div class="value" id="det_travel_agent">-</div>
                     </div>
 
-                    <!-- FIX: header sekarang judul-kiri/tombol-kanan, sama
-                         kayak front (sebelumnya kebalik tombol-kiri/judul-kanan) -->
                     <div class="resd-flip-face resd-flip-back">
-                        <h3>Identification <button class="resd-flip-btn" onclick="resdFlip('resdGuestCard')" title="Back"><i data-lucide="arrow-left"></i></button></h3>
+                        <h3>Identification <button class="resd-flip-btn" onclick="resdFlip('resdGuestCard')" title="Back"><i data-lucide="repeat"></i></button></h3>
                         <div class="field-row">
                             <div><label>ID Type</label><div class="value" id="det_id_type">-</div></div>
                             <div><label>ID Number</label><div class="value" id="det_id_number">-</div></div>
@@ -338,7 +337,7 @@
                 <div class="resd-flip-inner">
 
                     <div class="resd-flip-face resd-flip-front">
-                        <h3>Rate &amp; Statistics <button class="resd-flip-btn" onclick="resdFlip('resdRateCard')" title="More"><i data-lucide="arrow-right"></i></button></h3>
+                        <h3>Rate &amp; Statistics <button class="resd-flip-btn" onclick="resdFlip('resdRateCard')" title="More"><i data-lucide="repeat"></i></button></h3>
                         <div class="field-row">
                             <div><label>Rate</label><div class="value" id="det_rate">-</div></div>
                             <div><label>Price</label><div class="value" id="det_price">-</div></div>
@@ -353,9 +352,8 @@
                         </div>
                     </div>
 
-                    <!-- FIX: header judul-kiri/tombol-kanan konsisten sama front -->
                     <div class="resd-flip-face resd-flip-back">
-                        <h3>Rate Extended <button class="resd-flip-btn" onclick="resdFlip('resdRateCard')" title="Back"><i data-lucide="arrow-left"></i></button></h3>
+                        <h3>Rate Extended <button class="resd-flip-btn" onclick="resdFlip('resdRateCard')" title="Back"><i data-lucide="repeat"></i></button></h3>
                         <div class="field-row">
                             <div><label>Rate Code</label><div class="value" id="det_rate_code">-</div></div>
                             <div><label>Rate Plan</label><div class="value" id="det_rate_plan">-</div></div>

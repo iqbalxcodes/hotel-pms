@@ -1,37 +1,92 @@
 /* ======================================================
-   reservationPage.css
+   reservationDetailPage.css
+   Font/spacing scale sengaja mirip reservationPage.css
+   (12-13px label, gap pendek, margin pendek) biar konsisten
+   sama reservation.html.
    ====================================================== */
 
-.rsv-page {
+.resd-page {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin: 6px 12px 6px;
+    margin: 6px 8px;
     box-sizing: border-box;
 }
 
-.rsv-header-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+/* ---- header ---- */
+
+.resd-header-row {
     flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
-.rsv-header-row h2 {
+.resd-header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.resd-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.resd-header-left h2 {
     margin: 0;
-    font-size: 17px;
+    font-size: 16px;
     white-space: nowrap;
 }
 
-.rsv-header-actions {
-    margin-left: auto;
-    display: flex;
-    gap: 6px;
+#resdConfirmationNo { color: #1565c0; }
+
+.resd-status-select {
+    border: 1px solid #ccc;
+    border-radius: 14px;
+    padding: 3px 10px;
+    font-size: 11.5px;
+    background: #fafafa;
+    color: #444;
+    cursor: pointer;
 }
 
-.rsv-btn {
+.resd-header-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+}
+
+.resd-header-sub {
+    font-size: 11.5px;
+    color: #666;
+}
+
+/* sub-header items -- icon (user/bed) inline dengan teks,
+   ukuran icon disamakan ke tinggi teks (1em, kotak) */
+.resd-sub-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+.resd-sub-icon {
+    width: 1em;
+    height: 1em;
+    vertical-align: -1px;
+    margin-right: 1px;
+    flex: none;
+}
+.resd-flag {
+    font-size: inherit;
+}
+
+.resd-btn {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -39,534 +94,506 @@
     background: #fff;
     border-radius: 6px;
     padding: 5px 10px;
-    font-size: 13px;
+    font-size: 12.5px;
     color: #333;
     cursor: pointer;
 }
-.rsv-btn:hover { background: #f5f5f5; }
-.rsv-btn svg { width: 15px; height: 15px; flex: none; }
+.resd-btn:hover { background: #f5f5f5; }
+.resd-btn svg { width: 15px; height: 15px; flex: none; }
 
-.rsv-btn-primary {
-    background: #1565c0;
-    border-color: #1565c0;
-    color: #fff;
+.resd-btn-primary { background: #1565c0; border-color: #1565c0; color: #fff; }
+.resd-btn-primary:hover { background: #0d47a1; }
+
+.resd-btn-confirm { border-color: #2e7d32; color: #2e7d32; }
+.resd-btn-confirm:hover { background: #e8f5e9; }
+
+.resd-icon-only { padding: 5px 7px; }
+
+@media (max-width: 700px) {
+    .resd-btn-label { display: none; }
+    .resd-btn { padding: 6px; }
 }
-.rsv-btn-primary:hover { background: #0d47a1; }
 
-.rsv-card {
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    box-sizing: border-box;
-}
+/* ---- action bar: dibungkus card garis tipis, More nempel
+   ujung kanan card ini (BUKAN di sebelah Edit Reservation) ---- */
 
-/* ---- reset button (Search & Showing card) -- cuma keliatan
-   pas mode customize aktif, lihat .rsv-page-customizing di
-   bawah. Pakai class .rsv-btn juga jadi otomatis ikut aturan
-   responsive "icon-only di layar kecil" yang udah ada. ---- */
-
-.rsv-reset-btn { display: none; }
-.rsv-page-customizing .rsv-reset-btn { display: flex; }
-
-/* ---- search card ---- */
-
-.rsv-search-card {
+.resd-actionbar-card {
     flex: none;
-    padding: 6px 10px;
-    box-sizing: border-box;
-}
-
-.rsv-search-card h3 {
-    margin: 0 0 4px;
-    font-size: 12px;
-    color: #333;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 8px;
-}
-
-.rsv-search-fields {
-    display: flex;
-    align-items: flex-start;
-    overflow-x: auto;
-}
-
-.rsv-search-column {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    flex: none;
-    padding: 0 10px;
-}
-
-.rsv-search-column:first-child {
-    padding-left: 0;
-}
-
-/* garis pemisah vertikal SEKARANG SELALU ADA, mode customize
-   maupun bukan (sebelumnya cuma muncul kalau BUKAN customize --
-   itu bug, garisnya hilang pas customize). */
-.rsv-search-column:not(:first-child) {
-    border-left: 1px solid #e0e0e0;
-}
-
-/* mode customize: margin/gap diperpendek biar mirip mode biasa,
-   dashed border + hide-button tetep ada tapi lebih ringkas */
-.rsv-search-fields.rsv-customizing .rsv-search-column {
-    gap: 4px;
-    padding: 0 6px;
-}
-
-.rsv-search-fields.rsv-customizing .rsv-field-card {
-    border: 1px dashed rgba(0,0,0,.25);
-    border-radius: 6px;
-    padding: 3px 18px 3px 3px;
-}
-
-.rsv-field-card.rsv-field-hidden { opacity: .45; }
-
-.rsv-field-drag {
-    cursor: grab;
-    color: #bbb;
-    display: flex;
-    flex: none;
-}
-.rsv-field-drag svg { width: 12px; height: 12px; }
-
-.rsv-field-hide-btn {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 16px;
-    height: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-}
-.rsv-field-hide-btn svg { width: 11px; height: 11px; }
-
-.rsv-field-hide-btn.rsv-btn-hide { background: #ffebee; color: #c62828; }
-.rsv-field-hide-btn.rsv-btn-hide:hover { background: #ffcdd2; }
-.rsv-field-hide-btn.rsv-btn-show { background: #e8f5e9; color: #2e7d32; }
-.rsv-field-hide-btn.rsv-btn-show:hover { background: #c8e6c9; }
-
-.rsv-field-card {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    width: 128px;
-    flex: none;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 4px 6px;
+    background: #fff;
     box-sizing: border-box;
 }
 
-.rsv-field-card.rsv-dragging { opacity: .4; }
-.rsv-field-card.rsv-drop-before { box-shadow: -3px 0 0 0 #1565c0; }
-.rsv-field-card.rsv-drop-after { box-shadow: 3px 0 0 0 #1565c0; }
-
-.rsv-field { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
-.rsv-field label { font-size: 10px; color: #777; white-space: nowrap; }
-
-/* height FIX + font-size SERAGAM buat text/select/date -- sebelumnya
-   font-size beda-beda per tipe bikin browser render tinggi native
-   control beda-beda (gak ada height eksplisit). */
-.rsv-field input,
-.rsv-field select {
-    height: 26px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 0 6px;
-    font-size: 12px;
-    font: inherit;
-    box-sizing: border-box;
-    width: 100%;
-}
-
-.rsv-field input::placeholder { font-size: 12px; color: #aaa; }
-
-.rsv-search-footer {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 4px;
-}
-
-/* ---- showing card ---- */
-
-.rsv-showing-card {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    padding: 0;
-    overflow: hidden;
-    position: relative;
-}
-
-.rsv-showing-header {
-    flex: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 10px;
-    border-bottom: 1px solid #eee;
-    flex-wrap: wrap;
-}
-
-.rsv-showing-title {
-    font-weight: 600;
-    font-size: 13px;
-    color: #333;
-    flex: none;
-}
-
-.rsv-showing-center {
+.resd-mini-actions {
     flex: 1 1 auto;
     min-width: 0;
     display: flex;
-    justify-content: center;
+    gap: 4px;
     overflow-x: auto;
 }
 
-/* grup kanan: reset (customize only) + export, selalu nempel
-   ujung kanan header Showing */
-.rsv-showing-right-group {
-    margin-left: auto;
+#resdMoreBtn { flex: none; margin-left: auto; }
+
+.resd-mini-btn {
     flex: none;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 14px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: #555;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.resd-mini-btn:hover { background: #f2f3f5; }
+.resd-mini-btn svg { width: 13px; height: 13px; }
+
+/* ---- full action bar popover ---- */
+
+.resd-actions-popover {
+    position: fixed;
+    top: 96px;
+    right: 16px;
+    z-index: 80;
+    width: 260px;
+    max-height: 70vh;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.15);
+    padding: 8px;
 }
 
-.rsv-export-btn { flex: none; }
+.resd-action-group { margin-bottom: 6px; }
+.resd-action-group h5 {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #999;
+    margin: 6px 4px 4px;
+}
 
-.rsv-showing-pills {
+.resd-action-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #333;
+    cursor: pointer;
+}
+.resd-action-item:hover { background: #f2f3f5; }
+.resd-action-item svg { width: 14px; height: 14px; flex: none; color: #666; }
+
+/* ======================================================
+   GRID -- default (tablet/layar kotak) tetep 3 baris x 6
+   kolom, tiap card span 2 kolom -> visual 3x3. Di atas
+   1200px berubah jadi 6-kolom beneran (lihat media query
+   min-width:1200px di bawah), di bawah 700px stack 1 kolom.
+   ====================================================== */
+
+.resd-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    gap: 6px;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    overflow-y: auto;
+}
+
+.resd-card-guest      { grid-column: 1 / span 2; grid-row: 1; }
+.resd-card-stay       { grid-column: 3 / span 2; grid-row: 1; }
+.resd-card-secondary  { grid-column: 1 / span 2; grid-row: 2; }
+.resd-card-amenities  { grid-column: 3 / span 2; grid-row: 2; }
+.resd-card-remarks    { grid-column: 1 / span 2; grid-row: 3; }
+.resd-card-rate       { grid-column: 3 / span 2; grid-row: 3; }
+
+.resd-card-folio-1,
+.resd-card-folio-2,
+.resd-card-folio-3,
+.resd-card-folio-4 {
+    grid-column: span 2;
+    grid-row: 1 / span 3;
+}
+
+.resd-card {
+    position: relative;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.resd-card h3 {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #333;
     display: flex;
     align-items: center;
     gap: 6px;
-    flex: none;
+    justify-content: space-between;
+}
+.resd-card h3 svg { width: 13px; height: 13px; }
+
+.resd-card label {
+    display: block;
+    font-size: 10px;
+    color: #777;
+    margin-top: 4px;
+    margin-bottom: 1px;
 }
 
-.rsv-pill-arrow {
+.resd-card .value {
+    font-size: 12px;
+    font-weight: 600;
+    color: #222;
+    line-height: 1.2;
+    margin-bottom: 1px;
+}
+
+.resd-card .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 1px;
+}
+
+/* separator "-" di field gabungan (External / OTA) */
+.resd-dash-sep { color: #bbb; font-weight: 400; padding: 0 2px; }
+
+.resd-flip-btn {
     border: none;
     background: none;
     cursor: pointer;
-    color: #555;
-    width: 22px;
-    height: 22px;
+    color: #888;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: 2px;
     border-radius: 4px;
     flex: none;
 }
-.rsv-pill-arrow:hover { background: #f0f0f0; }
-.rsv-pill-arrow svg { width: 14px; height: 14px; }
+.resd-flip-btn:hover { background: #f0f0f0; color: #333; }
+.resd-flip-btn svg { width: 13px; height: 13px; }
 
-.rsv-pill-select,
-.rsv-pill-date {
-    border: 1px solid #ccc;
-    border-radius: 14px;
-    padding: 3px 9px;
-    font-size: 11.5px;
-    background: #fafafa;
-    color: #444;
-    cursor: pointer;
-    flex: none;
-}
-.rsv-pill-date { cursor: text; }
+/* ---- flip mechanics -- header title/tombol posisinya SAMA di
+   kedua sisi (h3: justify-content space-between di atas sudah
+   nanganin ini, HTML front & back sama-sama title-lalu-tombol) ---- */
 
-#rsvShowingPills #currentDate.rsv-pill-date {
-    width: auto;
+.resd-flip-card {
+    padding: 0;
+    perspective: 1200px;
+    overflow: visible;
 }
 
-.rsv-search-chips {
-    display: none;
+.resd-flip-inner {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transition: transform .5s;
+}
+
+.resd-flip-card.resd-flipped .resd-flip-inner {
+    transform: rotateY(180deg);
+}
+
+.resd-flip-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.resd-flip-back {
+    transform: rotateY(180deg);
+}
+
+/* ---- folio placeholder ---- */
+
+.resd-folio-card {
+    display: flex;
+    flex-direction: column;
+}
+.resd-folio-placeholder {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    flex: none;
+    color: #999;
+    text-align: center;
+    padding: 12px;
 }
-.rsv-search-chip {
+.resd-folio-placeholder svg { width: 28px; height: 28px; color: #ccc; }
+.resd-folio-placeholder span { font-size: 12px; }
+.resd-folio-placeholder small { font-size: 10.5px; color: #bbb; }
+
+/* ---- secondary guest list (name + relationship) ---- */
+
+.resd-count {
+    font-size: 10.5px;
+    font-weight: 400;
+    color: #999;
+    background: #f2f3f5;
+    border-radius: 10px;
+    padding: 1px 7px;
+}
+
+.resd-guest-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+.resd-guest-item {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: #e3f2fd;
-    color: #1565c0;
-    border-radius: 14px;
-    padding: 3px 10px;
+    font-size: 12px;
+    color: #333;
+    padding: 4px 6px;
+    background: #fafafa;
+    border-radius: 6px;
+}
+.resd-guest-item svg { width: 13px; height: 13px; color: #888; flex: none; }
+.resd-guest-item-body { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.resd-guest-item-name { font-weight: 600; }
+.resd-guest-item-relation { font-size: 10px; color: #999; font-weight: 400; }
+
+.resd-empty-note { font-size: 11px; color: #999; padding: 4px 0; }
+
+.resd-add-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px dashed #ccc;
+    background: #fff;
+    border-radius: 6px;
+    padding: 5px 8px;
     font-size: 11.5px;
-    flex: none;
-    white-space: nowrap;
+    color: #555;
+    cursor: pointer;
+    width: 100%;
+    justify-content: center;
 }
-.rsv-search-chip span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 180px;
-    white-space: nowrap;
-}
-.rsv-search-chip button {
+.resd-add-btn:hover { background: #f5f5f5; }
+.resd-add-btn svg { width: 13px; height: 13px; }
+
+.resd-add-icon-btn {
     border: none;
     background: none;
     cursor: pointer;
-    color: #1565c0;
+    color: #888;
     display: flex;
-    flex: none;
+    padding: 2px;
+    border-radius: 4px;
 }
-.rsv-search-chip svg { width: 12px; height: 12px; }
+.resd-add-icon-btn:hover { background: #f0f0f0; color: #1565c0; }
+.resd-add-icon-btn svg { width: 13px; height: 13px; }
 
-#normalToolbar { display: none; }
+/* ---- room & amenities: attribute nempel kecil di Room Type,
+   kosong kalau gak ada data (bukan bug) ---- */
 
-#selectionToolbar {
-    flex: none;
-    padding: 6px 12px;
-    border-bottom: 1px solid #eee;
+.resd-room-line { display: flex; align-items: center; gap: 6px; }
+.resd-room-status { display: flex; color: #bbb; }
+.resd-room-status svg { width: 9px; height: 9px; }
+
+.resd-room-type-attrs {
+    font-size: 10px;
+    font-weight: 400;
+    color: #999;
 }
 
-/* ---- pagination footer, nempel bawah, di DALAM card showing ---- */
-
-.rsv-table-footer {
-    flex: none;
+.resd-package-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 6px 12px;
-    border-top: 1px solid #eee;
-    font-size: 12px;
-    color: #555;
-    background: #fafafa;
+    flex-direction: column;
+    gap: 3px;
 }
-
-/* grup kanan footer: checkbox Pagination (customize only) +
-   page-pill (customize only) + Prev/Next (selalu ada) */
-.rsv-table-footer-right {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.rsv-pagination-toggle {
-    display: none;
-    align-items: center;
-    gap: 5px;
+.resd-package-list li {
     font-size: 11.5px;
-    color: #555;
-    cursor: pointer;
-    user-select: none;
-    white-space: nowrap;
-}
-.rsv-page-customizing .rsv-pagination-toggle { display: flex; }
-.rsv-pagination-toggle input { cursor: pointer; margin: 0; }
-
-.rsv-page-pill {
-    display: none;
-    font-size: 11.5px;
-    color: #555;
-    white-space: nowrap;
-}
-.rsv-page-customizing .rsv-page-pill { display: inline-block; }
-
-.rsv-page-nav {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.rsv-page-nav button {
-    border: 1px solid #ccc;
-    background: #fff;
-    border-radius: 3px;
-    padding: 2px 8px;
-    cursor: pointer;
-    font-size: 11.5px;
-}
-.rsv-page-nav button:disabled { opacity: .4; cursor: default; }
-
-/* ---- table row height FIXED (harus match ROW_HEIGHT_PX di reservation.js) ---- */
-
-.table-container td {
-    padding: 8px 8px !important;
-    line-height: 1.2 !important;
-    box-sizing: border-box;
-}
-
-/* ---- header tabel + body cell -- di-scope ke .rsv-showing-card
-   sendiri, LEPAS dari class lama .table-container (sengaja gak
-   ditempel balik ke HTML, biar gak ketarik margin/positioning
-   punya .table-container yang bakal bikin card ini beda lebar
-   sama card Search). Tanpa blok ini: table-layout auto (col
-   width hasil resize diabaikan browser), header polos gak ada
-   background/border pemisah -> nyatu sama body, keliatan hilang. ---- */
-
-.rsv-showing-card .table-scroll table {
-    table-layout: fixed;
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.rsv-showing-card thead th {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    text-align: left;
-    background-color: #fafafa;
-    border-bottom: 1px solid #ddd;
-    color: #444;
-    font-size: 13px;
-    font-weight: 600;
-    box-sizing: border-box;
-}
-
-/* ---- cell content: truncate + fade-blur kanan, marquee + fade
-   dua-sisi pas hover (dipicu class dari reservation.js:
-   bindCellMarquee / applyCellFade -- JS-nya udah ada dari awal,
-   ini cuma nambahin definisi visualnya). ---- */
-
-.rsv-showing-card #reservationTable td {
-    border-bottom: 1px solid #eee;
-    font-size: 14px;
-    box-sizing: border-box;
-    max-width: 0;
-    overflow: hidden;
-}
-
-.rsv-showing-card #reservationTable tr:last-child td {
-    border-bottom: none;
-}
-
-.rsv-showing-card #reservationTable tr:hover {
-    background-color: #f5f5f5;
-    cursor: pointer;
-}
-
-.cell-text-wrap {
+    color: #333;
+    padding-left: 12px;
     position: relative;
-    display: block;
-    overflow: hidden;
-    white-space: nowrap;
-    width: 100%;
 }
-
-.cell-text-inner {
-    display: inline-block;
-    white-space: nowrap;
-    transition: transform .3s ease;
-    will-change: transform;
-}
-
-.cell-fade::after {
-    content: "";
+.resd-package-list li:not(.resd-empty-note)::before {
+    content: "•";
     position: absolute;
-    top: 0;
-    right: 0;
-    height: 100%;
-    width: 22px;
-    pointer-events: none;
-    background: linear-gradient(to right, transparent, #fff 85%);
-    backdrop-filter: blur(1px);
-}
-
-.rsv-showing-card #reservationTable tr:hover .cell-fade::after {
-    background: linear-gradient(to right, transparent, #f5f5f5 85%);
-}
-
-.cell-fade-both::before {
-    content: "";
-    position: absolute;
-    top: 0;
     left: 0;
-    height: 100%;
-    width: 22px;
-    pointer-events: none;
-    z-index: 1;
-    background: linear-gradient(to left, transparent, #fff 85%);
-    backdrop-filter: blur(1px);
+    color: #1565c0;
 }
 
-.cell-fade-both::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    height: 100%;
-    width: 22px;
-    pointer-events: none;
-    z-index: 1;
-    background: linear-gradient(to right, transparent, #fff 85%);
-    backdrop-filter: blur(1px);
+/* ---- remarks: SATU BARIS horizontal, mini-card per item,
+   scroll-x kalau kepanjangan -- bukan stack vertikal ---- */
+
+.resd-card-remarks { display: flex; flex-direction: column; }
+
+.resd-remarks-row {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
 }
 
-.rsv-showing-card #reservationTable tr:hover .cell-fade-both::before {
-    background-image: linear-gradient(to left, transparent, #f5f5f5 85%);
+.resd-mini-remark-card {
+    flex: none;
+    width: 140px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 6px 8px;
+    box-sizing: border-box;
+    overflow-y: auto;
 }
-.rsv-showing-card #reservationTable tr:hover .cell-fade-both::after {
-    background-image: linear-gradient(to right, transparent, #f5f5f5 85%);
+
+.resd-mini-remark-type {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: #1565c0;
+    margin-bottom: 3px;
+    text-transform: uppercase;
 }
 
-/* ---- lebar kolom -- SESUAIKAN key ke COLUMN_MAP di
-   tableColumns.js / RESERVATION_COLUMNS di tableConfig.js.
-   Tanpa ini, table-layout:fixed bagi rata semua kolom sama
-   besar; kasih width eksplisit biar kolom bisa lebih pendek
-   dari isinya (efek fade di atas yang nutupin sisanya). ---- */
+/* ---- edit mode input ---- */
 
-/*
-.rsv-showing-card #reservationTable td[data-key="guest_name"] { width: 160px; }
-.rsv-showing-card #reservationTable td[data-key="status"] { width: 110px; }
-*/
+.resd-card .value input,
+.resd-card .value textarea,
+.resd-flip-face .value input,
+.resd-flip-face .value textarea {
+    width: 100%;
+    font: inherit;
+    font-weight: 600;
+    font-size: 12px;
+    border: 1px solid #999;
+    border-radius: 4px;
+    padding: 3px 5px;
+    box-sizing: border-box;
+    background: #fffef2;
+}
+.resd-card .value textarea { min-height: 60px; resize: vertical; }
 
-/* ---- responsive: layar kecil -- pill/dropdown diperpendek + gap dikecilin ---- */
+/* ---- desktop lebar (>=1200px): 6 kolom BENERAN kepake --
+   4 kartu biasa sejajar row 1 (masing2 1 kolom), folio geser
+   jadi span 2 baris aja (bukan 3), remarks+rate turun row 2.
+   Ganti angka 1200px sesuka lo kalau breakpoint-nya kerasa
+   ketinggian/kependekan. ---- */
+
+@media (min-width: 1200px) {
+
+    .resd-grid {
+        grid-template-columns: repeat(6, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+    }
+
+    .resd-card-guest      { grid-column: 1; grid-row: 1; }
+    .resd-card-secondary  { grid-column: 1; grid-row: 2; }
+    .resd-card-remarks    { grid-column: 1; grid-row: 3; }
+
+    .resd-card-stay       { grid-column: 2; grid-row: 1; }
+    .resd-card-rate       { grid-column: 2; grid-row: 2; }
+    .resd-card-amenities  { grid-column: 2; grid-row: 3; }
+
+    .resd-card-folio-1 { grid-column: 3; grid-row: 1 / span 3; }
+    .resd-card-folio-2 { grid-column: 4; grid-row: 1 / span 3; }
+    .resd-card-folio-3 { grid-column: 5; grid-row: 1 / span 3; }
+    .resd-card-folio-4 { grid-column: 6; grid-row: 1 / span 3; }
+
+}
+
+/* ---- responsive: stack 1 kolom, order eksplisit per class
+   (bukan nth-child) ---- */
 
 @media (max-width: 700px) {
-    .rsv-btn-label { display: none; }
-    .rsv-btn { padding: 6px; }
-    .rsv-search-footer .rsv-btn-label,
-    .rsv-export-btn .rsv-btn-label { display: inline; }
-    /* .rsv-reset-btn SENGAJA gak di-exception -- tetep icon-only
-       di layar kecil, sesuai permintaan */
-    .rsv-page { margin: 6px 8px 6px; }
-    .rsv-field-card { width: 100px; }
-    .rsv-search-column { padding: 0 6px; }
 
-    .rsv-showing-center {
-        order: 3;
-        flex-basis: 100%;
-        justify-content: center;
+    .resd-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: none;
     }
 
-    .rsv-showing-pills {
-        gap: 3px;
+    .resd-grid > .resd-card {
+        grid-column: 1 / -1;
+        grid-row: auto;
     }
 
-    .rsv-pill-select {
-        padding: 3px 6px;
-        font-size: 10.5px;
-        max-width: 82px;
-    }
+    .resd-card-guest      { order: 1; }
+    .resd-card-stay       { order: 2; }
+    .resd-card-secondary  { order: 3; }
+    .resd-card-amenities  { order: 4; }
+    .resd-card-remarks    { order: 5; }
+    .resd-card-rate       { order: 6; }
+    .resd-card-folio-1    { order: 7; }
+    .resd-card-folio-2    { order: 8; }
+    .resd-card-folio-3    { order: 9; }
+    .resd-card-folio-4    { order: 10; }
 
-    .rsv-pill-date {
-        padding: 3px 6px;
-        font-size: 10.5px;
-        width: 108px !important;
-    }
+    .resd-card { min-height: 160px; }
+    .resd-flip-card { min-height: 220px; }
 
-    .rsv-pill-arrow {
-        width: 18px;
-        height: 18px;
-    }
-    .rsv-pill-arrow svg { width: 12px; height: 12px; }
-
-    .rsv-table-footer { flex-wrap: wrap; }
-    .rsv-table-footer-right { flex-wrap: wrap; }
 }
 
-@media (max-width: 420px) {
-    .rsv-pill-select { max-width: 68px; }
-    .rsv-pill-date { width: 96px !important; }
-}
+/* ======================================================
+   FOLIO CAROUSEL -- cuma aktif mode "tablet" (701-1199px,
+   di antara mobile stack & desktop 4-kolom). Di luar rentang
+   itu nav panah disembunyikan & display:none gak dipasang,
+   jadi 4 card tetep tampil normal kayak breakpoint lain.
+   ====================================================== */
 
-.resd-sub-item{ display:inline-flex; align-items:center; gap:2px; }
-.resd-sub-icon{ width:11.5px; height:11.5px; vertical-align:-1px; margin-right:1px; }
-.resd-flag{ font-size:inherit; }
+.resd-folio-nav {
+    display: none;
+    align-items: center;
+    gap: 2px;
+    flex: none;
+}
+.resd-folio-nav button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #888;
+    display: flex;
+    padding: 2px;
+    border-radius: 4px;
+    flex: none;
+}
+.resd-folio-nav button:hover { background: #f0f0f0; color: #333; }
+.resd-folio-nav button:disabled { opacity: .3; cursor: default; }
+.resd-folio-nav button:disabled:hover { background: none; }
+.resd-folio-nav button svg { width: 14px; height: 14px; }
+
+@media (min-width: 701px) and (max-width: 1199px) {
+
+    .resd-card-folio-1,
+    .resd-card-folio-2,
+    .resd-card-folio-3,
+    .resd-card-folio-4 {
+        display: none;
+        grid-column: 5 / span 2;
+        grid-row: 1 / span 3;
+    }
+
+    .resd-card-folio-1.resd-folio-active,
+    .resd-card-folio-2.resd-folio-active,
+    .resd-card-folio-3.resd-folio-active,
+    .resd-card-folio-4.resd-folio-active {
+        display: flex;
+    }
+
+    .resd-folio-nav { display: flex; }
+
+}
