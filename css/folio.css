@@ -9,7 +9,7 @@
    nempel presis ke card induk, bukan ngandelin margin/padding parent. */
 .folio-card {
     position: absolute;
-    inset: 4px;
+    inset: 0 2px 2px 2px;
     border: 1px solid #ccc;
     border-radius: 6px;
     background: #fff;
