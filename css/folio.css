@@ -155,7 +155,7 @@
 
 .folio-table th {
     text-align: left;
-    padding: 5px 5px;
+    padding: 4px 3px;
     background: #fafafa;
     border-bottom: 1px solid #ddd;
     font-size: 12px;
@@ -166,10 +166,26 @@
 }
 
 .folio-table td {
-    padding: 5px 5px;
+    padding: 4px 3px;
     border-bottom: 1px solid #f0f0f0;
     font-size: 13px;
     white-space: nowrap;
+}
+
+.folio-table tbody tr:not(.folio-edit-row) {
+    cursor: pointer;
+}
+
+.folio-table tbody tr:not(.folio-edit-row):hover {
+    background: #f5f5f5;
+}
+
+.folio-row-selected {
+    background: #e3f2fd !important;
+}
+
+.folio-table-scroll:focus {
+    outline: none;
 }
 
 .folio-empty {

@@ -4,6 +4,18 @@
 // (fa_*, fp_*, folioServiceInput, dst) sekarang di-prefix
 // pakai containerId (lewat FolioUI.fid) supaya folio1/2/3
 // yang kebuka bareng gak saling rebutan elemen yang sama.
+//
+// FIX Guest ID: input customer_id sekarang type="text" (ID
+// bisa UUID, bukan cuma angka), dan lookup pakai kolom guests
+// yang BENERAN ada sesuai FolioService.getReservationGuestInfo
+// (display_name/first_name/last_name/country_code) -- sebelumnya
+// nembak guest.address/postal_code/city/country yang gak jelas
+// ada di schema, dan id dipaksa Number() jadi NaN kalau UUID.
+//
+// Items table: checkbox dihapus, ganti klik-row buat select
+// (ctrl+klik = multi, ctrl+A = all -- lihat folioRowClick/
+// folioSelectAll/folioTableKeydown di folio.js). Padding kolom
+// dikecilin juga (liat folio.css).
 // ======================================================
 
 function escapeHtmlSimple(str) {
@@ -166,7 +178,7 @@ const FolioUI = {
             <div class="folio-address-card folio-address-edit" id="${this.fid(c, "folioAddressEdit")}">
                 <div class="folio-field-row">
                     <select id="${this.fid(c, "fa_guest_or_company")}">${typeOptions}</select>
-                    <input id="${this.fid(c, "fa_customer_id")}" type="number" placeholder="ID" value="${a.customer_id ?? ""}"
+                    <input id="${this.fid(c, "fa_customer_id")}" type="text" placeholder="Guest ID" value="${escapeHtmlSimple(a.customer_id ?? "")}"
                         onkeydown="if(event.key==='Enter'){event.preventDefault(); folioLookupCustomer('${c}');}">
                 </div>
                 <div class="folio-field-row">
@@ -193,10 +205,15 @@ const FolioUI = {
 
     // --------------------------------------------------
     // Items Table
+    // Checkbox dihapus -- selection sekarang klik row langsung
+    // (ctrl+klik multi, ctrl+A all; lihat folioRowClick/
+    // folioSelectAll/folioTableKeydown di folio.js). Wrapper
+    // dikasih tabindex biar bisa nangkep keydown ctrl+A.
     // --------------------------------------------------
 
     renderItemsTable(state, editable) {
 
+        const c = state.containerId;
         const isClosed = !!(state.folio && state.folio.is_closed);
 
         const rows = state.items
@@ -204,19 +221,17 @@ const FolioUI = {
             .join("");
 
         return `
-            <div class="folio-table-scroll">
+            <div class="folio-table-scroll" tabindex="0" onkeydown="folioTableKeydown(event, '${c}')">
                 <table class="folio-table">
                     <colgroup>
-                        <col style="width:26px">
-                        <col style="width:42px">
-                        <col style="width:130px">
+                        <col style="width:46px">
+                        <col style="width:150px">
                         <col style="width:44px">
                         <col style="width:78px">
                         <col style="width:88px">
                     </colgroup>
                     <thead>
                         <tr>
-                            <th></th>
                             <th>Qty</th>
                             <th>Name Service</th>
                             <th>Tax</th>
@@ -225,7 +240,7 @@ const FolioUI = {
                         </tr>
                     </thead>
                     <tbody>
-                        ${rows || `<tr><td colspan="6" class="folio-empty">No items</td></tr>`}
+                        ${rows || `<tr><td colspan="5" class="folio-empty">No items</td></tr>`}
                     </tbody>
                 </table>
             </div>
@@ -240,9 +255,10 @@ const FolioUI = {
 
         if (!editable) {
 
+            const clickAttr = isClosed ? "" : `onclick="folioRowClick(event, '${c}', '${item.id}')"`;
+
             return `
-                <tr>
-                    <td><input type="checkbox" ${selected ? "checked" : ""} ${isClosed ? "disabled" : ""} onchange="folioToggleSelect('${c}', '${item.id}')"></td>
+                <tr class="${selected ? "folio-row-selected" : ""}" ${clickAttr}>
                     <td>${item.quantity}</td>
                     <td>${escapeHtmlSimple(item.service_name)}</td>
                     <td>${item.tax_rate}%</td>
@@ -255,7 +271,6 @@ const FolioUI = {
 
         return `
             <tr data-item-id="${item.id}" class="folio-edit-row">
-                <td><input type="checkbox" ${selected ? "checked" : ""} onchange="folioToggleSelect('${c}', '${item.id}')"></td>
                 <td><input type="number" step="0.01" class="folio-inline-input fi-qty" value="${item.quantity}"></td>
                 <td><input type="text" class="folio-inline-input fi-name" value="${escapeHtmlSimple(item.service_name)}"></td>
                 <td><input type="number" step="0.01" class="folio-inline-input fi-tax" value="${item.tax_rate}"></td>
@@ -266,16 +281,8 @@ const FolioUI = {
 
     },
 
-    // Scoped ke card folio yang bersangkutan (fix: dulu query global
-    // document.querySelectorAll(".folio-edit-row") -> ikut narik row
-    // dari folio lain kalau lagi edit bareng-bareng)
-    //
-    // FIX (id=eq.NaN): id folio_items TIDAK selalu integer (bisa UUID
-    // kalau kolomnya default gen_random_uuid()) -- dulu di sini
-    // dipaksa Number(row.dataset.itemId), jadi kalau id-nya UUID hasil
-    // Number(...) = NaN dan update ke Supabase nembak id=eq.NaN (400).
-    // Sekarang id dibiarkan apa adanya (string) supaya cocok baik untuk
-    // UUID maupun bigint/integer.
+    // Scoped ke card folio yang bersangkutan. id folio_items TIDAK
+    // selalu integer (bisa UUID) -- id dibiarkan apa adanya (string).
     collectEditDraft(containerId) {
 
         const container = document.getElementById(containerId);
@@ -536,8 +543,6 @@ const FolioUI = {
 
     // --------------------------------------------------
     // Payment View
-    // (catatan "API under development" DIHAPUS dari sini,
-    // sekarang dipasang permanen di status bar bawah halaman)
     // --------------------------------------------------
 
     renderPaymentView(state) {
@@ -682,17 +687,21 @@ const FolioUI = {
 
 
 // ======================================================
-// Guest/Company ID lookup
+// Guest/Company ID lookup — pakai kolom guests yang beneran
+// ada (sama seperti FolioService.getReservationGuestInfo:
+// display_name/first_name/last_name/country_code). id dikirim
+// apa adanya (string), bukan Number(), karena guests.id bisa UUID
+// sama seperti guest_id di reservation.
 // ======================================================
 
 async function folioLookupCustomer(containerId) {
 
     const idInput = document.getElementById(FolioUI.fid(containerId, "fa_customer_id"));
-    if (!idInput || !idInput.value) return;
+    if (!idInput || !idInput.value.trim()) return;
 
     try {
 
-        const guest = await FolioService.lookupGuestById(Number(idInput.value));
+        const guest = await FolioService.lookupGuestById(idInput.value.trim());
 
         if (!guest) {
 
@@ -701,11 +710,10 @@ async function folioLookupCustomer(containerId) {
 
         }
 
-        document.getElementById(FolioUI.fid(containerId, "fa_name")).value = `${guest.first_name || ""} ${guest.last_name || ""}`.trim();
-        document.getElementById(FolioUI.fid(containerId, "fa_street")).value = guest.address || "";
-        document.getElementById(FolioUI.fid(containerId, "fa_postcode")).value = guest.postal_code || "";
-        document.getElementById(FolioUI.fid(containerId, "fa_city")).value = guest.city || "";
-        document.getElementById(FolioUI.fid(containerId, "fa_country")).value = guest.country || "";
+        const fullName = guest.display_name || `${guest.first_name || ""} ${guest.last_name || ""}`.trim();
+
+        document.getElementById(FolioUI.fid(containerId, "fa_name")).value = fullName;
+        document.getElementById(FolioUI.fid(containerId, "fa_country")).value = guest.country_code || "";
 
     } catch (e) {
 

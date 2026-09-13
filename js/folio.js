@@ -247,24 +247,62 @@ async function folioSaveEdit(containerId) {
 // Selection (checkbox mode)
 // ======================================================
 
-function folioToggleSelect(containerId, itemId) {
+// ======================================================
+// Item row selection — klik row (ganti checkbox).
+// ctrl/cmd+klik = tambah/hapus dari selection.
+// klik biasa = replace selection jadi row itu aja
+// (klik lagi row yg sama = deselect).
+// ======================================================
+
+function folioRowClick(e, containerId, itemId) {
+
+    if (folioIsClosed(containerId)) return;
 
     const state = FolioInstances[containerId];
-    if (!state || folioIsClosed(containerId)) return;
+    if (!state) return;
 
-    if (state.selectedIds.has(itemId)) {
+    if (e.ctrlKey || e.metaKey) {
 
-        state.selectedIds.delete(itemId);
+        if (state.selectedIds.has(itemId)) {
+            state.selectedIds.delete(itemId);
+        } else {
+            state.selectedIds.add(itemId);
+        }
 
     } else {
 
-        state.selectedIds.add(itemId);
+        if (state.selectedIds.size === 1 && state.selectedIds.has(itemId)) {
+            state.selectedIds.clear();
+        } else {
+            state.selectedIds = new Set([itemId]);
+        }
 
     }
 
     state.toolbarAction = null;
-
     FolioUI.render(state);
+
+}
+
+function folioSelectAll(containerId) {
+
+    if (folioIsClosed(containerId)) return;
+
+    const state = FolioInstances[containerId];
+    if (!state) return;
+
+    state.selectedIds = new Set(state.items.map(i => i.id));
+    state.toolbarAction = null;
+    FolioUI.render(state);
+
+}
+
+function folioTableKeydown(e, containerId) {
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        folioSelectAll(containerId);
+    }
 
 }
 
