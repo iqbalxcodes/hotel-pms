@@ -2,15 +2,19 @@
    FOLIO MODULE — reusable card (Reservation, Cashiering,
    Guest, Invoice, dst)
    ====================================================== */
-
+/* posisi absolute + inset (margin kecil semua sisi) -- lebih robust
+   dibanding height:100%, karena gak peduli parent-nya flex/block/grid,
+   selama parent (elemen containerId, mis. #folioMount1) dikasih
+   position:relative + tinggi definit. Margin "beneran kecil" (4px)
+   nempel presis ke card induk, bukan ngandelin margin/padding parent. */
 .folio-card {
+    position: absolute;
+    inset: 4px;
     border: 1px solid #ccc;
     border-radius: 6px;
     background: #fff;
     display: flex;
     flex-direction: column;
-    height: 100%;
-    width: 100%;
     min-width: 0;
     box-sizing: border-box;
     overflow: hidden;
@@ -136,6 +140,7 @@
 
 .folio-table-scroll {
     overflow-x: auto;
+    overflow-y: auto;
     margin: 0 10px;
     flex: 1 1 auto;
     min-height: 0;
