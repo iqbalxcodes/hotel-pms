@@ -252,13 +252,13 @@ function renderLangCountry(res){
     const langEl = document.getElementById("det_language");
     if(langEl){
         const code = normalizeCode(res.language);
-        langEl.innerHTML = `${escapeHtml(code || res.language || "-")}${code ? ` ${flagImgHtml(code)}` : ""}`;
+        langEl.innerHTML = code ? flagImgHtml(code) : "-";
     }
     const countryEl = document.getElementById("det_country");
     if(countryEl){
         const raw = res.country_code || res.country;
         const code = normalizeCode(raw);
-        countryEl.innerHTML = `${escapeHtml(code || raw || "-")}${code ? ` ${flagImgHtml(code)}` : ""}`;
+        countryEl.innerHTML = code ? flagImgHtml(code) : "-";
     }
 }
 
