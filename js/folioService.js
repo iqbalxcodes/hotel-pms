@@ -115,6 +115,49 @@ const FolioService = {
     },
 
     // --------------------------------------------------
+    // Guest info dari reservation -- dipakai buat default
+    // address Folio 1 (header guest = guest reservasi ybs,
+    // sampai user/receptionist beneran ubah & save alamatnya
+    // sendiri lewat invoice_addresses).
+    // --------------------------------------------------
+
+    async getReservationGuestInfo(reservationId) {
+
+        if (!reservationId) return null;
+
+        const { data, error } = await supabaseClient
+            .from("reservation_list_view")
+            .select("guest_id, guest_name, country_code, contact")
+            .eq("id", reservationId)
+            .maybeSingle();
+
+        if (error) throw error;
+        return data;
+
+    },
+
+    // Bentuk object address "sementara" (belum disimpan ke
+    // invoice_addresses) dari data guest reservasi. Dipakai
+    // sebagai fallback tampilan doang -- bukan row asli.
+    buildDefaultAddressFromReservation(resInfo) {
+
+        if (!resInfo) return null;
+
+        return {
+            guest_or_company: "Guest",
+            customer_id: resInfo.guest_id || null,
+            name: resInfo.guest_name || "",
+            additional_data: null,
+            street: null,
+            postcode: null,
+            city: null,
+            region: null,
+            country: resInfo.country_code || null
+        };
+
+    },
+
+    // --------------------------------------------------
     // Room charge (default) — dipanggil sekali saat Folio 1
     // pertama kali dibuat untuk sebuah reservation.
     // --------------------------------------------------

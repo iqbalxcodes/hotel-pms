@@ -242,7 +242,7 @@ const FolioUI = {
 
             return `
                 <tr>
-                    <td><input type="checkbox" ${selected ? "checked" : ""} ${isClosed ? "disabled" : ""} onchange="folioToggleSelect('${c}', ${item.id})"></td>
+                    <td><input type="checkbox" ${selected ? "checked" : ""} ${isClosed ? "disabled" : ""} onchange="folioToggleSelect('${c}', '${item.id}')"></td>
                     <td>${item.quantity}</td>
                     <td>${escapeHtmlSimple(item.service_name)}</td>
                     <td>${item.tax_rate}%</td>
@@ -255,7 +255,7 @@ const FolioUI = {
 
         return `
             <tr data-item-id="${item.id}" class="folio-edit-row">
-                <td><input type="checkbox" ${selected ? "checked" : ""} onchange="folioToggleSelect('${c}', ${item.id})"></td>
+                <td><input type="checkbox" ${selected ? "checked" : ""} onchange="folioToggleSelect('${c}', '${item.id}')"></td>
                 <td><input type="number" step="0.01" class="folio-inline-input fi-qty" value="${item.quantity}"></td>
                 <td><input type="text" class="folio-inline-input fi-name" value="${escapeHtmlSimple(item.service_name)}"></td>
                 <td><input type="number" step="0.01" class="folio-inline-input fi-tax" value="${item.tax_rate}"></td>
@@ -269,6 +269,13 @@ const FolioUI = {
     // Scoped ke card folio yang bersangkutan (fix: dulu query global
     // document.querySelectorAll(".folio-edit-row") -> ikut narik row
     // dari folio lain kalau lagi edit bareng-bareng)
+    //
+    // FIX (id=eq.NaN): id folio_items TIDAK selalu integer (bisa UUID
+    // kalau kolomnya default gen_random_uuid()) -- dulu di sini
+    // dipaksa Number(row.dataset.itemId), jadi kalau id-nya UUID hasil
+    // Number(...) = NaN dan update ke Supabase nembak id=eq.NaN (400).
+    // Sekarang id dibiarkan apa adanya (string) supaya cocok baik untuk
+    // UUID maupun bigint/integer.
     collectEditDraft(containerId) {
 
         const container = document.getElementById(containerId);
@@ -287,7 +294,7 @@ const FolioUI = {
 
         const items = [...container.querySelectorAll(".folio-edit-row")].map(row => {
 
-            const id = Number(row.dataset.itemId);
+            const id = row.dataset.itemId;
 
             return {
                 id,

@@ -74,6 +74,41 @@ async function folioReload(containerId) {
         state.payments = payments;
         state.address = address;
 
+        // Default header Folio 1 = guest di reservasi ybs, SELAMA
+        // invoice_addresses belum pernah diisi beneran (baik karena
+        // belum ada row-nya sama sekali, ATAU row-nya ada tapi "name"
+        // masih kosong -- kasus row kosong yg kebentuk gara2 pernah
+        // Save tanpa isi apa2). Begitu user isi & save nama beneran,
+        // address.name gak kosong lagi -> default ini otomatis berhenti
+        // dipakai, data manual yang menang.
+        if (folio.folio_number === 1 && state.reservationId && (!address || !address.name)) {
+
+            try {
+
+                const resInfo = await FolioService.getReservationGuestInfo(state.reservationId);
+                const defaultAddress = FolioService.buildDefaultAddressFromReservation(resInfo);
+
+                console.log("[FOLIO DEBUG] reservationId:", state.reservationId);
+                console.log("[FOLIO DEBUG] resInfo:", resInfo);
+                console.log("[FOLIO DEBUG] defaultAddress:", defaultAddress);
+                console.log("[FOLIO DEBUG] address (existing row):", address);
+
+                if (defaultAddress) {
+                    // kalau row invoice_addresses beneran udah ada (id-nya
+                    // ada), pertahankan id itu supaya kalau nanti user save
+                    // dari form ini, update jalan ke row yang sama, bukan
+                    // bikin row baru.
+                    state.address = address ? { ...address, ...defaultAddress, id: address.id } : defaultAddress;
+                }
+
+            } catch (e) {
+
+                console.error("Gagal memuat default guest dari reservation:", e);
+
+            }
+
+        }
+
         if (typeof state.onChange === "function") {
             state.onChange(folio);
         }
@@ -178,6 +213,13 @@ async function folioSaveEdit(containerId) {
         await FolioService.saveAddress(state.folioId, draft.address);
 
         for (const item of draft.items) {
+
+            if (!item.id) {
+
+                console.error("folioSaveEdit: skip item tanpa id", item);
+                continue;
+
+            }
 
             await FolioService.updateItem(item.id, {
                 service_name: item.service_name,
