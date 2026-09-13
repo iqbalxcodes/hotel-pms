@@ -119,6 +119,15 @@ const STATUS_LABELS = {
 // Status Bar helpers (message / confirm / clock)
 // ======================================================
 
+function forceSubIconSize(){
+    document.querySelectorAll(".resd-sub-icon").forEach(svg => {
+        svg.style.width = "1em";
+        svg.style.height = "1em";
+        svg.removeAttribute("width");
+        svg.removeAttribute("height");
+    });
+}
+
 function escapeHtml(str){
     const div = document.createElement("div");
     div.textContent = str ?? "";
@@ -356,6 +365,7 @@ function updateHeaderSub(res){
 
     el.innerHTML = parts.length ? parts.join(" · ") : "-";
     if(window.lucide) lucide.createIcons();
+    forceSubIconSize();   
 }
 
 // ------------------------------------------------------
@@ -386,6 +396,7 @@ function renderSecondaryGuestList(res){
         : `<div class="resd-empty-note">No secondary guest</div>`;
 
     if(window.lucide) lucide.createIcons();
+    forceSubIconSize();
 }
 
 // ------------------------------------------------------
