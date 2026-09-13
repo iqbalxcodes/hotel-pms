@@ -243,23 +243,22 @@ function normalizeCode(val){
     return v.length === 2 ? v.toUpperCase() : null;
 }
 
-function flagEmoji(code){
+function flagImgHtml(code){
     if(!code || code.length !== 2) return "";
-    const A = 0x1F1E6;
-    return String.fromCodePoint(...[...code.toUpperCase()].map(c => A + c.charCodeAt(0) - 65));
+    return `<img src="https://flagcdn.com/${code.toLowerCase()}.svg" class="resd-flag-img" alt="${code}">`;
 }
 
 function renderLangCountry(res){
     const langEl = document.getElementById("det_language");
     if(langEl){
         const code = normalizeCode(res.language);
-        langEl.innerHTML = `${escapeHtml(code || res.language || "-")}${code ? ` <span class="resd-flag">${flagEmoji(code)}</span>` : ""}`;
+        langEl.innerHTML = `${escapeHtml(code || res.language || "-")}${code ? ` ${flagImgHtml(code)}` : ""}`;
     }
     const countryEl = document.getElementById("det_country");
     if(countryEl){
         const raw = res.country_code || res.country;
         const code = normalizeCode(raw);
-        countryEl.innerHTML = `${escapeHtml(code || raw || "-")}${code ? ` <span class="resd-flag">${flagEmoji(code)}</span>` : ""}`;
+        countryEl.innerHTML = `${escapeHtml(code || raw || "-")}${code ? ` ${flagImgHtml(code)}` : ""}`;
     }
 }
 
@@ -351,7 +350,7 @@ function updateHeaderSub(res){
     if(res.guest_name){
         const salut = res.salutation ? res.salutation + " " : "";
         const code = normalizeCode(res.language);
-        const flag = code ? ` <span class="resd-flag">${flagEmoji(code)}</span>` : "";
+        const flag = code ? ` ${flagImgHtml(code)}` : "";
         parts.push(`<span class="resd-sub-item"><i data-lucide="user" class="resd-sub-icon"></i>${escapeHtml(salut + res.guest_name)}${flag}</span>`);
     }
     if(res.room_number){
