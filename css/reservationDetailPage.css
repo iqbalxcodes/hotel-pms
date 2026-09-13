@@ -213,13 +213,30 @@
     min-height: 0;
 }
 
-.resd-card-folio-1,
-.resd-card-folio-2,
-.resd-card-folio-3,
-.resd-card-folio-4 {
+/* FIX (padding gak ngaruh): sebelumnya selector di sini cuma
+   ".resd-card-folio-1" (1 class) -- specificity-nya SAMA kayak
+   ".resd-card" di bawah, dan karena ".resd-card" ditulis belakangan
+   di file ini, dia yang menang (padding: 8px 10px tetep kepake).
+   Sekarang digabung jadi ".resd-card.resd-card-folio-1" (2 class)
+   biar specificity-nya LEBIH TINGGI dari ".resd-card" doang, gak
+   peduli urutan penulisan di file. */
+.resd-card.resd-card-folio-1,
+.resd-card.resd-card-folio-2,
+.resd-card.resd-card-folio-3,
+.resd-card.resd-card-folio-4 {
     grid-column: span 2;
     grid-row: 1 / span 3;
     padding: 0;
+}
+
+/* h3 "Folio N" tetep butuh padding sendiri, soalnya parent-nya
+   (card) sekarang padding:0 -- tanpa ini judulnya nempel ke tepi. */
+.resd-card.resd-card-folio-1 h3,
+.resd-card.resd-card-folio-2 h3,
+.resd-card.resd-card-folio-3 h3,
+.resd-card.resd-card-folio-4 h3 {
+    padding: 8px 10px 0;
+    margin: 0;
 }
 
 .resd-card {
