@@ -202,6 +202,17 @@
 .resd-card-remarks    { grid-column: 1 / span 2; grid-row: 3; }
 .resd-card-rate       { grid-column: 3 / span 2; grid-row: 3; }
 
+/* wadah tempat folio.js nge-mount (openFolio containerId harus
+   nunjuk ke div INI, bukan ke .resd-card-folio-N -- kalau ke kartu
+   utuh, .folio-card yang position:absolute bakal nutupin <h3> yg
+   ada tombol <>-nya). position:relative wajib biar inset:4px di
+   .folio-card ngukur relatif ke div ini, bukan ke ancestor lain. */
+.resd-folio-mount {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
 .resd-card-folio-1,
 .resd-card-folio-2,
 .resd-card-folio-3,
