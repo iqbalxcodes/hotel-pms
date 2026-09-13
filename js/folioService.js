@@ -119,20 +119,46 @@ const FolioService = {
     // address Folio 1 (header guest = guest reservasi ybs,
     // sampai user/receptionist beneran ubah & save alamatnya
     // sendiri lewat invoice_addresses).
+    //
+    // FIX: sebelumnya nembak reservation_list_view nebak nama
+    // kolom (guest_name/country_code/contact) -- gak yakin persis
+    // sama kayak yang ada di view aslinya, jadi diem2 gak dapet
+    // data. Sekarang langsung ke tabel dasar (reservations -> guests)
+    // pakai nama kolom asli dari schema: guests.first_name,
+    // guests.last_name, guests.display_name, guests.country_code,
+    // guests.phone.
     // --------------------------------------------------
 
     async getReservationGuestInfo(reservationId) {
 
         if (!reservationId) return null;
 
-        const { data, error } = await supabaseClient
-            .from("reservation_list_view")
-            .select("guest_id, guest_name, country_code, contact")
+        const { data: reservation, error: resError } = await supabaseClient
+            .from("reservations")
+            .select("guest_id")
             .eq("id", reservationId)
             .maybeSingle();
 
-        if (error) throw error;
-        return data;
+        if (resError) throw resError;
+        if (!reservation || !reservation.guest_id) return null;
+
+        const { data: guest, error: guestError } = await supabaseClient
+            .from("guests")
+            .select("id, first_name, last_name, display_name, country_code, phone")
+            .eq("id", reservation.guest_id)
+            .maybeSingle();
+
+        if (guestError) throw guestError;
+        if (!guest) return null;
+
+        const fullName = guest.display_name || `${guest.first_name || ""} ${guest.last_name || ""}`.trim();
+
+        return {
+            guest_id: guest.id,
+            guest_name: fullName,
+            country_code: guest.country_code,
+            contact: guest.phone
+        };
 
     },
 
@@ -510,14 +536,16 @@ const FolioService = {
 
     },
 
-    // Kunci folio setelah pembayaran selesai -> item folio tidak
-    // bisa diedit lagi (abgeschlossen).
+    // Kunci folio setelah pembayaran selesai -- SEMENTARA DIMATIKAN.
+    // is_closed sengaja TIDAK di-set true lagi (belum ada mode folio
+    // closed dulu, termasuk buat reservasi yang udah checkout). Tetep
+    // catat invoice_number/cashiered_by/closed_at buat riwayat, tapi
+    // folio tetap kebuka & bisa diedit normal.
     async closeFolioBilling(folioId, { invoice_number, cashiered_by, paid_at_date } = {}) {
 
         const { data, error } = await supabaseClient
             .from("folios")
             .update({
-                is_closed: true,
                 invoice_number: invoice_number || null,
                 cashiered_by: cashiered_by || null,
                 closed_at: new Date().toISOString()
@@ -528,7 +556,7 @@ const FolioService = {
 
         if (error) throw error;
 
-        await this.logActivity(folioId, "closed", `Folio closed (Invoice ${invoice_number || "-"})`, {
+        await this.logActivity(folioId, "closed", `Payment recorded (Invoice ${invoice_number || "-"})`, {
             invoice_number, cashiered_by, paid_at_date
         });
 
