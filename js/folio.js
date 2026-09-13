@@ -75,16 +75,26 @@ async function folioReload(containerId) {
         state.address = address;
 
         // Default header Folio 1 = guest di reservasi ybs, SELAMA
-        // invoice_addresses belum pernah disave manual (address masih
-        // null). Begitu user/receptionist edit+save alamat sekali,
-        // baris invoice_addresses beneran kebentuk -> reload berikutnya
-        // baca row asli itu, bukan default ini lagi.
-        if (!address && folio.folio_number === 1 && state.reservationId) {
+        // invoice_addresses belum pernah diisi beneran (baik karena
+        // belum ada row-nya sama sekali, ATAU row-nya ada tapi "name"
+        // masih kosong -- kasus row kosong yg kebentuk gara2 pernah
+        // Save tanpa isi apa2). Begitu user isi & save nama beneran,
+        // address.name gak kosong lagi -> default ini otomatis berhenti
+        // dipakai, data manual yang menang.
+        if (folio.folio_number === 1 && state.reservationId && (!address || !address.name)) {
 
             try {
 
                 const resInfo = await FolioService.getReservationGuestInfo(state.reservationId);
-                state.address = FolioService.buildDefaultAddressFromReservation(resInfo);
+                const defaultAddress = FolioService.buildDefaultAddressFromReservation(resInfo);
+
+                if (defaultAddress) {
+                    // kalau row invoice_addresses beneran udah ada (id-nya
+                    // ada), pertahankan id itu supaya kalau nanti user save
+                    // dari form ini, update jalan ke row yang sama, bukan
+                    // bikin row baru.
+                    state.address = address ? { ...address, ...defaultAddress, id: address.id } : defaultAddress;
+                }
 
             } catch (e) {
 
