@@ -4,6 +4,16 @@
 // logging — TIDAK tahu apa-apa soal UI/DOM, jadi bisa
 // dipakai dari halaman mana saja (reservation, cashiering,
 // guest, invoice, dst).
+//
+// FIX: nama tabel disamain ke schema asli --
+//   folio          -> folios
+//   reservation     -> reservation_list_view (buat kolom hasil join:
+//                       confirmation_no, guest_name, room_number, price,
+//                       room_type, arrival_date, departure_date)
+//   invoice_address -> invoice_addresses
+// Kolom folio_items & invoice_addresses sudah di-rename lewat migration
+// supaya match nama yang dipakai di sini (lihat
+// 20260913000000_fix_folio_schema.sql).
 // ======================================================
 
 const FolioService = {
@@ -17,7 +27,7 @@ const FolioService = {
         if (folioId) {
 
             const { data, error } = await supabaseClient
-                .from("folio")
+                .from("folios")
                 .select("*")
                 .eq("id", folioId)
                 .single();
@@ -36,7 +46,7 @@ const FolioService = {
         }
 
         const { data: created, error: createError } = await supabaseClient
-            .from("folio")
+            .from("folios")
             .insert({ reservation_id: reservationId, folio_number: 1, name: "Folio 1" })
             .select()
             .single();
@@ -58,7 +68,7 @@ const FolioService = {
     async getFoliosByReservation(reservationId) {
 
         const { data, error } = await supabaseClient
-            .from("folio")
+            .from("folios")
             .select("*")
             .eq("reservation_id", reservationId)
             .order("folio_number", { ascending: true });
@@ -78,7 +88,7 @@ const FolioService = {
             : 1;
 
         const { data, error } = await supabaseClient
-            .from("folio")
+            .from("folios")
             .insert({ reservation_id: reservationId, folio_number: nextNumber, name: `Folio ${nextNumber}` })
             .select()
             .single();
@@ -94,7 +104,7 @@ const FolioService = {
     async findReservationByConfirmation(confirmationNo) {
 
         const { data, error } = await supabaseClient
-            .from("reservation")
+            .from("reservation_list_view")
             .select("id, confirmation_no, guest_name, room_number")
             .eq("confirmation_no", confirmationNo)
             .maybeSingle();
@@ -129,7 +139,7 @@ const FolioService = {
         try {
 
             const { data: res, error } = await supabaseClient
-                .from("reservation")
+                .from("reservation_list_view")
                 .select("price, room_type, arrival_date, departure_date")
                 .eq("id", reservationId)
                 .maybeSingle();
@@ -458,13 +468,11 @@ const FolioService = {
     },
 
     // Kunci folio setelah pembayaran selesai -> item folio tidak
-    // bisa diedit lagi (abgeschlossen). Butuh kolom di tabel `folio`:
-    // is_closed (bool), invoice_number (text), cashiered_by (text),
-    // closed_at (timestamp).
+    // bisa diedit lagi (abgeschlossen).
     async closeFolioBilling(folioId, { invoice_number, cashiered_by, paid_at_date } = {}) {
 
         const { data, error } = await supabaseClient
-            .from("folio")
+            .from("folios")
             .update({
                 is_closed: true,
                 invoice_number: invoice_number || null,
@@ -507,7 +515,7 @@ const FolioService = {
     async getAddress(folioId) {
 
         const { data, error } = await supabaseClient
-            .from("invoice_address")
+            .from("invoice_addresses")
             .select("*")
             .eq("folio_id", folioId)
             .maybeSingle();
@@ -524,7 +532,7 @@ const FolioService = {
         if (existing) {
 
             const { error } = await supabaseClient
-                .from("invoice_address")
+                .from("invoice_addresses")
                 .update(address)
                 .eq("id", existing.id);
 
@@ -533,7 +541,7 @@ const FolioService = {
         } else {
 
             const { error } = await supabaseClient
-                .from("invoice_address")
+                .from("invoice_addresses")
                 .insert({ ...address, folio_id: folioId });
 
             if (error) throw error;

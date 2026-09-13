@@ -19,6 +19,9 @@
 //   case-insensitive (de/DE/dE -> DE), auto render flag.
 // - First Name & Last Name sekarang satu baris (field-row).
 // - Flip button icon: pake "repeat" (bukan arrow kanan/kiri).
+// - POLISH ROUND 4: Folio module diaktifkan. mountPrimaryFolio
+//   & mountSecondaryFolios sekarang beneran manggil openFolio()
+//   dari folio.js, gak lagi no-op.
 // ======================================================
 
 let currentReservation = null;
@@ -315,15 +318,44 @@ async function performStatusChange(newStatus){
 
 
 // ======================================================
-// Folio -- SENGAJA BELUM DIKERJAKAN.
+// Folio -- mount folio module ke card grid.
+// Folio 1 selalu ada (getOrCreateFolio bikin otomatis kalau
+// belum ada). Folio 2-4 cuma di-mount kalau folio-nya udah
+// exist (dibuat lewat Move/Split di folio lain); kalau belum,
+// tetep tampil placeholder "No folio yet".
 // ======================================================
 
 function mountPrimaryFolio(reservationId){
-    // TODO: aktifkan lagi kalau folio workspace sudah digarap
+    openFolio({ containerId: "folioMount1", reservationId });
 }
 
 async function mountSecondaryFolios(reservationId){
-    // TODO: aktifkan lagi kalau folio workspace sudah digarap
+
+    let folios = [];
+
+    try {
+        folios = await FolioService.getFoliosByReservation(reservationId);
+    } catch (e) {
+        console.error("Gagal memuat daftar folio:", e);
+        return;
+    }
+
+    for (let n = 2; n <= RESD_FOLIO_COUNT; n++){
+
+        const mount = document.getElementById(`folioMount${n}`);
+        if(!mount) continue;
+
+        const existing = folios.find(f => f.folio_number === n);
+        if(!existing) continue;
+
+        const placeholder = document.getElementById(`folioPlaceholder${n}`);
+        if(placeholder) placeholder.style.display = "none";
+        mount.style.display = "";
+
+        openFolio({ containerId: `folioMount${n}`, folioId: existing.id });
+
+    }
+
 }
 
 
@@ -524,9 +556,10 @@ function renderDetail(res){
     updateHeaderSub(res);
     updateBreadcrumb(res);
 
-    // Folio SENGAJA belum di-mount
+    // Folio
     if(res.id){
         mountPrimaryFolio(res.id);
+        mountSecondaryFolios(res.id);
     }
 
     updateStatusBadge(res.status);
