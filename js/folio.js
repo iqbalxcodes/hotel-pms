@@ -74,6 +74,26 @@ async function folioReload(containerId) {
         state.payments = payments;
         state.address = address;
 
+        // Default header Folio 1 = guest di reservasi ybs, SELAMA
+        // invoice_addresses belum pernah disave manual (address masih
+        // null). Begitu user/receptionist edit+save alamat sekali,
+        // baris invoice_addresses beneran kebentuk -> reload berikutnya
+        // baca row asli itu, bukan default ini lagi.
+        if (!address && folio.folio_number === 1 && state.reservationId) {
+
+            try {
+
+                const resInfo = await FolioService.getReservationGuestInfo(state.reservationId);
+                state.address = FolioService.buildDefaultAddressFromReservation(resInfo);
+
+            } catch (e) {
+
+                console.error("Gagal memuat default guest dari reservation:", e);
+
+            }
+
+        }
+
         if (typeof state.onChange === "function") {
             state.onChange(folio);
         }
