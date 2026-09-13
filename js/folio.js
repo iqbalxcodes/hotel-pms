@@ -88,6 +88,11 @@ async function folioReload(containerId) {
                 const resInfo = await FolioService.getReservationGuestInfo(state.reservationId);
                 const defaultAddress = FolioService.buildDefaultAddressFromReservation(resInfo);
 
+                console.log("[FOLIO DEBUG] reservationId:", state.reservationId);
+                console.log("[FOLIO DEBUG] resInfo:", resInfo);
+                console.log("[FOLIO DEBUG] defaultAddress:", defaultAddress);
+                console.log("[FOLIO DEBUG] address (existing row):", address);
+
                 if (defaultAddress) {
                     // kalau row invoice_addresses beneran udah ada (id-nya
                     // ada), pertahankan id itu supaya kalau nanti user save
