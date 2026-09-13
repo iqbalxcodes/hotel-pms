@@ -179,6 +179,13 @@ async function folioSaveEdit(containerId) {
 
         for (const item of draft.items) {
 
+            if (!item.id) {
+
+                console.error("folioSaveEdit: skip item tanpa id", item);
+                continue;
+
+            }
+
             await FolioService.updateItem(item.id, {
                 service_name: item.service_name,
                 quantity: item.quantity,
