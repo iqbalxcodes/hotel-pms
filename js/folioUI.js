@@ -1,21 +1,12 @@
 // ======================================================
 // folioUI.js
-// Rendering murni untuk modul Folio. Semua id DOM lokal
-// (fa_*, fp_*, folioServiceInput, dst) sekarang di-prefix
-// pakai containerId (lewat FolioUI.fid) supaya folio1/2/3
-// yang kebuka bareng gak saling rebutan elemen yang sama.
-//
-// FIX Guest ID: input customer_id sekarang type="text" (ID
-// bisa UUID, bukan cuma angka), dan lookup pakai kolom guests
-// yang BENERAN ada sesuai FolioService.getReservationGuestInfo
-// (display_name/first_name/last_name/country_code) -- sebelumnya
-// nembak guest.address/postal_code/city/country yang gak jelas
-// ada di schema, dan id dipaksa Number() jadi NaN kalau UUID.
-//
-// Items table: checkbox dihapus, ganti klik-row buat select
-// (ctrl+klik = multi, ctrl+A = all -- lihat folioRowClick/
-// folioSelectAll/folioTableKeydown di folio.js). Padding kolom
-// dikecilin juga (liat folio.css).
+// Rendering murni untuk modul Folio.
+// Kolom tabel (qty/name/tax/price/end price) sekarang
+// DINAMIS -- order/visible/width dibaca dari
+// getFolioTableState() (folioTableColumns.js), bukan hardcode.
+// collectEditDraft dibikin resilient: kalau kolom lagi
+// disembunyikan pas mode edit, value lama dipakai lagi
+// (gak ke-reset ke 0/kosong).
 // ======================================================
 
 function escapeHtmlSimple(str) {
@@ -29,7 +20,6 @@ function escapeHtmlSimple(str) {
 
 const FolioUI = {
 
-    // id lokal unik per container, mis: fid("folioMount2","fa_name") -> "folioMount2_fa_name"
     fid(containerId, name) {
         return `${containerId}_${name}`;
     },
@@ -204,43 +194,56 @@ const FolioUI = {
     },
 
     // --------------------------------------------------
-    // Items Table
-    // Checkbox dihapus -- selection sekarang klik row langsung
-    // (ctrl+klik multi, ctrl+A all; lihat folioRowClick/
-    // folioSelectAll/folioTableKeydown di folio.js). Wrapper
-    // dikasih tabindex biar bisa nangkep keydown ctrl+A.
+    // Items Table — kolom dinamis (getFolioTableState)
     // --------------------------------------------------
+
+    renderFolioColHeader(key) {
+
+        const col = FOLIO_COLUMN_MAP[key];
+        if (!col) return "";
+
+        return `
+            <th class="folio-resizable-th" data-key="${key}"
+                ondragover="folioColDragOver(event,'${key}')"
+                ondrop="folioColDrop(event,'${key}')">
+                <span class="folio-col-label" draggable="true"
+                    ondragstart="folioColDragStart(event,'${key}')"
+                    ondragend="folioColDragEnd(event)">${col.label}</span>
+                <div class="folio-col-resize-handle" onpointerdown="folioColResizeStart(event,'${key}')"></div>
+            </th>
+        `;
+
+    },
 
     renderItemsTable(state, editable) {
 
         const c = state.containerId;
         const isClosed = !!(state.folio && state.folio.is_closed);
+        const colState = getFolioTableState();
+
+        const colgroupCols = colState.visibleOrder.map(key => {
+            const w = colState.widths[key] || (FOLIO_COLUMN_MAP[key] ? FOLIO_COLUMN_MAP[key].width : 80);
+            return `<col data-folio-col="${key}" style="width:${w}px">`;
+        }).join("");
+
+        const theadCells = colState.visibleOrder.map(key => this.renderFolioColHeader(key)).join("");
 
         const rows = state.items
-            .map(item => this.renderItemRow(state, item, editable, state.selectedIds.has(item.id), isClosed))
+            .map(item => this.renderItemRow(state, item, editable, state.selectedIds.has(item.id), isClosed, colState.visibleOrder))
             .join("");
 
         return `
+            <div class="folio-table-toolbar">
+                <button class="folio-icon-btn" title="Modify Table" onclick="folioOpenModifyPopup()">⚙</button>
+            </div>
             <div class="folio-table-scroll" tabindex="0" onkeydown="folioTableKeydown(event, '${c}')">
                 <table class="folio-table">
-                    <colgroup>
-                        <col style="width:46px">
-                        <col style="width:150px">
-                        <col style="width:44px">
-                        <col style="width:78px">
-                        <col style="width:88px">
-                    </colgroup>
+                    <colgroup>${colgroupCols}</colgroup>
                     <thead>
-                        <tr>
-                            <th>Qty</th>
-                            <th>Name Service</th>
-                            <th>Tax</th>
-                            <th>Price</th>
-                            <th>End Price</th>
-                        </tr>
+                        <tr>${theadCells}</tr>
                     </thead>
                     <tbody>
-                        ${rows || `<tr><td colspan="5" class="folio-empty">No items</td></tr>`}
+                        ${rows || `<tr><td colspan="${colState.visibleOrder.length}" class="folio-empty">No items</td></tr>`}
                     </tbody>
                 </table>
             </div>
@@ -248,44 +251,47 @@ const FolioUI = {
 
     },
 
-    renderItemRow(state, item, editable, selected, isClosed) {
+    renderItemRow(state, item, editable, selected, isClosed, visibleOrder) {
 
         const c = state.containerId;
         const endPrice = FolioService.calcEndPrice(item);
 
+        const cellRenderers = {
+            quantity: () => editable
+                ? `<td><input type="number" step="0.01" class="folio-inline-input fi-qty" value="${item.quantity}"></td>`
+                : `<td>${item.quantity}</td>`,
+            service_name: () => editable
+                ? `<td><input type="text" class="folio-inline-input fi-name" value="${escapeHtmlSimple(item.service_name)}"></td>`
+                : `<td>${escapeHtmlSimple(item.service_name)}</td>`,
+            tax_rate: () => editable
+                ? `<td><input type="number" step="0.01" class="folio-inline-input fi-tax" value="${item.tax_rate}"></td>`
+                : `<td>${item.tax_rate}%</td>`,
+            unit_price: () => editable
+                ? `<td><input type="number" step="0.01" class="folio-inline-input fi-price" value="${item.unit_price}"></td>`
+                : `<td>${folioFormatCurrency(item.unit_price)}</td>`,
+            end_price: () => `<td class="folio-end-price-cell">${folioFormatCurrency(endPrice)}</td>`
+        };
+
+        const cells = visibleOrder.map(key => cellRenderers[key] ? cellRenderers[key]() : "").join("");
+
         if (!editable) {
 
             const clickAttr = isClosed ? "" : `onclick="folioRowClick(event, '${c}', '${item.id}')"`;
-
-            return `
-                <tr class="${selected ? "folio-row-selected" : ""}" ${clickAttr}>
-                    <td>${item.quantity}</td>
-                    <td>${escapeHtmlSimple(item.service_name)}</td>
-                    <td>${item.tax_rate}%</td>
-                    <td>${folioFormatCurrency(item.unit_price)}</td>
-                    <td>${folioFormatCurrency(endPrice)}</td>
-                </tr>
-            `;
+            return `<tr class="${selected ? "folio-row-selected" : ""}" ${clickAttr}>${cells}</tr>`;
 
         }
 
-        return `
-            <tr data-item-id="${item.id}" class="folio-edit-row">
-                <td><input type="number" step="0.01" class="folio-inline-input fi-qty" value="${item.quantity}"></td>
-                <td><input type="text" class="folio-inline-input fi-name" value="${escapeHtmlSimple(item.service_name)}"></td>
-                <td><input type="number" step="0.01" class="folio-inline-input fi-tax" value="${item.tax_rate}"></td>
-                <td><input type="number" step="0.01" class="folio-inline-input fi-price" value="${item.unit_price}"></td>
-                <td class="folio-end-price-cell">${folioFormatCurrency(endPrice)}</td>
-            </tr>
-        `;
+        return `<tr data-item-id="${item.id}" class="folio-edit-row">${cells}</tr>`;
 
     },
 
-    // Scoped ke card folio yang bersangkutan. id folio_items TIDAK
-    // selalu integer (bisa UUID) -- id dibiarkan apa adanya (string).
+    // Resilient: kalau kolom qty/name/tax/price lagi disembunyikan pas
+    // edit, inputnya gak ada di DOM -- fallback ke value lama di
+    // state.items biar gak ke-reset ke 0/kosong pas save.
     collectEditDraft(containerId) {
 
         const container = document.getElementById(containerId);
+        const state = FolioInstances[containerId];
 
         const address = {
             guest_or_company: document.getElementById(this.fid(containerId, "fa_guest_or_company"))?.value || "Guest",
@@ -302,13 +308,19 @@ const FolioUI = {
         const items = [...container.querySelectorAll(".folio-edit-row")].map(row => {
 
             const id = row.dataset.itemId;
+            const original = (state && state.items.find(i => String(i.id) === String(id))) || {};
+
+            const qtyEl = row.querySelector(".fi-qty");
+            const nameEl = row.querySelector(".fi-name");
+            const taxEl = row.querySelector(".fi-tax");
+            const priceEl = row.querySelector(".fi-price");
 
             return {
                 id,
-                quantity: Number(row.querySelector(".fi-qty").value),
-                service_name: row.querySelector(".fi-name").value,
-                tax_rate: Number(row.querySelector(".fi-tax").value),
-                unit_price: Number(row.querySelector(".fi-price").value)
+                quantity: qtyEl ? Number(qtyEl.value) : Number(original.quantity || 0),
+                service_name: nameEl ? nameEl.value : (original.service_name || ""),
+                tax_rate: taxEl ? Number(taxEl.value) : Number(original.tax_rate || 0),
+                unit_price: priceEl ? Number(priceEl.value) : Number(original.unit_price || 0)
             };
 
         });
@@ -687,11 +699,10 @@ const FolioUI = {
 
 
 // ======================================================
-// Guest/Company ID lookup — pakai kolom guests yang beneran
-// ada (sama seperti FolioService.getReservationGuestInfo:
-// display_name/first_name/last_name/country_code). id dikirim
-// apa adanya (string), bukan Number(), karena guests.id bisa UUID
-// sama seperti guest_id di reservation.
+// Guest/Company ID lookup — kolom guests yang beneran ada
+// (display_name/first_name/last_name/country_code, sama
+// kayak FolioService.getReservationGuestInfo). id dikirim
+// string apa adanya, bukan Number(), karena bisa UUID.
 // ======================================================
 
 async function folioLookupCustomer(containerId) {

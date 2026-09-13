@@ -479,3 +479,130 @@
     cursor: not-allowed;
     pointer-events: none;
 }
+
+/* --------------------------------------------------
+   Table wajib scroll, card GAK BOLEH ikut melebar.
+   .folio-card udah position:absolute+overflow:hidden
+   (gak kepengaruh ukuran konten), ini dobel-kancing di
+   level scroll container-nya juga.
+   -------------------------------------------------- */
+
+.folio-table-scroll {
+    width: auto;
+    max-width: 100%;
+}
+
+.folio-table-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 2px 8px 2px;
+    flex: none;
+}
+
+/* --------------------------------------------------
+   Resize / drag-reorder kolom
+   -------------------------------------------------- */
+
+.folio-resizable-th {
+    position: relative;
+    user-select: none;
+}
+
+.folio-col-label {
+    display: inline-block;
+    cursor: grab;
+}
+
+.folio-col-resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 6px;
+    height: 100%;
+    cursor: col-resize;
+    touch-action: none;
+}
+
+.folio-col-drop-before {
+    box-shadow: -3px 0 0 0 #1565c0;
+}
+
+.folio-col-drop-after {
+    box-shadow: 3px 0 0 0 #1565c0;
+}
+
+body.col-resizing {
+    cursor: col-resize !important;
+    user-select: none !important;
+}
+
+/* --------------------------------------------------
+   Modify Table popup
+   -------------------------------------------------- */
+
+.folio-modify-popup {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.35);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.folio-modify-popup-inner {
+    background: #fff;
+    border-radius: 8px;
+    width: 280px;
+    max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.folio-modify-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.folio-modify-list {
+    list-style: none;
+    margin: 0;
+    padding: 6px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+}
+
+.folio-modify-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 4px;
+    font-size: 13px;
+    border-radius: 4px;
+    cursor: grab;
+}
+
+.folio-modify-item:hover {
+    background: #f5f5f5;
+}
+
+.folio-modify-item.dragging {
+    opacity: .4;
+}
+
+.folio-modify-drag {
+    color: #bbb;
+    font-size: 12px;
+}
+
+.folio-modify-popup-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-top: 1px solid #eee;
+}
