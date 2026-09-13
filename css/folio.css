@@ -81,8 +81,8 @@
    -------------------------------------------------- */
 
 .folio-address-card {
-    margin: 10px;
-    padding: 10px 12px;
+    margin: 6px 8px;
+    padding: 8px 10px;
     border: 1px solid #eee;
     border-radius: 6px;
     background: #fafafa;
@@ -136,7 +136,7 @@
 
 .folio-table-scroll {
     overflow-x: auto;
-    margin: 0 10px;
+    margin: 0 8px;
     flex: 1 1 auto;
     min-height: 0;
     min-width: 0;
@@ -195,7 +195,7 @@
 .folio-add-service-row {
     display: flex;
     gap: 8px;
-    margin: 8px 10px;
+    margin: 6px 8px;
     flex: none;
     position: relative;
 }
@@ -255,7 +255,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 10px;
+    padding: 6px 8px;
     background: #f5f5f5;
     border-top: 1px solid #ddd;
     flex: none;
@@ -337,7 +337,7 @@
    -------------------------------------------------- */
 
 .folio-payment-card {
-    padding: 12px 14px;
+    padding: 8px 10px;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -387,7 +387,7 @@
    -------------------------------------------------- */
 
 .folio-history {
-    padding: 10px 14px;
+    padding: 6px 10px;
     overflow-y: auto;
     flex: 1 1 auto;
     min-height: 0;
