@@ -197,36 +197,14 @@ const FolioUI = {
     // Items Table — kolom dinamis (getFolioTableState)
     // --------------------------------------------------
 
-    renderFolioColHeader(key) {
-
-        const col = FOLIO_COLUMN_MAP[key];
-        if (!col) return "";
-
-        return `
-            <th class="folio-resizable-th" data-key="${key}"
-                ondragover="folioColDragOver(event,'${key}')"
-                ondrop="folioColDrop(event,'${key}')">
-                <span class="folio-col-label" draggable="true"
-                    ondragstart="folioColDragStart(event,'${key}')"
-                    ondragend="folioColDragEnd(event)">${col.label}</span>
-                <div class="folio-col-resize-handle" onpointerdown="folioColResizeStart(event,'${key}')"></div>
-            </th>
-        `;
-
-    },
-
     renderItemsTable(state, editable) {
 
         const c = state.containerId;
         const isClosed = !!(state.folio && state.folio.is_closed);
-        const colState = getFolioTableState();
+        const tableId = folioColumnTable.storageKey;
+        const colState = folioColumnTable.getState();
 
-        const colgroupCols = colState.visibleOrder.map(key => {
-            const w = colState.widths[key] || (FOLIO_COLUMN_MAP[key] ? FOLIO_COLUMN_MAP[key].width : 80);
-            return `<col data-folio-col="${key}" style="width:${w}px">`;
-        }).join("");
-
-        const theadCells = colState.visibleOrder.map(key => this.renderFolioColHeader(key)).join("");
+        const theadCells = colState.visibleOrder.map(key => ctRenderColHeader(tableId, key)).join("");
 
         const rows = state.items
             .map(item => this.renderItemRow(state, item, editable, state.selectedIds.has(item.id), isClosed, colState.visibleOrder))
@@ -234,14 +212,12 @@ const FolioUI = {
 
         return `
             <div class="folio-table-toolbar">
-                <button class="folio-icon-btn" title="Modify Table" onclick="folioOpenModifyPopup()">⚙</button>
+                <button class="folio-icon-btn" title="Modify Table" onclick="ctOpenModifyPopup('${tableId}')">⚙</button>
             </div>
             <div class="folio-table-scroll" tabindex="0" onkeydown="folioTableKeydown(event, '${c}')">
                 <table class="folio-table">
-                    <colgroup>${colgroupCols}</colgroup>
-                    <thead>
-                        <tr>${theadCells}</tr>
-                    </thead>
+                    <colgroup>${ctRenderColgroup(tableId)}</colgroup>
+                    <thead><tr>${theadCells}</tr></thead>
                     <tbody>
                         ${rows || `<tr><td colspan="${colState.visibleOrder.length}" class="folio-empty">No items</td></tr>`}
                     </tbody>
@@ -250,7 +226,7 @@ const FolioUI = {
         `;
 
     },
-
+    
     renderItemRow(state, item, editable, selected, isClosed, visibleOrder) {
 
         const c = state.containerId;

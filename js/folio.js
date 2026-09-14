@@ -17,6 +17,19 @@ function folioGetState(containerId) {
     return FolioInstances[containerId] || null;
 }
 
+const FOLIO_COLUMNS = [
+    { key: "quantity", label: "Qty", width: 46 },
+    { key: "service_name", label: "Name Service", width: 150 },
+    { key: "tax_rate", label: "Tax", width: 44 },
+    { key: "unit_price", label: "Price", width: 78 },
+    { key: "end_price", label: "End Price", width: 88 }
+];
+
+const folioColumnTable = createColumnTable({
+    storageKey: "hotel_pms_folio_table_state_v1",
+    columns: FOLIO_COLUMNS,
+    onChange: () => Object.values(FolioInstances).forEach(s => s && FolioUI.render(s))
+});
 
 // ======================================================
 // Entry point
