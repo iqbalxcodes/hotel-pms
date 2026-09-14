@@ -190,7 +190,7 @@
     min-height: 0;
     display: grid;
     gap: 6px;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     grid-template-rows: repeat(3, 1fr);
     overflow-y: auto;
 }
@@ -247,6 +247,7 @@
     padding: 8px 10px;
     box-sizing: border-box;
     min-height: 0;
+    min-width: 0;
     overflow-y: auto;
 }
 
@@ -516,7 +517,7 @@
 @media (min-width: 1200px) {
 
     .resd-grid {
-        grid-template-columns: repeat(6, 1fr);
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         grid-template-rows: repeat(3, 1fr);
     }
 
