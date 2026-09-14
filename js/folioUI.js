@@ -95,12 +95,20 @@ const FolioUI = {
 
         }
 
+        // Modify Table (⚙) dipindah ke sini -- sejajar ✎/◷ -- cuma
+        // relevan kalau tabel item lagi kelihatan (normal/edit), gak
+        // pas history/payment.
+        const tableGear = (!isHistory)
+            ? `<button class="folio-icon-btn" title="Modify Table" onclick="ctOpenModifyPopup('${folioColumnTable.storageKey}')">⚙</button>`
+            : "";
+
         return `
             <div class="folio-header">
                 <div class="folio-header-left">
                     <span class="folio-title">${escapeHtmlSimple(label)}</span>
                     ${isClosed ? `<span class="folio-closed-badge" title="Folio settled">🔒 Closed</span>` : ""}
                     ${editControls}
+                    ${tableGear}
                 </div>
                 ${state.backAction ? `<button class="folio-icon-btn" title="Back" onclick="${state.backAction}">←</button>` : ""}
             </div>
@@ -138,22 +146,25 @@ const FolioUI = {
 
         if (!editable) {
 
+            const salutation = { Mr: "Mr.", Mrs: "Mrs." }[a.guest_or_company] || "";
+            const displayName = [salutation, a.name || "-"].filter(Boolean).join(" ");
+            const country = (a.country && a.country.trim().length === 2)
+                ? a.country.trim().toUpperCase()
+                : (a.country || "-");
+
             return `
                 <div class="folio-address-card">
-                    <div class="folio-address-title">${escapeHtmlSimple(a.guest_or_company || "Guest")}</div>
-                    <div class="folio-address-row">
-                        <span>${a.customer_id ? "ID: " + escapeHtmlSimple(String(a.customer_id)) : ""}</span>
-                        <span class="folio-address-name">${escapeHtmlSimple(a.name || "-")}</span>
-                    </div>
-                    ${a.additional_data ? `<div class="folio-address-row">${escapeHtmlSimple(a.additional_data)}</div>` : ""}
+                    <div class="folio-address-row">${escapeHtmlSimple(a.customer_id || "-")}</div>
+                    <div class="folio-address-name">${escapeHtmlSimple(displayName)}</div>
+                    <div class="folio-address-row">${a.additional_data ? escapeHtmlSimple(a.additional_data) : "&nbsp;"}</div>
                     <div class="folio-address-row">${escapeHtmlSimple(a.street || "-")}</div>
                     <div class="folio-address-row">
-                        <span>${escapeHtmlSimple(a.postcode || "")}</span>
-                        <span>${escapeHtmlSimple(a.city || "")}</span>
+                        <span>${escapeHtmlSimple(a.postcode || "-")}</span>
+                        <span>${escapeHtmlSimple(a.city || "-")}</span>
                     </div>
                     <div class="folio-address-row">
-                        <span>${escapeHtmlSimple(a.region || "")}</span>
-                        <span>${escapeHtmlSimple(a.country || "")}</span>
+                        <span>${escapeHtmlSimple(a.region || "-")}</span>
+                        <span>${escapeHtmlSimple(country)}</span>
                     </div>
                 </div>
             `;
@@ -211,9 +222,6 @@ const FolioUI = {
             .join("");
 
         return `
-            <div class="folio-table-toolbar">
-                <button class="folio-icon-btn" title="Modify Table" onclick="ctOpenModifyPopup('${tableId}')">⚙</button>
-            </div>
             <div class="folio-table-scroll" tabindex="0" onkeydown="folioTableKeydown(event, '${c}')">
                 <table class="folio-table">
                     <colgroup>${ctRenderColgroup(tableId)}</colgroup>
@@ -226,7 +234,7 @@ const FolioUI = {
         `;
 
     },
-    
+
     renderItemRow(state, item, editable, selected, isClosed, visibleOrder) {
 
         const c = state.containerId;
