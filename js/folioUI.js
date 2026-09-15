@@ -416,7 +416,7 @@ const FolioUI = {
         return `
             <div class="folio-footer">
                 <div class="folio-balance folio-balance-settled">
-                    Invoice ${escapeHtmlSimple(invoiceNo)} <span class="folio-balance-status">Settled</span>
+                    Invoice ${escapeHtmlSimple(invoiceNo)}
                 </div>
             </div>
         `;
@@ -428,26 +428,19 @@ const FolioUI = {
         const c = state.containerId;
         const balance = FolioService.calcBalance(state.items, state.payments);
 
-        let statusLabel = "Settled";
         let statusClass = "folio-balance-settled";
 
         if (balance < 0) {
-
-            statusLabel = "Outstanding";
             statusClass = "folio-balance-outstanding";
-
         } else if (balance > 0) {
-
-            statusLabel = "Credit";
             statusClass = "folio-balance-credit";
-
         }
 
         return `
             <div class="folio-footer">
-                <button class="folio-btn auth-required require-auth" onclick="folioOpenPaymentView('${c}')">Take Payment</button>
+                <button class="folio-btn auth-required require-auth" onclick="folioOpenPaymentView('${c}')">Post Payment</button>
                 <div class="folio-balance ${statusClass}">
-                    Balance: ${folioFormatCurrency(balance)} <span class="folio-balance-status">${statusLabel}</span>
+                    Balance: ${folioFormatCurrency(balance)}
                 </div>
             </div>
         `;
