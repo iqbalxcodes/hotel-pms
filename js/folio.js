@@ -35,8 +35,11 @@ const folioColumnTable = createColumnTable({
 // Entry point
 // ======================================================
 
-async function openFolio({ containerId, reservationId = null, folioId = null, backAction = null, onChange = null }) {
 
+async function openFolio({ containerId, reservationId = null, folioId = null, backAction = null, onChange = null }) {
+    
+    await waitForAuth(); 
+    
     FolioInstances[containerId] = {
         containerId,
         reservationId,

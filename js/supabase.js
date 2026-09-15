@@ -7,3 +7,8 @@ const supabaseClient = supabase.createClient(
     supabaseUrl,
     supabaseKey
 );
+
+async function waitForAuth() {
+    const { data } = await supabaseClient.auth.getSession();
+    return data.session;
+}
