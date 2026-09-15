@@ -173,6 +173,18 @@ function resdFlip(cardId){
     if(card) card.classList.toggle("resd-flipped");
 }
 
+function resdOpenActivityLog() {
+    showDevMessage("Activity Log");
+}
+
+function resdRenderActivityLine(res) {
+
+    const el = document.getElementById("resdActivityLine");
+    if (!el || !res) return;
+
+    el.textContent = "-"; // placeholder, nunggu kolom created_by dkk ada di skema
+
+}
 
 // ======================================================
 // Full action bar popover (⋮ More)
@@ -554,6 +566,7 @@ function renderDetail(res){
     const confEl = document.getElementById("resdConfirmationNo");
     if(confEl) confEl.textContent = res.confirmation_no || "-";
     updateHeaderSub(res);
+    resdRenderActivityLine(res);
     updateBreadcrumb(res);
 
     // Folio
