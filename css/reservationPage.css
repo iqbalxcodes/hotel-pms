@@ -541,8 +541,22 @@
     /* .rsv-reset-btn SENGAJA gak di-exception -- tetep icon-only
        di layar kecil, sesuai permintaan */
     .rsv-page { margin: 6px 8px 6px; }
-    .rsv-field-card { width: 100px; }
+    .rsv-field-card { width: 150px; }
     .rsv-search-column { padding: 0 6px; }
+
+    .rsv-field-dow {
+    width: 24px;
+    font-size: 9px;
+    padding: 4px 0;
+    }
+
+    .rsv-field-search-btn {
+        width: 22px;
+        height: 22px;
+    }
+    .rsv-field-search-btn svg { width: 11px; height: 11px; }
+
+    .rsv-field-input-row { gap: 3px; }
 
     .rsv-showing-center {
         order: 3;
