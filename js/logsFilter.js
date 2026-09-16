@@ -83,7 +83,12 @@ function buildBaseQuery(forCount = false){
 
 function buildDataQuery(){
 
-    let query = buildBaseQuery(false).order("created_at", { ascending: false });
+    let query = buildBaseQuery(false);
+
+    const sort = guestTable.getSort();
+    query = sort
+        ? query.order(sort.key, { ascending: sort.direction === "asc" })
+        : query.order("created_at", { ascending: false });
 
     if(rowsPerPage !== "all"){
         const from = (currentPage - 1) * rowsPerPage;

@@ -72,13 +72,28 @@ function buildDiffSummary(row){
 
 }
 
-function renderLogRows(rows){
+function buildLogsCellHtml(key, row){
+
+    switch(key){
+        case "created_at": return formatDateTimeDisplay(row.created_at);
+        case "category": return `<span class="logs-category-badge logs-cat-${row.category.toLowerCase()}">${LOGS_CATEGORY_LABELS[row.category] || row.category}</span>`;
+        case "action": return escapeHtml(row.action);
+        case "entity": return `${escapeHtml(row.entity_type)}${row.entity_label ? " · " + escapeHtml(row.entity_label) : ""}`;
+        case "actor": return `${escapeHtml(row.actor_name || "system")}${row.actor_role ? ` <span class="logs-role-tag">${escapeHtml(row.actor_role)}</span>` : ""}`;
+        case "description": return escapeHtml(row.description || "");
+        case "diff": return buildDiffSummary(row);
+        default: return "";
+    }
+
+}
+
+function renderLogRows(rows, visibleOrder){
 
     const tbody = document.getElementById("logsTable");
     tbody.innerHTML = "";
 
     if(rows.length === 0){
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:#888;">No activity found</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${visibleOrder.length + 2}" style="text-align:center; padding:24px; color:#888;">No activity found</td></tr>`;
         return;
     }
 
@@ -86,16 +101,11 @@ function renderLogRows(rows){
 
         const tr = document.createElement("tr");
 
-        tr.innerHTML = `
-            <td>${formatDateTimeDisplay(row.created_at)}</td>
-            <td><span class="logs-category-badge logs-cat-${row.category.toLowerCase()}">${LOGS_CATEGORY_LABELS[row.category] || row.category}</span></td>
-            <td>${escapeHtml(row.action)}</td>
-            <td>${escapeHtml(row.entity_type)}${row.entity_label ? " · " + escapeHtml(row.entity_label) : ""}</td>
-            <td>${escapeHtml(row.actor_name || "system")}${row.actor_role ? ` <span class="logs-role-tag">${escapeHtml(row.actor_role)}</span>` : ""}</td>
-            <td>${escapeHtml(row.description || "")}</td>
-            <td class="logs-diff-cell">${buildDiffSummary(row)}</td>
-            <td><input type="checkbox" class="log-checkbox" data-id="${row.id}"></td>
-        `;
+        const cells = visibleOrder.map(key =>
+            `<td class="${key === "diff" ? "logs-diff-cell" : ""}">${buildLogsCellHtml(key, row)}</td>`
+        ).join("");
+
+        tr.innerHTML = cells + `<td><input type="checkbox" class="log-checkbox" data-id="${row.id}"></td>`;
 
         tbody.appendChild(tr);
 

@@ -104,3 +104,20 @@ body.col-resizing {
 .ct-btn:hover { background: #eee; }
 .ct-btn-plain { border-color: transparent; background: transparent; color: #666; }
 .ct-btn-confirm { border-color: #2e7d32; color: #2e7d32; }
+
+.ct-preset-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.ct-preset-row select,
+.ct-preset-row input {
+    flex: 1;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 12.5px;
+}
+.ct-col-sortable { cursor: pointer; }
+.ct-col-sortable:hover { color: #1565c0; }
+.ct-sort-indicator { font-size: 10px; color: #1565c0; }

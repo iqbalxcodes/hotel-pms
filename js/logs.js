@@ -4,6 +4,30 @@
 
 let myTier = "STAFF";
 
+const logsTable = createColumnTable({
+    storageKey: "hotel_pms_logs_table_v1",
+    columns: LOGS_TABLE_COLUMNS,
+    onChange: () => refreshTable()
+});
+
+function logsRenderHeader(){
+    const thead = document.querySelector("#logsTableScroll thead tr");
+    if(!thead) return;
+
+    thead.innerHTML = `
+        ${logsTable.getState().visibleOrder.map(k => ctRenderColHeader("hotel_pms_logs_table_v1", k)).join("")}
+        <th style="width:32px;"><button class="ct-icon-btn" onclick="ctOpenModifyPopup('hotel_pms_logs_table_v1')" title="Modify Table">⚙</button></th>
+    `;
+
+    const colgroupHost = document.querySelector("#logsTableScroll table");
+    let colgroup = colgroupHost.querySelector("colgroup");
+    if(!colgroup){
+        colgroup = document.createElement("colgroup");
+        colgroupHost.prepend(colgroup);
+    }
+    colgroup.innerHTML = ctRenderColgroup("hotel_pms_logs_table_v1") + `<col style="width:32px;">`;
+}
+
 async function refreshTable(){
 
     const { count, error: countError } = await buildBaseQuery(true);
@@ -25,16 +49,15 @@ async function refreshTable(){
         return;
     }
 
-    renderLogRows(data);
+    logsRenderHeader();
+    renderLogRows(data, logsTable.getState().visibleOrder);
     renderPaginationBar();
 
 }
 
 async function loadLogs(){
-
     currentPage = 1;
     await refreshTable();
-
 }
 
 async function deleteSelectedLogs(){

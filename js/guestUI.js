@@ -239,3 +239,42 @@ function renderPaginationBar(){
     nav.appendChild(nextBtn);
 
 }
+
+function buildGuestCellHtml(key, g){
+
+    switch(key){
+        case "first_name": return escapeHtml(g.first_name ?? "");
+        case "last_name": return escapeHtml(g.last_name ?? "");
+        case "email": return escapeHtml(g.email ?? "");
+        case "phone": return escapeHtml(g.phone ?? "");
+        case "city": return escapeHtml(g.city ?? "");
+        case "country": return escapeHtml(g.country ?? "");
+        case "loyalty_level": return escapeHtml(g.loyalty_level ?? "-");
+        case "loyalty_points": return escapeHtml(String(g.loyalty_points ?? 0));
+        default: return "";
+    }
+
+}
+
+function guestRenderHeader(){
+
+    const thead = document.querySelector("#guestTableScroll thead tr");
+    if(!thead) return;
+
+    const state = guestTable.getState();
+
+    thead.innerHTML = `
+        <th style="width:36px;"></th>
+        ${state.visibleOrder.map(k => ctRenderColHeader("hotel_pms_guest_table_v1", k)).join("")}
+        <th style="width:32px;"><button class="ct-icon-btn" onclick="ctOpenModifyPopup('hotel_pms_guest_table_v1')" title="Modify Table">⚙</button></th>
+    `;
+
+    const tableEl = document.querySelector("#guestTableScroll table");
+    let colgroup = tableEl.querySelector("colgroup");
+    if(!colgroup){
+        colgroup = document.createElement("colgroup");
+        tableEl.prepend(colgroup);
+    }
+    colgroup.innerHTML = `<col style="width:36px;">` + ctRenderColgroup("hotel_pms_guest_table_v1") + `<col style="width:32px;">`;
+
+}

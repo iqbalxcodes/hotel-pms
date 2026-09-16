@@ -1,22 +1,27 @@
 // ======================================================
 // tableColumnsEngine.js
-// Engine UNIVERSAL: visible/order/width kolom (per
-// localStorage key) + resize (pointer) + drag-reorder
-// header + SATU popup "Modify Table" dipakai bareng semua
-// tabel (reservation/folio/guest/dll).
+// Engine UNIVERSAL: visible/order/width kolom + SORT state +
+// PRESET (save/load/delete, per tableId) + resize (pointer) +
+// drag-reorder header + SATU popup "Modify Table" dipakai
+// bareng semua tabel (reservation/folio/guest/logs/dll).
 //
 // Pakai:
 //   const myTable = createColumnTable({
-//       storageKey: "unique_key_v1",   // dobel fungsi: localStorage key & ID registry
-//       columns: [{ key, label, width }, ...],
-//       onChange: () => { /* rerender tabelmu di sini */ }
+//       storageKey: "unique_key_v1",
+//       columns: [{ key, label, width, sortable }, ...],
+//       onChange: () => { /* rerender + refetch tabelmu */ }
 //   });
 //
-// Lalu di render header:
+// Header + colgroup:
 //   <colgroup>${ctRenderColgroup(myTable.storageKey)}</colgroup>
 //   <tr>${state.visibleOrder.map(k => ctRenderColHeader(myTable.storageKey, k)).join("")}</tr>
 //
-// Modify Table button:
+// Sort (dipanggil otomatis dari klik label header -- lihat
+// ctRenderColHeader -- gak perlu bikin sortTable() sendiri):
+//   const sort = myTable.getSort(); // { key, direction } | null
+//   query.order(sort.key, { ascending: sort.direction === "asc" })
+//
+// Modify Table + Preset button:
 //   onclick="ctOpenModifyPopup('unique_key_v1')"
 // ======================================================
 
@@ -26,6 +31,11 @@ function createColumnTable({ storageKey, columns, onChange }) {
 
     const columnMap = Object.fromEntries(columns.map(c => [c.key, c]));
     const allKeys = columns.map(c => c.key);
+    const presetsKey = storageKey + "_presets";
+
+    // ------------------------------------------------------
+    // Column visibility/order/width state
+    // ------------------------------------------------------
 
     function getState() {
 
@@ -34,7 +44,7 @@ function createColumnTable({ storageKey, columns, onChange }) {
 
         if (!raw) {
 
-            state = { visibleOrder: [...allKeys], widths: {} };
+            state = { visibleOrder: [...allKeys], widths: {}, sort: null };
 
         } else {
 
@@ -45,12 +55,13 @@ function createColumnTable({ storageKey, columns, onChange }) {
 
                 state = {
                     visibleOrder: cleanOrder.length > 0 ? cleanOrder : [...allKeys],
-                    widths: parsed.widths || {}
+                    widths: parsed.widths || {},
+                    sort: parsed.sort && columnMap[parsed.sort.key] ? parsed.sort : null
                 };
 
             } catch (e) {
 
-                state = { visibleOrder: [...allKeys], widths: {} };
+                state = { visibleOrder: [...allKeys], widths: {}, sort: null };
 
             }
 
@@ -111,9 +122,109 @@ function createColumnTable({ storageKey, columns, onChange }) {
 
     function resetColumns() {
 
-        saveState({ visibleOrder: [...allKeys], widths: {} });
+        const state = getState();
+        saveState({ visibleOrder: [...allKeys], widths: {}, sort: state.sort });
         notify();
 
+    }
+
+    // ------------------------------------------------------
+    // Sort state -- klik label header toggle: none -> asc ->
+    // desc -> none. Cuma kolom dgn sortable !== false yg bisa.
+    // ------------------------------------------------------
+
+    function getSort() {
+        return getState().sort;
+    }
+
+    function toggleSort(key) {
+
+        const col = columnMap[key];
+        if (!col || col.sortable === false) return;
+
+        const state = getState();
+        const current = state.sort;
+
+        if (!current || current.key !== key) {
+            state.sort = { key, direction: "asc" };
+        } else if (current.direction === "asc") {
+            state.sort = { key, direction: "desc" };
+        } else {
+            state.sort = null;
+        }
+
+        saveState(state);
+        notify();
+
+    }
+
+    // ------------------------------------------------------
+    // Presets -- named snapshot of visibleOrder+widths (BUKAN
+    // sort, sort itu working-state harian bukan bagian layout).
+    // Disimpan terpisah per tableId biar preset reservation gak
+    // ketuker sama preset guest/logs.
+    // ------------------------------------------------------
+
+    function getPresets() {
+
+        const raw = localStorage.getItem(presetsKey);
+        if (!raw) return {};
+
+        try { return JSON.parse(raw); }
+        catch (e) { return {}; }
+
+    }
+
+    function savePresets(presets) {
+        localStorage.setItem(presetsKey, JSON.stringify(presets));
+    }
+
+    function savePreset(name) {
+
+        if (!name || !name.trim()) return false;
+
+        const state = getState();
+        const presets = getPresets();
+
+        presets[name.trim()] = {
+            visibleOrder: [...state.visibleOrder],
+            widths: { ...state.widths }
+        };
+
+        savePresets(presets);
+        return true;
+
+    }
+
+    function loadPreset(name) {
+
+        const presets = getPresets();
+        const preset = presets[name];
+        if (!preset) return false;
+
+        const state = getState();
+        state.visibleOrder = preset.visibleOrder.filter(k => columnMap[k]);
+        state.widths = { ...preset.widths };
+
+        saveState(state);
+        notify();
+        return true;
+
+    }
+
+    function deletePreset(name) {
+
+        const presets = getPresets();
+        if (!presets[name]) return false;
+
+        delete presets[name];
+        savePresets(presets);
+        return true;
+
+    }
+
+    function listPresetNames() {
+        return Object.keys(getPresets()).sort();
     }
 
     const api = {
@@ -127,6 +238,12 @@ function createColumnTable({ storageKey, columns, onChange }) {
         setWidth,
         setVisibleOrder,
         resetColumns,
+        getSort,
+        toggleSort,
+        savePreset,
+        loadPreset,
+        deletePreset,
+        listPresetNames,
         notify
     };
 
@@ -156,26 +273,48 @@ function ctRenderColgroup(tableId, extraColsHtml = "") {
 
 }
 
-// opts: { onLabelClick: "jsExprString", indicatorHtml: "<span>▲</span>" }
+// opts: { onLabelClick: "jsExprString" } -- kalau dikasih, DIPAKAI
+// gantiin sort bawaan engine (buat page yg mau kontrol sort sendiri,
+// mis. reservation.js yg query-nya lebih kompleks). Kalau gak dikasih,
+// klik label = toggle sort bawaan engine (getSort()/toggleSort()).
 function ctRenderColHeader(tableId, key, opts = {}) {
 
     const table = ctRegistry[tableId];
     const col = table ? table.columnMap[key] : null;
     if (!col) return "";
 
-    const clickAttr = opts.onLabelClick ? `onclick="${opts.onLabelClick}"` : "";
+    const sortable = col.sortable !== false;
+    const clickAttr = opts.onLabelClick
+        ? `onclick="${opts.onLabelClick}"`
+        : (sortable ? `onclick="ctToggleSort('${tableId}', '${key}')"` : "");
+
+    let indicator = "";
+
+    if (sortable && !opts.onLabelClick) {
+        const sort = table.getSort();
+        if (sort && sort.key === key) {
+            indicator = sort.direction === "asc" ? ` <span class="ct-sort-indicator">▲</span>` : ` <span class="ct-sort-indicator">▼</span>`;
+        }
+    } else if (opts.indicatorHtml) {
+        indicator = opts.indicatorHtml;
+    }
 
     return `
         <th class="ct-th" data-key="${key}"
             ondragover="ctColDragOver(event, '${tableId}', '${key}')"
             ondrop="ctColDrop(event, '${tableId}', '${key}')">
-            <span class="ct-col-label" draggable="true" ${clickAttr}
+            <span class="ct-col-label ${sortable ? "ct-col-sortable" : ""}" draggable="true" ${clickAttr}
                 ondragstart="ctColDragStart('${tableId}', '${key}')"
-                ondragend="ctColDragEnd(event)">${col.label}${opts.indicatorHtml || ""}</span>
+                ondragend="ctColDragEnd(event)">${col.label}${indicator}</span>
             <div class="ct-col-resize-handle" onpointerdown="ctColResizeStart(event, '${tableId}', '${key}')"></div>
         </th>
     `;
 
+}
+
+function ctToggleSort(tableId, key) {
+    const table = ctRegistry[tableId];
+    if (table) table.toggleSort(key);
 }
 
 
@@ -237,9 +376,7 @@ function ctColDragEnd() {
 
 // ======================================================
 // Resize kolom (Pointer Events) -- live-update semua
-// <col data-ct-col="key" data-ct-table="tableId"> yang match
-// (buat kasus banyak instance tabel sama kebuka bareng,
-// mis. folio1/2/3).
+// <col data-ct-col="key" data-ct-table="tableId"> yang match.
 // ======================================================
 
 let ctResizeState = null;
@@ -310,8 +447,8 @@ function ctColResizeEnd(e) {
 
 
 // ======================================================
-// Modify Table popup — SATU DOM dipakai bareng semua tabel,
-// dibind ke tableId yang lagi aktif pas dibuka.
+// Modify Table popup — SATU DOM dipakai bareng semua tabel.
+// Sekarang + PRESET (save/load/delete) di footer.
 // ======================================================
 
 let ctModifyTableId = null;
@@ -333,6 +470,17 @@ function ctEnsurePopup() {
                 <span>Modify Table</span>
                 <button class="ct-icon-btn" onclick="ctCloseModifyPopup()">✕</button>
             </div>
+
+            <div class="ct-preset-row">
+                <select id="ctPresetSelect"></select>
+                <button class="ct-btn ct-btn-plain" onclick="ctLoadSelectedPreset()">Load</button>
+                <button class="ct-btn ct-btn-plain" onclick="ctDeleteSelectedPreset()">Delete</button>
+            </div>
+            <div class="ct-preset-row">
+                <input type="text" id="ctPresetNameInput" placeholder="Preset name...">
+                <button class="ct-btn ct-btn-plain" onclick="ctSaveCurrentAsPreset()">Save as preset</button>
+            </div>
+
             <ul id="ctModifyList" class="ct-modify-list"></ul>
             <div class="ct-modify-popup-footer">
                 <button class="ct-btn ct-btn-plain" onclick="ctResetModifyPopup()">Reset</button>
@@ -346,6 +494,66 @@ function ctEnsurePopup() {
     div.addEventListener("click", (e) => {
         if (e.target === div) ctCloseModifyPopup();
     });
+
+}
+
+function ctRenderPresetDropdown() {
+
+    const table = ctRegistry[ctModifyTableId];
+    const select = document.getElementById("ctPresetSelect");
+    if (!table || !select) return;
+
+    const names = table.listPresetNames();
+
+    select.innerHTML = `<option value="">-- Select Preset --</option>` +
+        names.map(n => `<option value="${n}">${n}</option>`).join("");
+
+}
+
+function ctLoadSelectedPreset() {
+
+    const table = ctRegistry[ctModifyTableId];
+    const select = document.getElementById("ctPresetSelect");
+    if (!table || !select || !select.value) return;
+
+    table.loadPreset(select.value);
+    ctCloseModifyPopup();
+
+}
+
+function ctDeleteSelectedPreset() {
+
+    const table = ctRegistry[ctModifyTableId];
+    const select = document.getElementById("ctPresetSelect");
+    if (!table || !select || !select.value) return;
+
+    table.deletePreset(select.value);
+    ctRenderPresetDropdown();
+
+}
+
+function ctSaveCurrentAsPreset() {
+
+    const table = ctRegistry[ctModifyTableId];
+    const input = document.getElementById("ctPresetNameInput");
+    if (!table || !input) return;
+
+    const order = ctModifyDraft.filter(i => i.visible).map(i => i.key);
+
+    // simpan draft yg lagi diedit di popup (belum Apply), biar preset
+    // konsisten sama apa yg diliat user
+    const tempState = table.getState();
+    const restoreWidths = { ...tempState.widths };
+    table.saveState({ ...tempState, visibleOrder: order });
+
+    const ok = table.savePreset(input.value);
+
+    table.saveState({ ...tempState, widths: restoreWidths });
+
+    if (ok) {
+        input.value = "";
+        ctRenderPresetDropdown();
+    }
 
 }
 
@@ -366,6 +574,11 @@ function ctOpenModifyPopup(tableId) {
     }));
 
     ctRenderModifyList();
+    ctRenderPresetDropdown();
+
+    const nameInput = document.getElementById("ctPresetNameInput");
+    if (nameInput) nameInput.value = "";
+
     document.getElementById("ctModifyPopup").style.display = "flex";
 
 }

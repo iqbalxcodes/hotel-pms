@@ -2,7 +2,11 @@
 // guest.js
 // ======================================================
 
-const GUEST_COLUMNS = ["first_name", "last_name", "email", "phone", "city", "country", "loyalty_level", "loyalty_points"];
+const guestTable = createColumnTable({
+    storageKey: "hotel_pms_guest_table_v1",
+    columns: GUEST_TABLE_COLUMNS,
+    onChange: () => refreshTable()
+});
 
 async function refreshTable(){
 
@@ -25,8 +29,8 @@ async function refreshTable(){
         return;
     }
 
+    guestRenderHeader();
     renderGuests(data);
-    GUEST_COLUMNS.forEach(col => resetHeader(col));
     renderPaginationBar();
 
 }
@@ -34,7 +38,6 @@ async function refreshTable(){
 async function loadGuests(){
 
     activeSearchKeyword = "";
-    activeSortColumn = null;
     currentPage = 1;
 
     const searchInput = document.getElementById("searchInput");
@@ -49,21 +52,22 @@ function renderGuests(guests){
     const tbody = document.getElementById("guestTable");
     tbody.innerHTML = "";
 
+    const visibleOrder = guestTable.getState().visibleOrder;
+
+    if(guests.length === 0){
+        tbody.innerHTML = `<tr><td colspan="${visibleOrder.length + 2}" style="text-align:center;padding:24px;color:#888;">No clients found</td></tr>`;
+        return;
+    }
+
     guests.forEach(g => {
 
         const tr = document.createElement("tr");
 
-        tr.innerHTML = `
-            <td><input type="checkbox" class="guest-checkbox" data-id="${g.id}"></td>
-            <td class="first_name-cell" data-id="${g.id}">${g.first_name ?? ""}</td>
-            <td class="last_name-cell" data-id="${g.id}">${g.last_name ?? ""}</td>
-            <td class="email-cell" data-id="${g.id}">${g.email ?? ""}</td>
-            <td class="phone-cell" data-id="${g.id}">${g.phone ?? ""}</td>
-            <td class="city-cell" data-id="${g.id}">${g.city ?? ""}</td>
-            <td class="country-cell" data-id="${g.id}">${g.country ?? ""}</td>
-            <td class="loyalty_level-cell" data-id="${g.id}">${g.loyalty_level ?? "-"}</td>
-            <td class="loyalty_points-cell" data-id="${g.id}">${g.loyalty_points ?? 0}</td>
-        `;
+        const cells = visibleOrder.map(key =>
+            `<td class="${key}-cell" data-id="${g.id}">${buildGuestCellHtml(key, g)}</td>`
+        ).join("");
+
+        tr.innerHTML = `<td><input type="checkbox" class="guest-checkbox" data-id="${g.id}"></td>${cells}`;
 
         tr.addEventListener("click", (e) => {
             if(e.target.closest("input, .edit-input")) return;
