@@ -67,6 +67,47 @@ function rsvUpdateDow(input) {
     if (dowEl) dowEl.textContent = rsvDowText(input.value);
 }
 
+function rsvNormalizeDateInput(input) {
+    const row = input.closest(".rsv-field-input-row");
+    const dowEl = row?.querySelector(".rsv-field-dow");
+
+    if (!input.value.trim()) {
+        if (dowEl) dowEl.textContent = "-";
+        return;
+    }
+
+    const parsed = rsvParseFlexibleDate(input.value);
+    if (!parsed) return; // biarin apa adanya, validasi ulang pas submit
+
+    const [y, m, d] = parsed.split("-");
+    input.value = `${d}/${m}/${y}`;
+    if (dowEl) dowEl.textContent = rsvDowText(parsed);
+}
+
+function rsvOpenNativePicker(btn) {
+    const row = btn.closest(".rsv-field-input-row");
+    const nativeInput = row?.querySelector(".rsv-native-date-hidden");
+    if (!nativeInput) return;
+
+    if (typeof nativeInput.showPicker === "function") {
+        nativeInput.showPicker();
+    } else {
+        nativeInput.click();
+    }
+}
+
+function rsvNativeDateChanged(nativeInput) {
+    const row = nativeInput.closest(".rsv-field-input-row");
+    const textInput = row?.querySelector(".rsv-input-shrink");
+    const dowEl = row?.querySelector(".rsv-field-dow");
+
+    if (!nativeInput.value) return;
+
+    const [y, m, d] = nativeInput.value.split("-");
+    if (textInput) textInput.value = `${d}/${m}/${y}`;
+    if (dowEl) dowEl.textContent = rsvDowText(nativeInput.value);
+}
+
 const RSV_ADVANCED_SEARCH_HANDLERS = {};
 
 function rsvOpenAdvancedSearch(key) {
@@ -107,11 +148,18 @@ function rsvParseFlexibleDate(raw) {
 
     if (s.includes("/") || s.includes(".")) {
         const parts = s.split(/[./]/).filter(Boolean);
-        if (parts.length !== 3) return null;
-        [d, m, y] = parts;
+        if (parts.length === 2) {
+            [d, m] = parts;
+            y = String(new Date().getFullYear());
+        } else if (parts.length === 3) {
+            [d, m, y] = parts;
+        } else {
+            return null;
+        }
     } else {
         const digits = s.replace(/\D/g, "");
-        if (digits.length === 6) { d = digits.slice(0, 2); m = digits.slice(2, 4); y = digits.slice(4, 6); }
+        if (digits.length === 4) { d = digits.slice(0, 2); m = digits.slice(2, 4); y = String(new Date().getFullYear()); }
+        else if (digits.length === 6) { d = digits.slice(0, 2); m = digits.slice(2, 4); y = digits.slice(4, 6); }
         else if (digits.length === 8) { d = digits.slice(0, 2); m = digits.slice(2, 4); y = digits.slice(4, 8); }
         else return null;
     }
@@ -194,7 +242,9 @@ function rsvRenderFieldCard(key, values) {
     } else if (isDate) {
         inputHtml = `
             <div class="rsv-field-input-row">
-                <input type="date" class="rsv-input-shrink" data-search-key="${def.key}" value="${rsvEsc(savedValue)}" oninput="rsvUpdateDow(this)">
+                <input type="text" class="rsv-input-shrink" data-search-key="${def.key}" value="${rsvEsc(savedValue)}" placeholder="dd/mm/yyyy" onblur="rsvNormalizeDateInput(this)">
+                <button type="button" class="rsv-field-calendar-btn" onclick="rsvOpenNativePicker(this)" title="Pick date">${rsvIcon("calendar")}</button>
+                <input type="date" class="rsv-native-date-hidden" tabindex="-1" onchange="rsvNativeDateChanged(this)">
                 <span class="rsv-field-dow">${rsvDowText(savedValue)}</span>
             </div>
         `;
