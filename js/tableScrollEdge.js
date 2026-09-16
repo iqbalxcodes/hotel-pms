@@ -2,14 +2,12 @@
 // tableScrollEdge.js
 // Edge-hover scroll card. Nempel otomatis ke semua .table-scroll
 // yang overflow horizontal. Native scroll manual tetap jalan.
-// FIXED (v2): versi lama pakai pointerenter/pointerleave per
-// container -- gampang "macet" (card nyangkut/nempel di posisi
-// lama) kalau mouse ninggalin container lewat elemen lain yang
-// overlap (mis. card kita sendiri, atau elemen fixed lain kayak
-// ghost drag workspace). Sekarang pakai satu rAF loop global +
-// posisi mouse terakhir, recalc SEMUA container tiap frame
-// berdasarkan bounding rect murni -- gak bergantung event
-// enter/leave yang bisa kebajak elemen overlap.
+//
+// v3: klik tunggal = 1x scroll step (behavior lama tetap ada).
+// TAMBAHAN: tahan (pointerdown) lebih dari HOLD_DELAY -> masuk
+// mode repeat, scroll terus tiap REPEAT_INTERVAL sampai
+// pointerup/leave/cancel. Ini terpisah dari rAF loop posisi
+// card (yang urusannya nampilin/nyembunyiin & posisi card doang).
 // ======================================================
 
 (function(){
@@ -18,6 +16,8 @@
     const SCROLL_STEP = 220;
     const CARD_W = 28;
     const CARD_H = 36;
+    const HOLD_DELAY = 350;      // ms sebelum mulai repeat
+    const REPEAT_INTERVAL = 120; // ms antar scroll pas ditahan
 
     const registry = []; // { container, leftCard, rightCard }
 
@@ -33,9 +33,65 @@
             background:#fff; border:1px solid #ccc; border-radius:4px;
             box-shadow:0 2px 6px rgba(0,0,0,0.15);
             cursor:pointer; font-size:14px; color:#444; user-select:none;
+            touch-action:none;
         `;
 
         return card;
+
+    }
+
+    // ------------------------------------------------------
+    // Hold-to-scroll: dipasang per-card, generic (dipakai buat
+    // leftCard & rightCard sama-sama, arah dibedain lewat sign)
+    // ------------------------------------------------------
+
+    function bindHoldScroll(card, container, direction){
+
+        let holdTimer = null;
+        let repeatTimer = null;
+        let firedOnce = false;
+
+        function doScroll(){
+            container.scrollBy({ left: direction * SCROLL_STEP, behavior: "smooth" });
+        }
+
+        function startRepeat(){
+            repeatTimer = setInterval(doScroll, REPEAT_INTERVAL);
+        }
+
+        function clearTimers(){
+            clearTimeout(holdTimer);
+            clearInterval(repeatTimer);
+            holdTimer = null;
+            repeatTimer = null;
+        }
+
+        card.addEventListener("pointerdown", (e) => {
+
+            e.preventDefault();
+            firedOnce = false;
+
+            try { card.setPointerCapture(e.pointerId); } catch(err){}
+
+            // klik tunggal langsung scroll 1x (behavior lama)
+            doScroll();
+            firedOnce = true;
+
+            // kalau ditahan lebih dari HOLD_DELAY -> mulai repeat
+            holdTimer = setTimeout(startRepeat, HOLD_DELAY);
+
+        });
+
+        const stop = () => {
+            clearTimers();
+        };
+
+        card.addEventListener("pointerup", stop);
+        card.addEventListener("pointercancel", stop);
+        card.addEventListener("pointerleave", stop);
+
+        // safety net kalau pointerup ke-miss (mis. window blur)
+        window.addEventListener("blur", stop);
 
     }
 
@@ -50,13 +106,8 @@
         document.body.appendChild(leftCard);
         document.body.appendChild(rightCard);
 
-        leftCard.addEventListener("click", () => {
-            container.scrollBy({ left: -SCROLL_STEP, behavior: "smooth" });
-        });
-
-        rightCard.addEventListener("click", () => {
-            container.scrollBy({ left: SCROLL_STEP, behavior: "smooth" });
-        });
+        bindHoldScroll(leftCard, container, -1);
+        bindHoldScroll(rightCard, container, 1);
 
         registry.push({ container, leftCard, rightCard });
 
