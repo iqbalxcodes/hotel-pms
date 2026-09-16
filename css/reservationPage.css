@@ -89,6 +89,7 @@
 .rsv-search-fields {
     display: flex;
     align-items: flex-start;
+    justify-content: space-between;
     overflow-x: auto;
 }
 
@@ -96,7 +97,8 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    flex: none;
+    flex: 1 1 0;
+    min-width: 150px;
     padding: 0 10px;
 }
 
@@ -168,7 +170,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    width: 128px;
+    width: 100%;
     flex: none;
     box-sizing: border-box;
 }
@@ -244,11 +246,6 @@
     justify-content: flex-end;
     margin-top: 4px;
     gap: 6px;
-}
-
-.rsv-search-clear-btn {
-    /* pakai style .rsv-btn biasa, gak perlu class baru sebenernya,
-       tapi dikasih biar gampang di-target kalau nanti mau beda gaya */
 }
 
 /* ---- showing card ---- */
