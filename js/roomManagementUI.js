@@ -195,35 +195,36 @@ function rmRenderBlockedList(rooms, onClickRoom){
 
 function rmRenderRoomList(rooms, occupiedSet, selectedRoom, onClickRoom){
 
-    const el = document.getElementById("rmRoomListBody");
-    if(!el) return;
+    const tbody = document.getElementById("rmRoomListBody");
+    if(!tbody) return;
+
+    const visibleOrder = roomTable.getState().visibleOrder;
 
     if(rooms.length === 0){
-        el.innerHTML = `<div class="rm-empty-note" style="padding:12px;">No rooms found</div>`;
+        tbody.innerHTML = `<tr><td colspan="${visibleOrder.length + 2}" class="rm-empty-note" style="padding:12px;">No rooms found</td></tr>`;
         return;
     }
 
-    el.innerHTML = rooms.map(r => {
+    tbody.innerHTML = rooms.map(r => {
 
         const isOccupied = occupiedSet.has(r.room_number);
-        const badgeKey = isOccupied ? "OCCUPIED" : r.status;
-        const label = isOccupied ? "Occupied" : (r.status || "-").replace(/_/g, " ");
         const activeClass = r.room_number === selectedRoom ? "active" : "";
 
+        const cells = visibleOrder.map(key =>
+            `<td>${rmBuildRoomCellHtml(key, r, isOccupied)}</td>`
+        ).join("");
+
         return `
-            <div class="rm-row ${activeClass}" data-room="${rmEscapeHtml(r.room_number)}">
-                <input type="checkbox" class="rm-room-checkbox" data-id="${rmEscapeHtml(r.room_number)}" onclick="event.stopPropagation()">
-                ${renderStatusBadge(badgeKey, { size: 18 })}
-                <span class="rm-row-number">${rmEscapeHtml(r.room_number)}</span>
-                <span class="rm-row-type">${rmEscapeHtml(r.room_type || "")}</span>
-                <span class="rm-row-floor">${r.floor ?? ""}</span>
-                <span class="rm-row-status-label">${rmEscapeHtml(label)}</span>
-            </div>
+            <tr class="rm-row ${activeClass}" data-room="${rmEscapeHtml(r.room_number)}">
+                <td><input type="checkbox" class="rm-room-checkbox" data-id="${rmEscapeHtml(r.room_number)}" onclick="event.stopPropagation()"></td>
+                ${cells}
+                <td></td>
+            </tr>
         `;
 
     }).join("");
 
-    el.querySelectorAll(".rm-row").forEach(node => {
+    tbody.querySelectorAll(".rm-row").forEach(node => {
 
         node.addEventListener("click", () => onClickRoom(node.dataset.room));
 
@@ -557,5 +558,41 @@ function rmRenderRoomUsage(reservations){
             </div>
         </div>
     `).join("");
+
+}
+
+function rmRenderRoomTableHeader(){
+
+    const thead = document.querySelector("#rmRoomTable thead tr");
+    if(!thead) return;
+
+    const state = roomTable.getState();
+
+    thead.innerHTML = `
+        <th style="width:30px;"></th>
+        ${state.visibleOrder.map(k => ctRenderColHeader("hotel_pms_room_table_v1", k)).join("")}
+        <th style="width:28px;"><button class="ct-icon-btn" onclick="ctOpenModifyPopup('hotel_pms_room_table_v1')" title="Modify Table">⚙</button></th>
+    `;
+
+    const tableEl = document.getElementById("rmRoomTable");
+    let colgroup = tableEl.querySelector("colgroup");
+    if(!colgroup){
+        colgroup = document.createElement("colgroup");
+        tableEl.prepend(colgroup);
+    }
+    colgroup.innerHTML = `<col style="width:30px;">` + ctRenderColgroup("hotel_pms_room_table_v1") + `<col style="width:28px;">`;
+
+}
+
+function rmBuildRoomCellHtml(key, r, isOccupied){
+
+    switch(key){
+        case "status": return renderStatusBadge(isOccupied ? "OCCUPIED" : r.status, { size: 18 });
+        case "room_number": return rmEscapeHtml(r.room_number);
+        case "room_type": return rmEscapeHtml(r.room_type || "");
+        case "floor": return r.floor ?? "";
+        case "status_label": return rmEscapeHtml(isOccupied ? "Occupied" : (r.status || "-").replace(/_/g, " "));
+        default: return "";
+    }
 
 }

@@ -440,3 +440,30 @@
     }
 
 }
+
+.rm-room-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.rm-room-table tbody tr.rm-row {
+    cursor: pointer;
+    font-size: 13.5px;
+}
+
+.rm-room-table tbody tr.rm-row:hover { background: #f5f5f5; }
+.rm-room-table tbody tr.rm-row.active { background: #e3f2fd; }
+
+.rm-room-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #eee;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rm-room-table thead th {
+    background: #fafafa;
+    border-bottom: 1px solid #ddd;
+}

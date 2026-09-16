@@ -9,6 +9,41 @@ let rmOccupiedSet = new Set();
 let rmSearchKeyword = "";
 let rmSelectedRoom = null;
 
+const roomTable = createColumnTable({
+    storageKey: "hotel_pms_room_table_v1",
+    columns: ROOM_TABLE_COLUMNS,
+    onChange: () => rmRenderFilteredList()
+});
+
+function rmSortRooms(rooms, occupiedSet){
+
+    const sort = roomTable.getSort();
+    if(!sort) return rooms;
+
+    const dir = sort.direction === "asc" ? 1 : -1;
+
+    return [...rooms].sort((a, b) => {
+
+        let va, vb;
+
+        if(sort.key === "room_number"){
+            va = a.room_number; vb = b.room_number;
+        } else if(sort.key === "room_type"){
+            va = a.room_type || ""; vb = b.room_type || "";
+        } else if(sort.key === "floor"){
+            va = a.floor ?? ""; vb = b.floor ?? "";
+        } else {
+            return 0;
+        }
+
+        if(va < vb) return -1 * dir;
+        if(va > vb) return 1 * dir;
+        return 0;
+
+    });
+
+}
+
 
 // ======================================================
 // Clock (sama seperti halaman lain)
@@ -84,7 +119,10 @@ function rmRenderFilteredList(){
         || (r.notes || "").toLowerCase().includes(kw)
     );
 
-    rmRenderRoomList(filtered, rmOccupiedSet, rmSelectedRoom, rmOpenRoomDetail);
+    const sorted = rmSortRooms(filtered, rmOccupiedSet);
+
+    rmRenderRoomTableHeader();
+    rmRenderRoomList(sorted, rmOccupiedSet, rmSelectedRoom, rmOpenRoomDetail);
 
 }
 
