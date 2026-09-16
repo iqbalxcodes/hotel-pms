@@ -19,10 +19,17 @@
 const RSV_FIELDS_KEY = "rsv_search_fields_config";
 const RSV_COLUMN_SIZE = 4;
 
+
+
 // kolom yang gak masuk akal buat search manual (computed/internal)
 const RSV_SEARCH_EXCLUDE = [
     "nights", "billing_items", "id", "guest_id", "room_id",
-    "created_at", "updated_at"
+    "created_at", "updated_at",
+    "currency", "tax", "discount", "paid_amount", "room_rate",
+    "payment_method", "pending_to_charge", "additional_guest",
+    "notes", "secondary_guest_first_name", "secondary_guest_last_name",
+    "bed_type", "salutation", "language", "cancel_policy",
+    "travel_reason", "check_in_at", "check_out_at"
 ];
 
 const RSV_STATUS_OPTIONS = [
@@ -40,6 +47,38 @@ const RSV_YESNO_OPTIONS = [
     { value: "true", label: "Yes" },
     { value: "false", label: "No" }
 ];
+
+// Field yang "susah ditebak spelling"-nya -- diperpendek, sisa
+// ruang jadi tombol kaca pembesar buat popup advanced-search
+// (belum di-develop popup-nya, tinggal daftarin handler-nya nanti
+// via RSV_ADVANCED_SEARCH_HANDLERS[key] = function(key){...}).
+const RSV_MAGNIFIER_FIELDS = ["guest_name", "room_number", "room_type", "rate_name", "company", "travel_agent", "booker_name"];
+
+const RSV_DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+function rsvDowText(value) {
+    if (!value) return "-";
+    const d = new Date(value + "T00:00:00");
+    return isNaN(d) ? "-" : RSV_DOW[d.getDay()];
+}
+
+function rsvUpdateDow(input) {
+    const dowEl = input.parentElement.querySelector(".rsv-field-dow");
+    if (dowEl) dowEl.textContent = rsvDowText(input.value);
+}
+
+const RSV_ADVANCED_SEARCH_HANDLERS = {};
+
+function rsvOpenAdvancedSearch(key) {
+    const handler = RSV_ADVANCED_SEARCH_HANDLERS[key];
+    if (typeof handler === "function") {
+        handler(key);
+        return;
+    }
+    if (typeof showMessage === "function") {
+        showMessage(`Advanced search for ${rsvFieldLabel(key)} is still in development`, "info");
+    }
+}
 
 // generate dari tableConfig.js (harus sudah ke-load duluan di HTML)
 const RSV_SEARCH_FIELDS_DEFAULT = (typeof RESERVATION_COLUMNS !== "undefined" ? RESERVATION_COLUMNS : [])

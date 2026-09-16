@@ -138,8 +138,8 @@
     position: absolute;
     top: 2px;
     right: 2px;
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
     padding: 0;
     margin: 0;
     display: flex;
@@ -151,11 +151,11 @@
     line-height: 0;
 }
 .rsv-field-hide-btn svg {
-    width: 9px;
-    height: 9px;
+    width: 8px;
+    height: 8px;
     margin: 0;
     padding: 0;
-    stroke-width: 2.5;
+    stroke-width: 3;
 }
 
 .rsv-field-hide-btn.rsv-btn-hide { background: #ffebee; color: #c62828; }
@@ -194,6 +194,48 @@
     box-sizing: border-box;
     width: 100%;
 }
+
+.rsv-field-input-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.rsv-field-input-row .rsv-input-shrink {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.rsv-field-dow {
+    flex: none;
+    width: 28px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: #777;
+    background: #f2f3f5;
+    border-radius: 4px;
+    padding: 5px 0;
+    box-sizing: border-box;
+}
+
+.rsv-field-search-btn {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #555;
+}
+.rsv-field-search-btn:hover { background: #f0f0f0; color: #1565c0; }
+.rsv-field-search-btn svg { width: 13px; height: 13px; }
 
 .rsv-field input::placeholder { font-size: 12px; color: #aaa; }
 
