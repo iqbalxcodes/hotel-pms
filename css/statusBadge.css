@@ -1,0 +1,21 @@
+/* ======================================================
+   statusBadge.css
+   Icon-in-circle badge, dipakai universal (room management,
+   room rack, dll). Ukuran fix, gak pengaruh ke tinggi cell.
+   ====================================================== */
+
+.status-icon-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    border-radius: 50%;
+    color: #fff;
+    line-height: 0;
+}
+
+.status-icon-badge svg {
+    width: 55%;
+    height: 55%;
+    stroke: currentColor;
+}

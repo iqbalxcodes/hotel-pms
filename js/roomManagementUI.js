@@ -205,15 +205,15 @@ function rmRenderRoomList(rooms, occupiedSet, selectedRoom, onClickRoom){
 
     el.innerHTML = rooms.map(r => {
 
-        const statusKey = (r.status || "").toLowerCase();
         const isOccupied = occupiedSet.has(r.room_number);
+        const badgeKey = isOccupied ? "OCCUPIED" : r.status;
         const label = isOccupied ? "Occupied" : (r.status || "-").replace(/_/g, " ");
         const activeClass = r.room_number === selectedRoom ? "active" : "";
 
         return `
             <div class="rm-row ${activeClass}" data-room="${rmEscapeHtml(r.room_number)}">
                 <input type="checkbox" class="rm-room-checkbox" data-id="${rmEscapeHtml(r.room_number)}" onclick="event.stopPropagation()">
-                <span class="rm-status-dot status-${statusKey}">●</span>
+                ${renderStatusBadge(badgeKey, { size: 18 })}
                 <span class="rm-row-number">${rmEscapeHtml(r.room_number)}</span>
                 <span class="rm-row-type">${rmEscapeHtml(r.room_type || "")}</span>
                 <span class="rm-row-floor">${r.floor ?? ""}</span>
@@ -228,6 +228,8 @@ function rmRenderRoomList(rooms, occupiedSet, selectedRoom, onClickRoom){
         node.addEventListener("click", () => onClickRoom(node.dataset.room));
 
     });
+
+    refreshStatusBadgeIcons();
 
 }
 
