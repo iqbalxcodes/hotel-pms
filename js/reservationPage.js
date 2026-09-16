@@ -182,17 +182,31 @@ function rsvRenderFieldCard(key, values) {
 
     const savedValue = values[key] || "";
     const hidden = rsvFieldsHidden.includes(def.key);
+    const isDate = def.type === "date";
+    const isMagnifier = RSV_MAGNIFIER_FIELDS.includes(def.key);
+
     let inputHtml;
+
     if (def.type === "select") {
         inputHtml = `<select data-search-key="${def.key}">${def.options.map(o =>
             `<option value="${o.value}" ${o.value === savedValue ? "selected" : ""}>${o.label}</option>`
         ).join("")}</select>`;
+    } else if (isDate) {
+        inputHtml = `
+            <div class="rsv-field-input-row">
+                <input type="date" class="rsv-input-shrink" data-search-key="${def.key}" value="${rsvEsc(savedValue)}" oninput="rsvUpdateDow(this)">
+                <span class="rsv-field-dow">${rsvDowText(savedValue)}</span>
+            </div>
+        `;
+    } else if (isMagnifier) {
+        inputHtml = `
+            <div class="rsv-field-input-row">
+                <input type="text" class="rsv-input-shrink" data-search-key="${def.key}" value="${rsvEsc(savedValue)}">
+                <button type="button" class="rsv-field-search-btn" onclick="rsvOpenAdvancedSearch('${def.key}')" title="Advanced search">${rsvIcon("search")}</button>
+            </div>
+        `;
     } else {
-        if (def.type === "date") {
-            inputHtml = `<input type="text" data-search-key="${def.key}" value="${rsvEsc(savedValue)}" placeholder="dd/mm/yyyy">`;
-        } else {
-            inputHtml = `<input type="${def.type}" data-search-key="${def.key}" value="${rsvEsc(savedValue)}">`;
-        }
+        inputHtml = `<input type="${def.type}" data-search-key="${def.key}" value="${rsvEsc(savedValue)}">`;
     }
 
     const hideBtnClass = hidden ? "rsv-btn-show" : "rsv-btn-hide";
