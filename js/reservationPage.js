@@ -405,8 +405,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ---- reset buttons (Search card + Showing card) ----
+    // ---- reset buttons (Search card + Showing card) ----
     document.getElementById("rsvSearchResetBtn")?.addEventListener("click", rsvResetFieldsToDefault);
     document.getElementById("rsvShowingResetBtn")?.addEventListener("click", rsvResetFieldsToDefault);
+
+    // ---- reset SEARCH VALUES (beda sama reset layout di atas) ----
+    document.getElementById("rsvSearchClearBtn")?.addEventListener("click", rsvClearSearch);
 
     // ---- checkbox Pagination (footer, mode customize) ----
     const pagToggle = document.getElementById("rsvPaginationToggle");

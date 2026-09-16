@@ -138,16 +138,25 @@
     position: absolute;
     top: 2px;
     right: 2px;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    margin: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     border: none;
     border-radius: 3px;
     cursor: pointer;
+    line-height: 0;
 }
-.rsv-field-hide-btn svg { width: 11px; height: 11px; }
+.rsv-field-hide-btn svg {
+    width: 9px;
+    height: 9px;
+    margin: 0;
+    padding: 0;
+    stroke-width: 2.5;
+}
 
 .rsv-field-hide-btn.rsv-btn-hide { background: #ffebee; color: #c62828; }
 .rsv-field-hide-btn.rsv-btn-hide:hover { background: #ffcdd2; }
@@ -192,6 +201,12 @@
     display: flex;
     justify-content: flex-end;
     margin-top: 4px;
+    gap: 6px;
+}
+
+.rsv-search-clear-btn {
+    /* pakai style .rsv-btn biasa, gak perlu class baru sebenernya,
+       tapi dikasih biar gampang di-target kalau nanti mau beda gaya */
 }
 
 /* ---- showing card ---- */
