@@ -2,12 +2,46 @@
 // roomManagement.js
 // State + wiring. Memanggil roomManagementData.js (fetch/mutasi)
 // dan roomManagementUI.js (render).
+//
+// Search: dipindah dari input segaris ke search CARD (searchCardEngine,
+// columnSize:1 -> 4 field = 4 kolom, mirip halaman reservation).
+// Filter jadi AND multi-field (bukan cuma satu keyword substring).
+// Ditambah pagination client-side (dulu render semua rooms sekaligus).
 // ======================================================
 
 let rmAllRooms = [];
 let rmOccupiedSet = new Set();
-let rmSearchKeyword = "";
 let rmSelectedRoom = null;
+
+let rmActiveSearchFields = {};
+let rmCurrentPage = 1;
+const RM_PAGE_SIZE = 15;
+
+const RM_FIELDS_KEY = "rm_search_fields_config";
+
+const RM_STATUS_OPTIONS = [
+    { value: "", label: "Any" },
+    { value: "CLEAN", label: "Clean" },
+    { value: "DIRTY", label: "Dirty" },
+    { value: "INSPECTED", label: "Inspected" },
+    { value: "OUT_OF_SERVICE", label: "Out of Service" },
+    { value: "BLOCKED", label: "Blocked" }
+];
+
+const RM_SEARCH_FIELDS = [
+    { key: "room_number", label: "Room Number", type: "text" },
+    { key: "room_type", label: "Room Type", type: "text" },
+    { key: "floor", label: "Floor", type: "text" },
+    { key: "status", label: "Status", type: "select", options: RM_STATUS_OPTIONS }
+];
+
+// columnSize:1 -> tiap field jadi kolomnya sendiri -> 4 field = 4 kolom
+const rmSearchCard = createSearchCard({
+    storageKey: RM_FIELDS_KEY,
+    containerId: "rmSearchFields",
+    fields: RM_SEARCH_FIELDS,
+    columnSize: 1
+});
 
 const roomTable = createColumnTable({
     storageKey: "hotel_pms_room_table_v1",
@@ -39,6 +73,22 @@ function rmSortRooms(rooms, occupiedSet){
         if(va < vb) return -1 * dir;
         if(va > vb) return 1 * dir;
         return 0;
+
+    });
+
+}
+
+function rmMatchesFields(r, fields){
+
+    return Object.entries(fields).every(([key, val]) => {
+
+        if(!val) return true;
+
+        if(key === "status"){
+            return r.status === val;
+        }
+
+        return String(r[key] ?? "").toLowerCase().includes(String(val).toLowerCase());
 
     });
 
@@ -111,18 +161,102 @@ async function rmRefreshOverviewAndList(){
 
 function rmRenderFilteredList(){
 
-    const kw = rmSearchKeyword.trim().toLowerCase();
+    const hasFilter = Object.keys(rmActiveSearchFields).length > 0;
 
-    const filtered = !kw ? rmAllRooms : rmAllRooms.filter(r =>
-        String(r.room_number).toLowerCase().includes(kw)
-        || (r.room_type || "").toLowerCase().includes(kw)
-        || (r.notes || "").toLowerCase().includes(kw)
-    );
+    const filtered = !hasFilter
+        ? rmAllRooms
+        : rmAllRooms.filter(r => rmMatchesFields(r, rmActiveSearchFields));
 
     const sorted = rmSortRooms(filtered, rmOccupiedSet);
 
+    const totalPages = Math.max(1, Math.ceil(sorted.length / RM_PAGE_SIZE));
+    if(rmCurrentPage > totalPages) rmCurrentPage = totalPages;
+    if(rmCurrentPage < 1) rmCurrentPage = 1;
+
+    const start = (rmCurrentPage - 1) * RM_PAGE_SIZE;
+    const pageRows = sorted.slice(start, start + RM_PAGE_SIZE);
+
     rmRenderRoomTableHeader();
-    rmRenderRoomList(sorted, rmOccupiedSet, rmSelectedRoom, rmOpenRoomDetail);
+    rmRenderRoomList(pageRows, rmOccupiedSet, rmSelectedRoom, rmOpenRoomDetail);
+    rmRenderPagination(sorted.length, totalPages);
+
+}
+
+function rmRenderPagination(total, totalPages){
+
+    const info = document.getElementById("rmPaginationInfo");
+    const prevBtn = document.getElementById("rmPrevPage");
+    const nextBtn = document.getElementById("rmNextPage");
+    if(!info) return;
+
+    const from = total === 0 ? 0 : (rmCurrentPage - 1) * RM_PAGE_SIZE + 1;
+    const to = Math.min(rmCurrentPage * RM_PAGE_SIZE, total);
+
+    info.textContent = `${from}-${to} of ${total}`;
+
+    if(prevBtn) prevBtn.disabled = rmCurrentPage <= 1;
+    if(nextBtn) nextBtn.disabled = rmCurrentPage >= totalPages;
+
+}
+
+
+// ------------------------------------------------------
+// Search card handlers
+// ------------------------------------------------------
+
+function rmApplySearch(fields){
+    rmActiveSearchFields = fields;
+    rmCurrentPage = 1;
+    rmRenderFilteredList();
+    rmRenderChip();
+}
+
+function rmClearSearch(){
+    rmActiveSearchFields = {};
+    rmSearchCard.clearValues();
+    rmCurrentPage = 1;
+    rmRenderFilteredList();
+    rmRenderChip();
+}
+
+function rmRemoveSearchField(key){
+
+    delete rmActiveSearchFields[key];
+
+    const el = document.querySelector(`#rmSearchFields [data-search-key="${key}"]`);
+    if(el) el.value = "";
+
+    rmCurrentPage = 1;
+    rmRenderFilteredList();
+    rmRenderChip();
+
+}
+
+function rmRenderChip(){
+
+    const wrap = document.getElementById("rmSearchChips");
+    if(!wrap) return;
+
+    const keys = Object.keys(rmActiveSearchFields || {});
+
+    if(keys.length === 0){
+        wrap.style.display = "none";
+        wrap.innerHTML = "";
+        return;
+    }
+
+    wrap.style.display = "flex";
+
+    wrap.innerHTML = keys.map(k => `
+        <span class="rm-search-chip" data-key="${k}">
+            <span>${rmEscapeHtml(rmSearchCard.fieldLabel(k))}: ${rmEscapeHtml(rmSearchCard.formatValue(k, rmActiveSearchFields[k]))}</span>
+            <button data-remove="${k}" title="Remove">&times;</button>
+        </span>
+    `).join("");
+
+    wrap.querySelectorAll("[data-remove]").forEach(btn => {
+        btn.onclick = () => rmRemoveSearchField(btn.dataset.remove);
+    });
 
 }
 
@@ -279,16 +413,13 @@ function rmUpdateSelectionToolbar(){
 
     const selected = document.querySelectorAll(".rm-room-checkbox:checked");
 
-    const normalToolbar = document.getElementById("rmNormalToolbar");
     const selectionToolbar = document.getElementById("rmSelectionToolbar");
     const selectedCount = document.getElementById("rmSelectedCount");
 
     if(selected.length > 0){
-        normalToolbar.style.display = "none";
         selectionToolbar.style.display = "flex";
         selectedCount.innerText = `${selected.length} selected`;
     } else {
-        normalToolbar.style.display = "flex";
         selectionToolbar.style.display = "none";
     }
 
@@ -347,6 +478,16 @@ async function rmSetSelectedRoomsStatus(status){
 
 
 // ======================================================
+// pms:customize-toggle -- dispatch dari pmsTopbar.js, biar
+// drag-reorder/hide field di search card kepakai juga di sini.
+// ======================================================
+
+document.addEventListener("pms:customize-toggle", (e) => {
+    rmSearchCard.setCustomizing(e.detail.active);
+});
+
+
+// ======================================================
 // Init
 // ======================================================
 
@@ -354,8 +495,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     startClock();
 
-    document.getElementById("rmSearchInput").addEventListener("input", (e) => {
-        rmSearchKeyword = e.target.value;
+    rmSearchCard.load();
+    rmSearchCard.render();
+
+    document.getElementById("rmSearchForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        rmApplySearch(rmSearchCard.gatherValues());
+    });
+
+    document.getElementById("rmSearchClearBtn").addEventListener("click", rmClearSearch);
+
+    document.getElementById("rmPrevPage").addEventListener("click", () => {
+        if(rmCurrentPage <= 1) return;
+        rmCurrentPage--;
+        rmRenderFilteredList();
+    });
+
+    document.getElementById("rmNextPage").addEventListener("click", () => {
+        rmCurrentPage++;
         rmRenderFilteredList();
     });
 

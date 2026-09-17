@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hotel PMS — Room Management</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/pmsTopbar.css">
+    <link rel="stylesheet" href="/css/statusBadge.css">
+    <link rel="stylesheet" href="/css/searchCardEngine.css">
+    <link rel="stylesheet" href="/css/tableColumnsEngine.css">
     <link rel="stylesheet" href="/css/roomManagement.css">
 </head>
 <body>
@@ -42,33 +46,53 @@
             </div>
 
             <!-- ============================================== -->
-            <!-- COLUMN 2 — Room List -->
+            <!-- COLUMN 2 — Search card + Room List (ct engine) -->
             <!-- ============================================== -->
 
             <div class="rm-list">
 
-                <div class="rm-list-toolbar" id="rmNormalToolbar">
-                    <input type="text" id="rmSearchInput" placeholder="Search room number / type / notes">
+                <div class="rm-card rm-search-card">
+                    <form id="rmSearchForm">
+                        <div class="sce-search-fields" id="rmSearchFields"></div>
+                        <div class="rm-search-footer">
+                            <button type="button" id="rmSearchClearBtn" class="rm-btn">Clear</button>
+                            <button type="submit" class="rm-btn rm-btn-primary">Search</button>
+                        </div>
+                    </form>
                 </div>
 
-                <div class="rm-list-toolbar" id="rmSelectionToolbar" style="display:none;">
+                <div class="rm-card rm-showing-card">
 
-                    <span id="rmSelectedCount">0 selected</span>
+                    <div class="rm-showing-header">
+                        <span class="rm-showing-title">Room List</span>
+                        <div id="rmSearchChips" class="rm-search-chips"></div>
+                    </div>
 
-                    <button id="rmDirtyBtn">DIRTY</button>
-                    <button id="rmCleanBtn">CLEAN</button>
-                    <button id="rmInspectedBtn">INSPECTED</button>
-                    <button id="rmOooBtn">OUT OF SERVICE</button>
-                    <button id="rmBlockedBtn">BLOCKED</button>
+                    <div class="rm-list-toolbar" id="rmSelectionToolbar" style="display:none;">
+                        <span id="rmSelectedCount">0 selected</span>
+                        <button id="rmDirtyBtn">DIRTY</button>
+                        <button id="rmCleanBtn">CLEAN</button>
+                        <button id="rmInspectedBtn">INSPECTED</button>
+                        <button id="rmOooBtn">OUT OF SERVICE</button>
+                        <button id="rmBlockedBtn">BLOCKED</button>
+                    </div>
+
+                    <div class="rm-list-scroll table-scroll">
+                        <table id="rmRoomTable" class="rm-room-table">
+                            <thead><tr></tr></thead>
+                            <tbody id="rmRoomListBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="rm-table-footer">
+                        <span id="rmPaginationInfo">0-0 of 0</span>
+                        <div class="rm-page-nav">
+                            <button id="rmPrevPage" type="button">‹ Prev</button>
+                            <button id="rmNextPage" type="button">Next ›</button>
+                        </div>
+                    </div>
 
                 </div>
-
-            <div class="rm-list-scroll">
-                <table id="rmRoomTable" class="rm-room-table">
-                    <thead><tr></tr></thead>
-                    <tbody id="rmRoomListBody"></tbody>
-                </table>
-            </div>
 
             </div>
 
@@ -99,10 +123,11 @@
     <script src="js/statusBadge.js"></script>
     <script src="js/roomTableConfig.js"></script>
     <script src="js/tableColumnsEngine.js"></script>
+    <script src="js/searchCardEngine.js"></script>
     <script src="js/roomManagementData.js"></script>
     <script src="js/roomManagementUI.js"></script>
     <script src="js/roomManagement.js"></script>
-    
+
     <script src="js/pageHeader.js"></script>
     <script>initPageHeader();</script>
     <script src="js/sidebar.js"></script>

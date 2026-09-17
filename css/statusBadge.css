@@ -1,21 +1,22 @@
 /* ======================================================
    statusBadge.css
-   Icon-in-circle badge, dipakai universal (room management,
-   room rack, dll). Ukuran fix, gak pengaruh ke tinggi cell.
+   Lingkaran warna + icon lucide putih di tengah. Ukuran
+   diatur lewat inline width/height (opts.size di statusBadge.js),
+   icon di-scale relatif (%) jadi otomatis pas sama lebar/tinggi sel.
    ====================================================== */
 
 .status-icon-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex: none;
     border-radius: 50%;
-    color: #fff;
-    line-height: 0;
+    flex: none;
+    box-sizing: border-box;
 }
 
 .status-icon-badge svg {
-    width: 55%;
-    height: 55%;
-    stroke: currentColor;
+    width: 60%;
+    height: 60%;
+    stroke: #fff;
+    color: #fff;
 }

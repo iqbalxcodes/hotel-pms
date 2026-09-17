@@ -26,7 +26,7 @@
 }
 
 .rm-overview { grid-area: overview; gap: 16px; overflow-y: auto; }
-.rm-list     { grid-area: list; }
+.rm-list     { grid-area: list; gap: 10px; }
 .rm-detail   { grid-area: detail; }
 
 
@@ -106,25 +106,105 @@
 
 
 /* ======================================================
-   COLUMN 2 — Room List
+   COLUMN 2 — Search card
    ====================================================== */
+
+.rm-search-card {
+    flex: none;
+}
+
+.rm-search-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rm-search-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.rm-btn {
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 4px;
+    padding: 5px 12px;
+    font-size: 12.5px;
+    cursor: pointer;
+    color: #333;
+}
+.rm-btn:hover { background: #f0f0f0; }
+
+.rm-btn-primary {
+    background: #1565c0;
+    border-color: #1565c0;
+    color: #fff;
+}
+.rm-btn-primary:hover { background: #0d47a1; }
+
+
+/* ======================================================
+   COLUMN 2 — Showing card (toolbar + table + pagination)
+   ====================================================== */
+
+.rm-showing-card {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rm-showing-header {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.rm-showing-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: #333;
+}
+
+.rm-search-chips {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.rm-search-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #e3f2fd;
+    color: #1565c0;
+    border-radius: 14px;
+    padding: 3px 10px;
+    font-size: 11.5px;
+    white-space: nowrap;
+}
+
+.rm-search-chip button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #1565c0;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0;
+}
 
 .rm-list-toolbar {
     flex: none;
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 8px;
     flex-wrap: wrap;
-}
-
-.rm-list-toolbar input[type="text"] {
-    flex: 1 1 auto;
-    min-width: 120px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 5px 8px;
-    font-size: 13px;
 }
 
 .rm-list-scroll {
@@ -136,43 +216,31 @@
     background: #fff;
 }
 
-.rm-row {
+.rm-table-footer {
+    flex: none;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    border-bottom: 1px solid #eee;
-    cursor: pointer;
-    font-size: 13.5px;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+    font-size: 12px;
+    color: #555;
 }
 
-.rm-row:last-child { border-bottom: none; }
-.rm-row:hover { background: #f5f5f5; }
-.rm-row.active { background: #e3f2fd; }
-
-.rm-row .rm-row-number { font-weight: 600; width: 52px; flex: none; }
-.rm-row .rm-row-type { flex: 1 1 auto; color: #555; }
-.rm-row .rm-row-floor { width: 40px; flex: none; color: #888; text-align: center; }
-
-.rm-status-dot {
-    font-size: 10px;
-    line-height: 1;
-    flex: none;
+.rm-page-nav {
+    display: flex;
+    gap: 6px;
 }
 
-.rm-status-dot.status-available,
-.rm-status-dot.status-clean { color: #2e7d32; }
-.rm-status-dot.status-dirty { color: #e65100; }
-.rm-status-dot.status-inspected { color: #1565c0; }
-.rm-status-dot.status-out_of_service { color: #ad1457; }
-.rm-status-dot.status-blocked { color: #616161; }
-
-.rm-row-status-label {
-    width: 90px;
-    flex: none;
+.rm-page-nav button {
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 3px;
+    padding: 3px 10px;
     font-size: 11.5px;
-    color: #777;
+    cursor: pointer;
 }
+.rm-page-nav button:disabled { opacity: .4; cursor: default; }
 
 
 /* ======================================================
