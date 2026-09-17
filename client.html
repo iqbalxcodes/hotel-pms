@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- client.html (replaces guest.html) -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel PMS — Clients</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/pmsTopbar.css">
+    <link rel="stylesheet" href="/css/statusBadge.css">
+    <link rel="stylesheet" href="/css/searchCardEngine.css">
+    <link rel="stylesheet" href="/css/tableColumnsEngine.css">
+    <link rel="stylesheet" href="/css/client.css">
+</head>
+<body>
+
+    <div id="pageHeaderBar" class="page-header-bar"></div>
+
+    <div id="pmsTopbar" data-page="client"></div>
+
+    <div class="table-container cl-page">
+
+        <div class="cl-grid" id="clGrid" data-view="list">
+
+            <!-- ============================================== -->
+            <!-- COLUMN 1 — Allgemeine Info (overview) -->
+            <!-- ============================================== -->
+
+            <div class="cl-overview">
+
+                <div class="cl-card">
+                    <h4>Allgemeine Info</h4>
+                    <div class="cl-stat-grid" id="clOverviewStats"></div>
+                </div>
+
+                <div class="cl-card">
+                    <h4>By Loyalty Tier</h4>
+                    <div class="cl-mini-list" id="clLoyaltyBreakdown"></div>
+                </div>
+
+            </div>
+
+            <!-- ============================================== -->
+            <!-- COLUMN 2 — Search card + Client List (ct engine) -->
+            <!-- ============================================== -->
+
+            <div class="cl-list">
+
+                <div class="cl-card cl-add-panel" id="clAddPanel" style="display:none;">
+                    <h4>Add Client</h4>
+                    <form id="clAddForm">
+                        <select id="c_client_type" required>
+                            <option value="GUEST">Guest</option>
+                            <option value="COMPANY">Company</option>
+                            <option value="TRAVEL_AGENCY">Travel Agency</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                        <input type="text" id="c_name" placeholder="Name / Company Name" required>
+                        <input type="text" id="c_contact_person" placeholder="Contact Person" style="display:none;">
+                        <input type="email" id="c_email" placeholder="Email">
+                        <input type="text" id="c_phone" placeholder="Phone">
+                        <input type="text" id="c_city" placeholder="City">
+                        <input type="text" id="c_country" placeholder="Country">
+                        <select id="c_loyalty_level">
+                            <option value="Standard">Standard</option>
+                            <option value="Silver">Silver</option>
+                            <option value="Gold">Gold</option>
+                            <option value="VIP">VIP</option>
+                        </select>
+                        <div class="cl-add-footer">
+                            <button type="button" class="cl-btn" id="clAddCancelBtn">Cancel</button>
+                            <button type="submit" class="cl-btn cl-btn-primary">Save Client</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="cl-card cl-search-card">
+                    <form id="clSearchForm">
+                        <div class="sce-search-fields" id="clSearchFields"></div>
+                        <div class="cl-search-footer">
+                            <button type="button" class="cl-btn" id="clAddOpenBtn">+ Add Client</button>
+                            <button type="button" class="cl-btn" id="clSearchClearBtn">Clear</button>
+                            <button type="submit" class="cl-btn cl-btn-primary">Search</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="cl-card cl-showing-card">
+
+                    <div class="cl-showing-header">
+                        <span class="cl-showing-title">Client List</span>
+                        <div id="clSearchChips" class="cl-search-chips"></div>
+                    </div>
+
+                    <div class="cl-list-toolbar" id="clSelectionToolbar" style="display:none;">
+                        <span id="clSelectedCount">0 selected</span>
+                        <button id="clVipBtn">MARK VIP</button>
+                        <button id="clDeleteBtn">DELETE</button>
+                    </div>
+
+                    <div class="cl-list-scroll table-scroll">
+                        <table id="clClientTable" class="cl-client-table">
+                            <thead><tr></tr></thead>
+                            <tbody id="clClientListBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="cl-table-footer">
+                        <span id="clPaginationInfo">0-0 of 0</span>
+                        <div class="cl-page-nav">
+                            <button id="clPrevPage" type="button">‹ Prev</button>
+                            <button id="clNextPage" type="button">Next ›</button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ============================================== -->
+            <!-- COLUMN 3 — Client Detail (wider) -->
+            <!-- ============================================== -->
+
+            <div class="cl-detail">
+                <div class="cl-detail-scroll" id="clDetailPane">
+                    <div class="cl-empty-note">Select a client from the list to view details</div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="statusBar">
+        <div id="userArea"></div>
+        <div id="contextArea"></div>
+        <div id="paginationInfo"></div>
+        <div id="paginationNav"></div>
+    </div>
+
+    <script src="js/statusBadge.js"></script>
+    <script src="js/clientTableConfig.js"></script>
+    <script src="js/tableColumnsEngine.js"></script>
+    <script src="js/searchCardEngine.js"></script>
+    <script src="js/clientUI.js"></script>
+    <script src="js/client.js"></script>
+
+    <script src="js/pageHeader.js"></script>
+    <script>initPageHeader();</script>
+    <script src="js/sidebar.js"></script>
+    <script>initSidebar();</script>
+    <script src="js/pmsTopbar.js"></script>
+    <script src="js/statusBarClock.js"></script>
+
+</body>
+</html>

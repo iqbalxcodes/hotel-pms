@@ -16,7 +16,7 @@ const PMS_PAGE_LABELS = {
     "room-rack":   "Room Rack",
     "reservation": "Reservation",
     "room":        "Room Management",
-    "guest":       "Guest"
+    "client":      "Clients"
 };
 
 let pmsCustomizeActive = false;
