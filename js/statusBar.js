@@ -1,18 +1,16 @@
 // ======================================================
 // statusBar.js
-// CLEANED: bagian login/logout/isLoggedIn DICABUT -- itu udah
-// jadi tanggung jawab auth.js (Supabase Auth beneran). Dulu
-// dua-duanya define ulang hal yang sama (isLoggedIn sbg
-// `let` di sini vs `function` di auth.js) -> kalau kedua file
-// keload di HTML yang sama, SyntaxError redeclaration, seluruh
-// script abis itu gak jalan.
+// Login/logout DICABUT dari bar ini (auth.js masih render
+// #userArea, tapi disembunyikan lewat CSS #userArea{display:none}
+// -- fungsi login-nya gak dihapus, cuma gak ditampilin di sini).
 //
-// renderPaginationInfo() SENGAJA dikosongin (stub) atas
-// permintaan -- bar #paginationInfo TETEP ada di DOM, cuma
-// gak diisi apa-apa lagi. Dibiarin gitu buat dipake lagi nanti.
+// Layout baru: [contextArea (kiri)] [flexible gap] [jam] [logo]
+// #paginationInfo & #paginationNav DIPENSIUNKAN dari fungsi asli
+// (pagination global) -- sekarang dipakai buat jam & logo.
+// Halaman yang butuh pagination beneran (reservation, logs, room)
+// udah punya footer paginationnya sendiri masing-masing.
 // ======================================================
 
-// contextMode: "message" | "confirm"
 let contextMode = "message";
 
 let lastMessage = { text: "Ready", type: "info" };
@@ -42,7 +40,6 @@ function renderContextArea(){
 
     }
 
-    // default: message mode
     const iconMap = {
         success: "✓",
         error: "✕",
@@ -132,92 +129,63 @@ function resolveConfirm(answer){
 
 
 // ======================================================
-// Pagination Info -- STUB. Bar #paginationInfo dibiarin ada
-// di DOM (jangan dihapus dari HTML), tapi gak diisi apa-apa.
-// Efek samping: rows-per-page hover popover (yang nempel di
-// elemen ini) ikut nonaktif buat sementara -- itu udah
-// diketahui & diterima, bukan bug.
+// Jam — #paginationInfo dipakai sebagai clock (dd/mm/yyyy hh:mm:ss)
 // ======================================================
 
-function renderPaginationInfo(){
-    // sengaja kosong
+function renderStatusBarClock(){
+
+    const el = document.getElementById("paginationInfo");
+    if(!el) return;
+
+    const now = new Date();
+
+    const day = String(now.getDate()).padStart(2, "0");
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const year = now.getFullYear();
+    const h = String(now.getHours()).padStart(2, "0");
+    const m = String(now.getMinutes()).padStart(2, "0");
+    const s = String(now.getSeconds()).padStart(2, "0");
+
+    el.innerHTML = `<span class="sb-clock">${day}/${month}/${year} ${h}:${m}:${s}</span>`;
+
 }
 
 
 // ======================================================
-// Pagination Nav
+// Logo — #paginationNav dipakai sebagai brand IqbalPMS
 // ======================================================
 
-function renderPaginationNav(){
+function renderStatusBarLogo(){
 
     const el = document.getElementById("paginationNav");
-    if(!el) return;
+    if(!el || el.dataset.sbLogoDone) return;
 
-    const totalPages = getTotalPages();
-
-    const windowStart = Math.max(1, currentPage - 2);
-    const windowEnd = Math.min(totalPages, windowStart + 4);
-
-    let pageButtons = "";
-
-    for(let p = windowStart; p <= windowEnd; p++){
-
-        pageButtons += `
-            <button
-                class="${p === currentPage ? 'active-page' : ''}"
-                onclick="goToPage(${p})"
-            >${p}</button>
-        `;
-
-    }
+    el.dataset.sbLogoDone = "1";
 
     el.innerHTML = `
-        <button onclick="goToPage(1)" ${currentPage <= 1 ? "disabled" : ""}>«</button>
-        <button onclick="goToPage(${currentPage - 1})" ${currentPage <= 1 ? "disabled" : ""}>‹</button>
-        ${pageButtons}
-        <button onclick="goToPage(${currentPage + 1})" ${currentPage >= totalPages ? "disabled" : ""}>›</button>
-        <button onclick="goToPage(${totalPages})" ${currentPage >= totalPages ? "disabled" : ""}>»</button>
+        <span class="sb-logo">
+            <img src="/iqbalpms.png" alt="IqbalPMS">
+            <span class="sb-logo-text">IqbalPMS</span>
+        </span>
     `;
 
 }
 
-function goToPage(page){
-
-    const totalPages = getTotalPages();
-
-    if(page < 1 || page > totalPages || page === currentPage){
-
-        if(page === currentPage){
-
-            return;
-
-        }
-
-    }
-
-    currentPage = Math.min(Math.max(page, 1), totalPages);
-
-    refreshTable();
-
-}
-
 function renderPaginationBar(){
-
-    renderPaginationInfo();
-    renderPaginationNav();
-
+    renderStatusBarLogo();
 }
 
 
 // ======================================================
-// Init -- renderUserArea() DICABUT dari sini, itu tanggung
-// jawab auth.js (dipanggil dari initAuth -> handleAuthChange).
+// Init
 // ======================================================
 
 document.addEventListener("DOMContentLoaded", () => {
 
     renderContextArea();
-    renderPaginationInfo();
-    renderPaginationNav();
+    renderStatusBarClock();
+    renderStatusBarLogo();
+
+    setInterval(renderStatusBarClock, 1000);
 
 });

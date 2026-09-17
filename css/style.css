@@ -1766,3 +1766,100 @@ body.col-resizing * {
 }
 .phadd-item:hover { background: #f2f3f5; }
 .phadd-item svg { width: 15px; height: 15px; flex: none; color: #666; }
+
+/* ======================================================
+   statusBar v2 — login dicabut, context kiri, jam+logo kanan.
+   Trik: #paginationInfo udah margin-left:auto dari dulu, jadi
+   spacer flexible-nya GRATIS begitu #contextArea berhenti
+   nge-stretch (flex:0 1 auto).
+   ====================================================== */
+
+#userArea {
+    display: none !important;
+}
+
+#contextArea {
+    flex: 0 1 auto;
+    border-left: none !important;
+}
+
+#paginationInfo {
+    margin-left: auto;
+    cursor: default;
+}
+
+#paginationNav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sb-clock {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: #444;
+}
+
+.sb-logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    color: #1565c0;
+    white-space: nowrap;
+}
+
+.sb-logo img {
+    height: 20px;
+    width: auto;
+    display: block;
+}
+
+/* ======================================================
+   statusBar v2 — sembunyiin login, geser context ke kiri,
+   sisanya kepake buat jam + logo (lihat js masing-masing
+   halaman: reservationUI.js/logsUI.js/roomManagementUI.js/
+   reservationDetail.js — masing-masing punya renderPaginationBar
+   atau setara yang di-patch buat ngisi ini).
+   ====================================================== */
+
+#userArea {
+    display: none !important;
+}
+
+#contextArea {
+    flex: 0 1 auto;
+    border-left: none !important;
+}
+
+#paginationInfo {
+    margin-left: auto;
+    cursor: default;
+}
+
+#paginationNav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sb-clock {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: #444;
+}
+
+.sb-logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    color: #1565c0;
+    white-space: nowrap;
+}
+
+.sb-logo img {
+    height: 20px;
+    width: auto;
+    display: block;
+}
