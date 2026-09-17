@@ -33,7 +33,6 @@ function sbRenderLogo(){
     el.innerHTML = `
         <span class="sb-logo">
             <img src="/iqbalpms.png" alt="IqbalPMS">
-            <span class="sb-logo-text">IqbalPMS</span>
         </span>
     `;
 
