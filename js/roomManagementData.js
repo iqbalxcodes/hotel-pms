@@ -414,3 +414,76 @@ async function rmFetchTodayReservationEvents(){
     return events;
 
 }
+
+// ======================================================
+// Traces -- tabel `traces` UNIVERSAL (context_type: ROOM,
+// RESERVATION, MAINTENANCE_REQUEST, dll). room.html cuma
+// nampilin & bikin yang context_type="ROOM" -- filter ini
+// yang bikin kolom Traces di sini gak numpuk sama trace punya
+// reservation/maintenance page lain.
+//
+// TODO: created_by/assigned_to sengaja gak diisi -- butuh
+// daftar app_users buat mapping id->nama, belum ada UI-nya.
+// ======================================================
+
+async function rmFetchActiveTraces(limit = 100){
+
+    const { data, error } = await supabaseClient
+        .from("traces")
+        .select("*")
+        .eq("context_type", "ROOM")
+        .neq("status", "COMPLETED")
+        .order("due_at", { ascending: true, nullsFirst: false })
+        .limit(limit);
+
+    if(error){
+        console.error(error);
+        return [];
+    }
+
+    return data;
+
+}
+
+async function rmCreateTrace(payload){
+
+    // getActivePropertyId ASYNC -- wajib await, kalau nggak
+    // property_id ke-isi Promise object, insert bakal gagal.
+    let propertyId;
+
+    try {
+        propertyId = await getActivePropertyId();
+    } catch(e){
+        return { data: null, error: { message: "Gagal ambil active property: " + e.message } };
+    }
+
+    if(!propertyId){
+        return { data: null, error: { message: "Active property tidak ditemukan" } };
+    }
+
+    const { data, error } = await supabaseClient
+        .from("traces")
+        .insert({ ...payload, context_type: "ROOM", property_id: propertyId })
+        .select()
+        .single();
+
+    return { data, error };
+
+}
+
+async function rmUpdateTraceStatus(id, status){
+
+    const patch = { status, updated_at: new Date().toISOString() };
+
+    if(status === "COMPLETED"){
+        patch.completed_at = new Date().toISOString();
+    }
+
+    const { error } = await supabaseClient
+        .from("traces")
+        .update(patch)
+        .eq("id", id);
+
+    return { error };
+
+}

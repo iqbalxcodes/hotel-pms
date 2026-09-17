@@ -2,7 +2,6 @@
    ROOM MANAGEMENT — layout grid 3-kolom
    Column 1 (overview) | Column 2 (list) | Column 3 (detail)
    ====================================================== */
-
 .rm-page {
     overflow: hidden;
 }
@@ -10,14 +9,15 @@
 .rm-grid {
     display: grid;
     gap: 16px;
-    grid-template-columns: 280px 420px 1fr;
-    grid-template-areas: "overview list detail";
+    grid-template-columns: 280px 420px 1fr 1fr;
+    grid-template-areas: "overview list traces detail";
     flex: 1 1 auto;
     min-height: 0;
 }
 
 .rm-overview,
 .rm-list,
+.rm-traces,
 .rm-detail {
     min-width: 0;
     min-height: 0;
@@ -25,11 +25,39 @@
     flex-direction: column;
 }
 
-.rm-overview { grid-area: overview; gap: 16px; overflow-y: auto; }
+.rm-overview { grid-area: overview; gap: 16px; overflow: hidden; }
 .rm-list     { grid-area: list; gap: 10px; }
+.rm-traces   { grid-area: traces; }
 .rm-detail   { grid-area: detail; }
 
+/* Overview: card pertama (stats) fixed, 2 card sisanya (fundsachen +
+   blocked) berbagi rata sisa tinggi kolom, masing2 scroll sendiri. */
+.rm-overview > .rm-card:first-child {
+    flex: none;
+}
 
+.rm-overview > .rm-card.rm-card-fill {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.rm-overview > .rm-card.rm-card-fill .rm-mini-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    margin-bottom: 0;
+}
+
+/* Mode detail (room dipilih): traces disembunyikan, detail melebar
+   span kolom 3+4. */
+.rm-grid[data-view="detail"] {
+    grid-template-areas: "overview list detail detail";
+}
+.rm-grid[data-view="detail"] .rm-traces {
+    display: none;
+}
 /* ======================================================
    MINI CARDS di Column 1
    ====================================================== */
@@ -464,7 +492,7 @@
 
     .rm-grid {
         grid-template-columns: 1fr 1fr;
-        grid-template-areas: "overview list";
+        grid-template-areas: "overview list" "traces detail";
     }
 
     .rm-detail { display: none; }
@@ -473,7 +501,8 @@
         grid-template-areas: "detail list";
     }
 
-    .rm-grid[data-view="detail"] .rm-overview { display: none; }
+    .rm-grid[data-view="detail"] .rm-overview,
+    .rm-grid[data-view="detail"] .rm-traces { display: none; }
     .rm-grid[data-view="detail"] .rm-detail { display: flex; }
 
 }
@@ -489,12 +518,13 @@
 
     .rm-grid {
         grid-template-columns: 1fr;
-        grid-template-areas: "overview" "list" "detail";
+        grid-template-areas: "overview" "list" "traces" "detail";
         overflow-y: auto;
     }
 
     .rm-list-scroll,
-    .rm-detail-scroll {
+    .rm-detail-scroll,
+    .rm-trace-list-scroll {
         max-height: 60vh;
     }
 
@@ -503,7 +533,8 @@
     }
 
     .rm-grid[data-view="detail"] .rm-overview,
-    .rm-grid[data-view="detail"] .rm-list {
+    .rm-grid[data-view="detail"] .rm-list,
+    .rm-grid[data-view="detail"] .rm-traces {
         display: none;
     }
 
@@ -534,4 +565,132 @@
 .rm-room-table thead th {
     background: #fafafa;
     border-bottom: 1px solid #ddd;
+}
+
+/* ======================================================
+   TRACES column
+   ====================================================== */
+
+.rm-traces-card {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.rm-trace-filters {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.rm-trace-filter-btn {
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 12px;
+    padding: 3px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    color: #666;
+}
+.rm-trace-filter-btn:hover { background: #f0f0f0; }
+.rm-trace-filter-btn.active {
+    background: #1565c0;
+    border-color: #1565c0;
+    color: #fff;
+}
+
+.rm-trace-list-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.rm-trace-item {
+    border: 1px solid #e2e2e2;
+    border-radius: 6px;
+    padding: 8px 10px;
+    background: #fff;
+    font-size: 12.5px;
+    border-left: 4px solid #ccc;
+}
+
+.rm-trace-item.priority-low     { border-left-color: #90a4ae; }
+.rm-trace-item.priority-normal  { border-left-color: #1565c0; }
+.rm-trace-item.priority-high    { border-left-color: #ef6c00; }
+.rm-trace-item.priority-urgent  { border-left-color: #c62828; }
+
+.rm-trace-item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 3px;
+}
+
+.rm-trace-room {
+    font-weight: 700;
+    cursor: pointer;
+}
+.rm-trace-room:hover { text-decoration: underline; }
+
+.rm-trace-dept {
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: #999;
+}
+
+.rm-trace-instruction {
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.rm-trace-item-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.rm-trace-due {
+    font-size: 11px;
+    color: #888;
+}
+
+.rm-trace-status-select {
+    font-size: 11px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 2px 4px;
+}
+
+.rm-trace-add {
+    flex: none;
+    border-top: 1px solid #eee;
+    padding-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rm-trace-add-row {
+    display: flex;
+    gap: 6px;
+}
+.rm-trace-add-row > * { flex: 1 1 0; min-width: 0; }
+
+.rm-trace-add input,
+.rm-trace-add select,
+.rm-trace-add textarea {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px 7px;
+    font-size: 12.5px;
+    box-sizing: border-box;
+    width: 100%;
 }

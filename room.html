@@ -23,7 +23,8 @@
         <div class="rm-grid" id="rmGrid" data-view="list">
 
             <!-- ============================================== -->
-            <!-- COLUMN 1 — Overview / Fundsachen / Blocked-OOO -->
+            <!-- COLUMN 1 — Overview (fixed) / Fundsachen + Blocked
+                 (keduanya flex:1, ngisi sisa tinggi kolom) -->
             <!-- ============================================== -->
 
             <div class="rm-overview">
@@ -33,12 +34,12 @@
                     <div class="rm-stat-grid" id="rmOverviewStats"></div>
                 </div>
 
-                <div class="rm-card">
+                <div class="rm-card rm-card-fill">
                     <h4>Fundsachen <span id="rmFundsachenCount" class="rm-subcard-count"></span></h4>
                     <div class="rm-mini-list" id="rmFundsachenList"></div>
                 </div>
 
-                <div class="rm-card">
+                <div class="rm-card rm-card-fill">
                     <h4>Blocked / Out of Order</h4>
                     <div class="rm-mini-list" id="rmBlockedList"></div>
                 </div>
@@ -46,7 +47,8 @@
             </div>
 
             <!-- ============================================== -->
-            <!-- COLUMN 2 — Search card + Room List (ct engine) -->
+            <!-- COLUMN 2 — Search card + Showing (table attached
+                 langsung ke card ini, bukan card terpisah) -->
             <!-- ============================================== -->
 
             <div class="rm-list">
@@ -64,7 +66,7 @@
                 <div class="rm-card rm-showing-card">
 
                     <div class="rm-showing-header">
-                        <span class="rm-showing-title">Room List</span>
+                        <span class="rm-showing-title">Showing</span>
                         <div id="rmSearchChips" class="rm-search-chips"></div>
                     </div>
 
@@ -97,7 +99,61 @@
             </div>
 
             <!-- ============================================== -->
-            <!-- COLUMN 3 — Activity timeline (default) / Room Detail -->
+            <!-- COLUMN 3 — Traces (semua room, full height).
+                 Disembunyikan pas mode detail (room dipilih). -->
+            <!-- ============================================== -->
+
+            <div class="rm-traces">
+                <div class="rm-card rm-traces-card">
+
+                    <h4>
+                        Traces <span id="rmTracesCount" class="rm-subcard-count"></span>
+                    </h4>
+
+                    <div class="rm-trace-filters" id="rmTraceFilters">
+                        <button class="rm-trace-filter-btn active" data-filter="all">All</button>
+                        <button class="rm-trace-filter-btn" data-filter="open">Open</button>
+                        <button class="rm-trace-filter-btn" data-filter="urgent">Urgent</button>
+                    </div>
+
+                    <div class="rm-trace-list-scroll" id="rmTracesList"></div>
+
+                    <div class="rm-trace-add" id="rmTraceAddForm">
+
+                        <div class="rm-trace-add-row">
+                            <input type="text" id="rmTraceRoomInput" placeholder="Room number">
+                            <select id="rmTraceDeptInput">
+                                <option value="HOUSEKEEPING">Housekeeping</option>
+                                <option value="FRONT_OFFICE">Reception</option>
+                                <option value="MAINTENANCE">Maintenance</option>
+                                <option value="MANAGEMENT">Other</option>
+                            </select>
+                        </div>
+
+                        <select id="rmTraceSubtypeInput"></select>
+
+                        <div class="rm-trace-add-row">
+                            <select id="rmTracePriorityInput">
+                                <option value="LOW">Low</option>
+                                <option value="NORMAL" selected>Normal</option>
+                                <option value="HIGH">High</option>
+                                <option value="URGENT">Urgent</option>
+                            </select>
+                            <input type="datetime-local" id="rmTraceDueInput">
+                        </div>
+
+                        <textarea id="rmTraceCommentInput" placeholder="Comment (optional)" rows="2"></textarea>
+
+                        <button type="button" class="rm-btn rm-btn-primary" id="rmTraceAddBtn">+ Add Trace</button>
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- COLUMN 4 — Activity timeline (default) / Room Detail
+                 (pas room dipilih, kolom ini melebar span 3+4) -->
             <!-- ============================================== -->
 
             <div class="rm-detail">
@@ -126,6 +182,7 @@
     <script src="js/searchCardEngine.js"></script>
     <script src="js/roomManagementData.js"></script>
     <script src="js/roomManagementUI.js"></script>
+    <script src="js/roomTraces.js"></script>
     <script src="js/roomManagement.js"></script>
 
     <script src="js/pageHeader.js"></script>

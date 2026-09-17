@@ -9,6 +9,7 @@
 // Ditambah pagination client-side (dulu render semua rooms sekaligus).
 // ======================================================
 
+let rmActiveTraces = [];
 let rmAllRooms = [];
 let rmOccupiedSet = new Set();
 let rmSelectedRoom = null;
@@ -265,6 +266,90 @@ function rmRenderChip(){
 // Column 3 default — Activity feed
 // ======================================================
 
+function rmBuildRoomLookup(){
+    return new Map(rmAllRooms.map(r => [r.id, r]));
+}
+
+async function rmLoadTraces(){
+
+    rmActiveTraces = await rmFetchActiveTraces();
+
+    rmRenderTracesList(
+        rmActiveTraces,
+        rmBuildRoomLookup(),
+        rmOpenRoomDetail,
+        rmHandleTraceStatusChange
+    );
+
+}
+
+async function rmHandleTraceStatusChange(id, status){
+
+    const { error } = await rmUpdateTraceStatus(id, status);
+
+    if(error){
+        rmShowMessage("Gagal update status trace", "error");
+        return;
+    }
+
+    await rmLoadTraces();
+
+}
+
+async function rmHandleAddTrace(){
+
+    const roomInput = document.getElementById("rmTraceRoomInput");
+    const deptInput = document.getElementById("rmTraceDeptInput");
+    const subtypeInput = document.getElementById("rmTraceSubtypeInput");
+    const priorityInput = document.getElementById("rmTracePriorityInput");
+    const dueInput = document.getElementById("rmTraceDueInput");
+    const commentInput = document.getElementById("rmTraceCommentInput");
+
+    const roomNumber = roomInput.value.trim();
+
+    if(!roomNumber){
+        rmShowMessage("Isi nomor kamar dulu", "error");
+        return;
+    }
+
+    const room = rmAllRooms.find(r => String(r.room_number) === roomNumber);
+
+    if(!room){
+        rmShowMessage(`Room ${roomNumber} tidak ditemukan`, "error");
+        return;
+    }
+
+    const comment = commentInput.value.trim();
+    const instruction = comment ? `${subtypeInput.value}: ${comment}` : subtypeInput.value;
+
+    const payload = {
+        context_type: "ROOM",
+        context_id: room.id,
+        assigned_department: deptInput.value,
+        priority: priorityInput.value,
+        due_at: dueInput.value ? new Date(dueInput.value).toISOString() : null,
+        status: "OPEN",
+        instruction
+    };
+
+    const { error } = await rmCreateTrace(payload);
+
+    if(error){
+        console.error(error);
+        rmShowMessage("Gagal menambah trace: " + error.message, "error");
+        return;
+    }
+
+    rmShowMessage("Trace added", "success");
+
+    roomInput.value = "";
+    commentInput.value = "";
+    dueInput.value = "";
+
+    await rmLoadTraces();
+
+}
+
 async function rmLoadActivityFeed(){
 
     const [activity, reservationEvents] = await Promise.all([
@@ -311,6 +396,7 @@ function rmBackToList(){
     rmSetView("list");
     rmRenderFilteredList();
     rmLoadActivityFeed();
+    rmLoadTraces();
 
 }
 
@@ -528,11 +614,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("rmOooBtn").addEventListener("click", () => rmSetSelectedRoomsStatus("OUT_OF_SERVICE"));
     document.getElementById("rmBlockedBtn").addEventListener("click", () => rmSetSelectedRoomsStatus("BLOCKED"));
 
+    rmTracePopulateSubtypes();
+    document.getElementById("rmTraceDeptInput").addEventListener("change", rmTracePopulateSubtypes);
+    document.getElementById("rmTraceAddBtn").addEventListener("click", rmHandleAddTrace);
+
+    document.querySelectorAll(".rm-trace-filter-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            rmSetTraceFilter(btn.dataset.filter, rmActiveTraces, rmBuildRoomLookup(), rmOpenRoomDetail, rmHandleTraceStatusChange);
+        });
+    });
+
     rmSetView("list");
 
     try {
         await rmRefreshOverviewAndList();
         await rmLoadActivityFeed();
+        await rmLoadTraces();
     } catch(err){
         console.error("Room Management init failed:", err);
     }
