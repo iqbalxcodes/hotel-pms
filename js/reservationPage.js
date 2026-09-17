@@ -1,27 +1,14 @@
 // ======================================================
 // reservationPage.js
-// Search fields generate dinamis dari RESERVATION_COLUMNS
-// (tableConfig.js). Grouped ke kolom <div> max 4/kolom,
-// overflow-x scroll kalau kepanjangan.
-//
-// BARU:
-// - Reset button (Search card & Showing card) -- keliatan
-//   cuma pas mode customize, klik = balikin urutan/hidden
-//   field pencarian ke default.
-// - Toggle class .rsv-page-customizing di .rsv-page pas
-//   customize mode nyala/mati -- dipakai CSS buat nampilin
-//   reset button, page-pill, checkbox Pagination di footer.
-// - Checkbox Pagination (footer, mode customize) -- wiring ke
-//   rsvSetPaginationEnabled() di reservation.js.
+// Field search sekarang pakai searchCardEngine.js
+// (createSearchCard) -- generate/drag-reorder/show-hide/date-
+// parser/magnifier semua di-handle engine. File ini cuma
+// nyambungin: config field spesifik reservation + logic
+// apply-search (activeSearchFields, refreshTable, chip).
 // ======================================================
 
-
 const RSV_FIELDS_KEY = "rsv_search_fields_config";
-const RSV_COLUMN_SIZE = 4;
 
-
-
-// kolom yang gak masuk akal buat search manual (computed/internal)
 const RSV_SEARCH_EXCLUDE = [
     "nights", "billing_items", "id", "guest_id", "room_id",
     "created_at", "updated_at",
@@ -48,380 +35,40 @@ const RSV_YESNO_OPTIONS = [
     { value: "false", label: "No" }
 ];
 
-// Field yang "susah ditebak spelling"-nya -- diperpendek, sisa
-// ruang jadi tombol kaca pembesar buat popup advanced-search
-// (belum di-develop popup-nya, tinggal daftarin handler-nya nanti
-// via RSV_ADVANCED_SEARCH_HANDLERS[key] = function(key){...}).
 const RSV_MAGNIFIER_FIELDS = ["guest_name", "room_number", "room_type", "rate_name", "company", "travel_agent", "booker_name"];
 
-const RSV_DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-
-function rsvDowText(value) {
-    if (!value) return "-";
-    const d = new Date(value + "T00:00:00");
-    return isNaN(d) ? "-" : RSV_DOW[d.getDay()];
-}
-
-function rsvUpdateDow(input) {
-    const dowEl = input.parentElement.querySelector(".rsv-field-dow");
-    if (dowEl) dowEl.textContent = rsvDowText(input.value);
-}
-
-function rsvNormalizeDateInput(input) {
-    const row = input.closest(".rsv-field-input-row");
-    const dowEl = row?.querySelector(".rsv-field-dow");
-
-    if (!input.value.trim()) {
-        if (dowEl) dowEl.textContent = "-";
-        return;
-    }
-
-    const parsed = rsvParseFlexibleDate(input.value);
-    if (!parsed) return; // biarin apa adanya, validasi ulang pas submit
-
-    const [y, m, d] = parsed.split("-");
-    input.value = `${d}/${m}/${y}`;
-    if (dowEl) dowEl.textContent = rsvDowText(parsed);
-}
-
-function rsvOpenNativePicker(btn) {
-    const row = btn.closest(".rsv-field-input-row");
-    const nativeInput = row?.querySelector(".rsv-native-date-hidden");
-    if (!nativeInput) return;
-
-    if (typeof nativeInput.showPicker === "function") {
-        nativeInput.showPicker();
-    } else {
-        nativeInput.click();
-    }
-}
-
-function rsvNativeDateChanged(nativeInput) {
-    const row = nativeInput.closest(".rsv-field-input-row");
-    const textInput = row?.querySelector(".rsv-input-shrink");
-    const dowEl = row?.querySelector(".rsv-field-dow");
-
-    if (!nativeInput.value) return;
-
-    const [y, m, d] = nativeInput.value.split("-");
-    if (textInput) textInput.value = `${d}/${m}/${y}`;
-    if (dowEl) dowEl.textContent = rsvDowText(nativeInput.value);
-}
-
-const RSV_ADVANCED_SEARCH_HANDLERS = {};
-
-function rsvOpenAdvancedSearch(key) {
-    const handler = RSV_ADVANCED_SEARCH_HANDLERS[key];
-    if (typeof handler === "function") {
-        handler(key);
-        return;
-    }
-    if (typeof showMessage === "function") {
-        showMessage(`Advanced search for ${rsvFieldLabel(key)} is still in development`, "info");
-    }
-}
-
-// generate dari tableConfig.js (harus sudah ke-load duluan di HTML)
 const RSV_SEARCH_FIELDS_DEFAULT = (typeof RESERVATION_COLUMNS !== "undefined" ? RESERVATION_COLUMNS : [])
     .filter(c => !RSV_SEARCH_EXCLUDE.includes(c.key))
     .map(c => {
-        if(c.key === "status") return { key: c.key, label: c.label, type: "select", options: RSV_STATUS_OPTIONS };
-        if(c.type === "boolean") return { key: c.key, label: c.label, type: "select", options: RSV_YESNO_OPTIONS };
-        if(c.type === "date" || c.type === "datetime") return { key: c.key, label: c.label, type: "date" };
+        if (c.key === "status") return { key: c.key, label: c.label, type: "select", options: RSV_STATUS_OPTIONS };
+        if (c.type === "boolean") return { key: c.key, label: c.label, type: "select", options: RSV_YESNO_OPTIONS };
+        if (c.type === "date" || c.type === "datetime") return { key: c.key, label: c.label, type: "date" };
         return { key: c.key, label: c.label, type: "text" };
     });
 
-let rsvFieldsOrder = [];
-let rsvFieldsHidden = [];
-let rsvCustomizing = false;
-let rsvDragKey = null;
-
-function rsvFieldDef(key) {
-    return RSV_SEARCH_FIELDS_DEFAULT.find(f => f.key === key);
-}
-
-function rsvParseFlexibleDate(raw) {
-    const s = (raw || "").trim();
-    if (!s) return null;
-
-    let d, m, y;
-
-    if (s.includes("/") || s.includes(".")) {
-        const parts = s.split(/[./]/).filter(Boolean);
-        if (parts.length === 2) {
-            [d, m] = parts;
-            y = String(new Date().getFullYear());
-        } else if (parts.length === 3) {
-            [d, m, y] = parts;
-        } else {
-            return null;
-        }
-    } else {
-        const digits = s.replace(/\D/g, "");
-        if (digits.length === 4) { d = digits.slice(0, 2); m = digits.slice(2, 4); y = String(new Date().getFullYear()); }
-        else if (digits.length === 6) { d = digits.slice(0, 2); m = digits.slice(2, 4); y = digits.slice(4, 6); }
-        else if (digits.length === 8) { d = digits.slice(0, 2); m = digits.slice(2, 4); y = digits.slice(4, 8); }
-        else return null;
-    }
-
-    if (!/^\d+$/.test(d) || !/^\d+$/.test(m) || !/^\d+$/.test(y)) return null;
-
-    let yNum = parseInt(y, 10);
-    if (y.length === 2) yNum = yNum < 50 ? 2000 + yNum : 1900 + yNum;
-    else if (y.length !== 4) return null;
-
-    const dNum = parseInt(d, 10);
-    const mNum = parseInt(m, 10);
-    if (mNum < 1 || mNum > 12) return null;
-    const maxDay = new Date(yNum, mNum, 0).getDate();
-    if (dNum < 1 || dNum > maxDay) return null;
-
-    const pad = n => String(n).padStart(2, "0");
-    return `${yNum}-${pad(mNum)}-${pad(dNum)}`;
-}
-
-function rsvLoadFieldConfig() {
-    try {
-        const saved = JSON.parse(localStorage.getItem(RSV_FIELDS_KEY));
-        if (saved && Array.isArray(saved.order)) {
-            rsvFieldsOrder = saved.order.filter(k => rsvFieldDef(k));
-            RSV_SEARCH_FIELDS_DEFAULT.forEach(f => {
-                if (!rsvFieldsOrder.includes(f.key)) rsvFieldsOrder.push(f.key);
-            });
-            rsvFieldsHidden = Array.isArray(saved.hidden) ? saved.hidden : [];
-            return;
-        }
-    } catch (e) {}
-    rsvFieldsOrder = RSV_SEARCH_FIELDS_DEFAULT.map(f => f.key);
-    rsvFieldsHidden = [];
-}
-
-function rsvSaveFieldConfig() {
-    localStorage.setItem(RSV_FIELDS_KEY, JSON.stringify({ order: rsvFieldsOrder, hidden: rsvFieldsHidden }));
-}
-
-// ------------------------------------------------------
-// Reset ke default -- dipakai tombol reset di Search DAN
-// Showing (dua-duanya reset hal yang sama: konfigurasi field
-// pencarian, satu-satunya "customizable state" yang ada
-// sekarang).
-// ------------------------------------------------------
-
-function rsvResetFieldsToDefault(){
-    rsvFieldsOrder = RSV_SEARCH_FIELDS_DEFAULT.map(f => f.key);
-    rsvFieldsHidden = [];
-    rsvSaveFieldConfig();
-    rsvRenderFields();
-    showMessage && showMessage("Search fields reset ke default", "success");
-}
-
-function rsvIcon(name) { return `<i data-lucide="${name}"></i>`; }
-
-function rsvEsc(s) {
-    if (typeof escapeHtml === "function") return escapeHtml(s);
-    const d = document.createElement("div");
-    d.textContent = s ?? "";
-    return d.innerHTML;
-}
-
-function rsvRenderFieldCard(key, values) {
-    const def = rsvFieldDef(key);
-    if (!def) return "";
-
-    const savedValue = values[key] || "";
-    const hidden = rsvFieldsHidden.includes(def.key);
-    const isDate = def.type === "date";
-    const isMagnifier = RSV_MAGNIFIER_FIELDS.includes(def.key);
-
-    let inputHtml;
-
-    if (def.type === "select") {
-        inputHtml = `<select data-search-key="${def.key}">${def.options.map(o =>
-            `<option value="${o.value}" ${o.value === savedValue ? "selected" : ""}>${o.label}</option>`
-        ).join("")}</select>`;
-    } else if (isDate) {
-        inputHtml = `
-            <div class="rsv-field-input-row">
-                <input type="text" class="rsv-input-shrink" data-search-key="${def.key}" value="${rsvEsc(savedValue)}" placeholder="dd/mm/yyyy" onblur="rsvNormalizeDateInput(this)">
-                <button type="button" class="rsv-field-calendar-btn" onclick="rsvOpenNativePicker(this)" title="Pick date">${rsvIcon("calendar")}</button>
-                <input type="date" class="rsv-native-date-hidden" tabindex="-1" onchange="rsvNativeDateChanged(this)">
-                <span class="rsv-field-dow">${rsvDowText(savedValue)}</span>
-            </div>
-        `;
-    } else if (isMagnifier) {
-        inputHtml = `
-            <div class="rsv-field-input-row">
-                <input type="text" class="rsv-input-shrink" data-search-key="${def.key}" value="${rsvEsc(savedValue)}">
-                <button type="button" class="rsv-field-search-btn" onclick="rsvOpenAdvancedSearch('${def.key}')" title="Advanced search">${rsvIcon("search")}</button>
-            </div>
-        `;
-    } else {
-        inputHtml = `<input type="${def.type}" data-search-key="${def.key}" value="${rsvEsc(savedValue)}">`;
-    }
-
-    const hideBtnClass = hidden ? "rsv-btn-show" : "rsv-btn-hide";
-
-    return `
-        <div class="rsv-field-card ${hidden ? "rsv-field-hidden" : ""}" data-key="${def.key}" draggable="${rsvCustomizing}">
-            ${rsvCustomizing ? `<span class="rsv-field-drag">${rsvIcon("grip-vertical")}</span>` : ""}
-            <div class="rsv-field">
-                <label>${rsvEsc(def.label)}</label>
-                ${inputHtml}
-            </div>
-            ${rsvCustomizing ? `<button class="rsv-field-hide-btn ${hideBtnClass}" data-hide="${def.key}" title="${hidden ? "Show" : "Hide"}">${rsvIcon(hidden ? "plus" : "minus")}</button>` : ""}
-        </div>
-    `;
-}
-
-function rsvRenderFields() {
-    const container = document.getElementById("rsvSearchFields");
-    if (!container) return;
-
-    container.classList.toggle("rsv-customizing", rsvCustomizing);
-
-    const values = {};
-    container.querySelectorAll("[data-search-key]").forEach(el => {
-        values[el.dataset.searchKey] = el.value;
-    });
-
-    const visibleKeys = rsvFieldsOrder.filter(key => {
-        const hidden = rsvFieldsHidden.includes(key);
-        return !hidden || rsvCustomizing;
-    });
-
-    const columns = [];
-    for (let i = 0; i < visibleKeys.length; i += RSV_COLUMN_SIZE) {
-        columns.push(visibleKeys.slice(i, i + RSV_COLUMN_SIZE));
-    }
-
-    container.innerHTML = columns.map(colKeys => `
-        <div class="rsv-search-column">
-            ${colKeys.map(key => rsvRenderFieldCard(key, values)).join("")}
-        </div>
-    `).join("");
-
-    if (window.lucide) lucide.createIcons();
-
-    if (rsvCustomizing) rsvBindCustomizeEvents(container);
-}
-
-function rsvBindCustomizeEvents(container) {
-
-    container.querySelectorAll("[data-hide]").forEach(btn => {
-        btn.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const key = btn.dataset.hide;
-            const idx = rsvFieldsHidden.indexOf(key);
-            if (idx === -1) rsvFieldsHidden.push(key);
-            else rsvFieldsHidden.splice(idx, 1);
-            rsvRenderFields();
-        };
-    });
-
-    container.querySelectorAll(".rsv-field-card").forEach(card => {
-
-        card.addEventListener("dragstart", () => {
-            rsvDragKey = card.dataset.key;
-            card.classList.add("rsv-dragging");
-        });
-
-        card.addEventListener("dragend", () => {
-            card.classList.remove("rsv-dragging");
-            container.querySelectorAll(".rsv-field-card").forEach(c =>
-                c.classList.remove("rsv-drop-before", "rsv-drop-after"));
-            rsvDragKey = null;
-        });
-
-        card.addEventListener("dragover", (e) => {
-            if (!rsvDragKey || rsvDragKey === card.dataset.key) return;
-            e.preventDefault();
-            const rect = card.getBoundingClientRect();
-            const before = e.clientX < rect.left + rect.width / 2;
-            container.querySelectorAll(".rsv-field-card").forEach(c =>
-                c.classList.remove("rsv-drop-before", "rsv-drop-after"));
-            card.classList.add(before ? "rsv-drop-before" : "rsv-drop-after");
-        });
-
-        card.addEventListener("drop", (e) => {
-            e.preventDefault();
-            if (!rsvDragKey || rsvDragKey === card.dataset.key) return;
-
-            const rect = card.getBoundingClientRect();
-            const before = e.clientX < rect.left + rect.width / 2;
-
-            const fromIdx = rsvFieldsOrder.indexOf(rsvDragKey);
-            rsvFieldsOrder.splice(fromIdx, 1);
-
-            let toIdx = rsvFieldsOrder.indexOf(card.dataset.key);
-            if (!before) toIdx += 1;
-
-            rsvFieldsOrder.splice(toIdx, 0, rsvDragKey);
-
-            rsvRenderFields();
-        });
-    });
-}
-
-// ------------------------------------------------------
-// pms:customize-toggle -- dispatch dari pmsTopbar.js. Sekarang
-// juga toggle class .rsv-page-customizing (dipakai CSS buat
-// nampilin reset button / page-pill / checkbox pagination),
-// dan minta renderPaginationBar() re-render footer sesuai mode.
-// ------------------------------------------------------
-
-document.addEventListener("pms:customize-toggle", (e) => {
-    rsvCustomizing = e.detail.active;
-    if (!rsvCustomizing) rsvSaveFieldConfig();
-
-    document.querySelector(".rsv-page")?.classList.toggle("rsv-page-customizing", rsvCustomizing);
-
-    rsvRenderFields();
-
-    if (typeof renderPaginationBar === "function") renderPaginationBar();
+const rsvSearchCard = createSearchCard({
+    storageKey: RSV_FIELDS_KEY,
+    containerId: "rsvSearchFields",
+    fields: RSV_SEARCH_FIELDS_DEFAULT,
+    magnifierFields: RSV_MAGNIFIER_FIELDS
 });
 
-function rsvLoadLucide(cb) {
-    if (window.lucide) { cb(); return; }
-    const s = document.createElement("script");
-    s.src = "https://unpkg.com/lucide@latest";
-    s.onload = cb;
-    document.head.appendChild(s);
+let rsvCustomizing = false;
+
+function rsvResetFieldsToDefault() {
+    rsvSearchCard.resetToDefault();
 }
 
 function rsvGatherSearchFields() {
-    const fields = {};
-    document.querySelectorAll('#rsvSearchForm [data-search-key]').forEach(el => {
-        const v = el.value.trim();
-        if (!v) return;
-
-        const def = rsvFieldDef(el.dataset.searchKey);
-        if (def && def.type === "date") {
-            const parsed = rsvParseFlexibleDate(v);
-            if (!parsed) {
-                showMessage(`Format tanggal "${v}" tidak dikenali di ${def.label}`, "error");
-                throw new Error("invalid date");
-            }
-            fields[el.dataset.searchKey] = parsed;
-        } else {
-            fields[el.dataset.searchKey] = v;
-        }
-    });
-    return fields;
+    return rsvSearchCard.gatherValues();
 }
 
 function rsvFieldLabel(key) {
-    const def = rsvFieldDef(key);
-    return def ? def.label : key;
+    return rsvSearchCard.fieldLabel(key);
 }
 
 function rsvFormatFieldValue(key, value) {
-    const def = rsvFieldDef(key);
-    if (def && def.type === "date" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        const [y, m, d] = value.split("-");
-        return `${d}/${m}/${y}`;
-    }
-    return value;
+    return rsvSearchCard.formatValue(key, value);
 }
 
 function rsvApplySearch(fields) {
@@ -433,7 +80,7 @@ function rsvApplySearch(fields) {
 
 function rsvClearSearch() {
     activeSearchFields = {};
-    document.querySelectorAll('#rsvSearchForm [data-search-key]').forEach(el => { el.value = ""; });
+    rsvSearchCard.clearValues();
     currentPage = 1;
     refreshTable();
     rsvRenderChip();
@@ -442,12 +89,19 @@ function rsvClearSearch() {
 function rsvRemoveSearchField(key) {
     delete activeSearchFields[key];
 
-    const el = document.querySelector(`#rsvSearchForm [data-search-key="${key}"]`);
+    const el = document.querySelector(`#rsvSearchFields [data-search-key="${key}"]`);
     if (el) el.value = "";
 
     currentPage = 1;
     refreshTable();
     rsvRenderChip();
+}
+
+function rsvEsc(s) {
+    if (typeof escapeHtml === "function") return escapeHtml(s);
+    const d = document.createElement("div");
+    d.textContent = s ?? "";
+    return d.innerHTML;
 }
 
 function rsvRenderChip() {
@@ -481,22 +135,39 @@ function rsvRenderChip() {
     });
 }
 
+// ------------------------------------------------------
+// pms:customize-toggle -- dispatch dari pmsTopbar.js
+// ------------------------------------------------------
+
+document.addEventListener("pms:customize-toggle", (e) => {
+    rsvCustomizing = e.detail.active;
+
+    document.querySelector(".rsv-page")?.classList.toggle("rsv-page-customizing", rsvCustomizing);
+
+    rsvSearchCard.setCustomizing(rsvCustomizing);
+
+    if (typeof renderPaginationBar === "function") renderPaginationBar();
+});
+
+function rsvLoadLucide(cb) {
+    if (window.lucide) { cb(); return; }
+    const s = document.createElement("script");
+    s.src = "https://unpkg.com/lucide@latest";
+    s.onload = cb;
+    document.head.appendChild(s);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
 
-    rsvLoadFieldConfig();
-    rsvRenderFields();
+    rsvSearchCard.load();
+    rsvSearchCard.render();
 
     const form = document.getElementById("rsvSearchForm");
 
     if (form) {
         form.addEventListener("submit", (e) => {
             e.preventDefault();
-            let fields;
-            try {
-                fields = rsvGatherSearchFields();
-            } catch (err) {
-                return; // showMessage udah muncul dari parser
-            }
+            const fields = rsvGatherSearchFields();
 
             if (Object.keys(fields).length === 0) {
                 showMessage("Isi minimal satu field pencarian", "error");
@@ -507,15 +178,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ---- reset buttons (Search card + Showing card) ----
-    // ---- reset buttons (Search card + Showing card) ----
     document.getElementById("rsvSearchResetBtn")?.addEventListener("click", rsvResetFieldsToDefault);
     document.getElementById("rsvShowingResetBtn")?.addEventListener("click", rsvResetFieldsToDefault);
-
-    // ---- reset SEARCH VALUES (beda sama reset layout di atas) ----
     document.getElementById("rsvSearchClearBtn")?.addEventListener("click", rsvClearSearch);
 
-    // ---- checkbox Pagination (footer, mode customize) ----
     const pagToggle = document.getElementById("rsvPaginationToggle");
     if (pagToggle) {
         pagToggle.checked = (typeof paginationEnabled !== "undefined") ? paginationEnabled : true;

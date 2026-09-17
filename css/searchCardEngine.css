@@ -1,0 +1,171 @@
+/* ======================================================
+   searchCardEngine.css
+   Style generic buat field-field dari searchCardEngine.js
+   (class prefix sce-). Halaman lain (guest/room/logs) tinggal
+   link file ini, gak perlu tulis CSS field baru.
+   ====================================================== */
+
+.sce-search-fields {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    overflow-x: auto;
+}
+
+.sce-search-column {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1 1 0;
+    min-width: 150px;
+    padding: 0 10px;
+}
+
+.sce-search-column:first-child { padding-left: 0; }
+.sce-search-column:not(:first-child) { border-left: 1px solid #e0e0e0; }
+
+.sce-search-fields.sce-customizing .sce-search-column {
+    gap: 4px;
+    padding: 0 6px;
+}
+
+.sce-search-fields.sce-customizing .sce-field-card {
+    border: 1px dashed rgba(0,0,0,.25);
+    border-radius: 6px;
+    padding: 3px 18px 3px 3px;
+}
+
+.sce-field-card.sce-field-hidden { opacity: .45; }
+
+.sce-field-drag {
+    cursor: grab;
+    color: #bbb;
+    display: flex;
+    flex: none;
+}
+.sce-field-drag svg { width: 12px; height: 12px; }
+
+.sce-field-hide-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 13px;
+    height: 13px;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    line-height: 0;
+}
+.sce-field-hide-btn svg {
+    width: 8px;
+    height: 8px;
+    margin: 0;
+    padding: 0;
+    stroke-width: 3;
+}
+
+.sce-field-hide-btn.sce-btn-hide { background: #ffebee; color: #c62828; }
+.sce-field-hide-btn.sce-btn-hide:hover { background: #ffcdd2; }
+.sce-field-hide-btn.sce-btn-show { background: #e8f5e9; color: #2e7d32; }
+.sce-field-hide-btn.sce-btn-show:hover { background: #c8e6c9; }
+
+.sce-field-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    flex: none;
+    box-sizing: border-box;
+}
+
+.sce-field-card.sce-dragging { opacity: .4; }
+.sce-field-card.sce-drop-before { box-shadow: -3px 0 0 0 #1565c0; }
+.sce-field-card.sce-drop-after { box-shadow: 3px 0 0 0 #1565c0; }
+
+.sce-field { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
+.sce-field label { font-size: 10px; color: #777; white-space: nowrap; }
+
+.sce-field input,
+.sce-field select {
+    height: 26px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0 6px;
+    font-size: 12px;
+    font: inherit;
+    box-sizing: border-box;
+    width: 100%;
+}
+.sce-field input::placeholder { font-size: 12px; color: #aaa; }
+
+.sce-field-input-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+}
+.sce-field-input-row .sce-input-shrink { flex: 1 1 auto; min-width: 0; }
+
+.sce-field-dow {
+    flex: none;
+    width: 28px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: #777;
+    background: #f2f3f5;
+    border-radius: 4px;
+    padding: 5px 0;
+    box-sizing: border-box;
+}
+
+.sce-field-search-btn,
+.sce-field-calendar-btn {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ccc;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #555;
+}
+.sce-field-search-btn:hover,
+.sce-field-calendar-btn:hover { background: #f0f0f0; color: #1565c0; }
+.sce-field-search-btn svg,
+.sce-field-calendar-btn svg { width: 13px; height: 13px; }
+
+.sce-native-date-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+    border: none;
+    padding: 0;
+}
+
+@media (max-width: 700px) {
+    .sce-field-card { width: 150px; }
+    .sce-search-column { padding: 0 6px; }
+
+    .sce-field-dow { width: 24px; font-size: 9px; padding: 4px 0; }
+
+    .sce-field-search-btn,
+    .sce-field-calendar-btn { width: 22px; height: 22px; }
+    .sce-field-search-btn svg,
+    .sce-field-calendar-btn svg { width: 11px; height: 11px; }
+
+    .sce-field-input-row { gap: 3px; }
+}
