@@ -231,6 +231,7 @@ function rmRenderRoomList(rooms, occupiedSet, selectedRoom, onClickRoom){
     });
 
     refreshStatusBadgeIcons();
+    rmInitCellMarquees();
 
 }
 
@@ -584,15 +585,67 @@ function rmRenderRoomTableHeader(){
 
 }
 
+function rmWrapCellText(text){
+    return `<span class="cell-text-wrap"><span class="cell-text-inner">${text}</span></span>`;
+}
+
 function rmBuildRoomCellHtml(key, r, isOccupied){
 
     switch(key){
         case "status": return renderStatusBadge(isOccupied ? "OCCUPIED" : r.status, { size: 18 });
-        case "room_number": return rmEscapeHtml(r.room_number);
-        case "room_type": return rmEscapeHtml(r.room_type || "");
-        case "floor": return r.floor ?? "";
-        case "status_label": return rmEscapeHtml(isOccupied ? "Occupied" : (r.status || "-").replace(/_/g, " "));
+        case "room_number": return rmWrapCellText(rmEscapeHtml(r.room_number));
+        case "room_type": return rmWrapCellText(rmEscapeHtml(r.room_type || ""));
+        case "floor": return rmWrapCellText(String(r.floor ?? ""));
+        case "status_label": return rmWrapCellText(rmEscapeHtml(isOccupied ? "Occupied" : (r.status || "-").replace(/_/g, " ")));
         default: return "";
     }
+
+}
+
+// ------------------------------------------------------
+// Cell marquee/fade -- sama pola kayak reservation.js
+// (bindCellMarquee/applyCellFade) tapi discope ke #rmRoomTable
+// biar gak nabrak listener punya tabel reservation.
+// ------------------------------------------------------
+
+function rmBindCellMarquee(wrap){
+
+    const inner = wrap.querySelector(".cell-text-inner");
+    if(!inner) return;
+
+    wrap.addEventListener("mouseenter", () => {
+        const over = inner.scrollWidth - wrap.clientWidth;
+        if(over <= 1) return;
+        wrap.classList.remove("cell-fade");
+        wrap.classList.add("cell-fade-both");
+        inner.style.transitionDuration = Math.max(0.6, over / 45) + "s";
+        inner.style.transform = `translateX(-${over}px)`;
+    });
+
+    wrap.addEventListener("mouseleave", () => {
+        inner.style.transform = "translateX(0)";
+        inner.style.transitionDuration = ".3s";
+        setTimeout(() => rmApplyCellFade(wrap), 300);
+    });
+
+}
+
+function rmApplyCellFade(wrap){
+
+    if(!wrap.isConnected) return;
+    const inner = wrap.querySelector(".cell-text-inner");
+    if(!inner) return;
+    const overflowing = inner.scrollWidth - wrap.clientWidth > 1;
+    wrap.classList.toggle("cell-fade", overflowing);
+    wrap.classList.remove("cell-fade-both");
+
+}
+
+function rmInitCellMarquees(){
+
+    document.querySelectorAll("#rmRoomTable .cell-text-wrap").forEach(wrap => {
+        rmBindCellMarquee(wrap);
+        rmApplyCellFade(wrap);
+    });
 
 }
