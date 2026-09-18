@@ -562,6 +562,18 @@ async function rmSetSelectedRoomsStatus(status){
 
 }
 
+async function waitForAuthReady(){
+        try {
+            if(window.supabaseClient && supabaseClient.auth && supabaseClient.auth.getSession){
+                await Promise.race([
+                    supabaseClient.auth.getSession(),
+                    new Promise(resolve => setTimeout(resolve, 1500))
+                ]);
+            }
+        } catch(e){
+    console.warn("waitForAuthReady failed, lanjut anyway:", e);
+    }
+}
 
 // ======================================================
 // pms:customize-toggle -- dispatch dari pmsTopbar.js, biar
@@ -578,7 +590,8 @@ document.addEventListener("pms:customize-toggle", (e) => {
 // ======================================================
 
 document.addEventListener("DOMContentLoaded", async () => {
-
+    
+    await waitForAuthReady();
     startClock();
 
     rmSearchCard.load();
