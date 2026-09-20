@@ -161,10 +161,10 @@ function rmRenderSummaryStrip(items, activeKey, handlers){
 
 
 // ======================================================
-// Column 3 — Traces (local stub, render only, no DB)
+// Column 3 — Traces (tabel "traces" beneran, context GENERAL)
 // ======================================================
 
-function rmRenderTraces(traces){
+function rmRenderTraces(traces, onDone){
 
     const el = document.getElementById("rmTracesList");
     if(!el) return;
@@ -174,11 +174,17 @@ function rmRenderTraces(traces){
         return;
     }
 
-    el.innerHTML = traces.map(text => `
-        <div class="rm-mini-item">
-            <div class="rm-mini-title">${rmEscapeHtml(text)}</div>
+    el.innerHTML = traces.map(t => `
+        <div class="rm-mini-item" data-id="${t.id}">
+            <div class="rm-mini-title">${rmEscapeHtml(t.instruction)}</div>
+            <div class="rm-mini-sub">${rmEscapeHtml(t.priority || "NORMAL")} · ${rmTimeAgo(t.created_at)}</div>
+            <button class="rm-trace-done-btn" data-id="${t.id}">✓ Done</button>
         </div>
     `).join("");
+
+    el.querySelectorAll(".rm-trace-done-btn").forEach(btn => {
+        btn.addEventListener("click", () => onDone(btn.dataset.id));
+    });
 
 }
 
@@ -230,8 +236,7 @@ function rmRenderRoomList(rooms, occupiedSet, selectedRoom, onClickRoom){
 
 
 // ======================================================
-// Column 4 — Global Activity Timeline (own card now, not
-// the default content of the detail pane anymore)
+// Column 4 — Global Activity Timeline
 // ======================================================
 
 function rmRenderActivityFeed(activityRows, reservationEvents){
@@ -365,8 +370,7 @@ function rmCheckSpan(label, isTrue){
 
 
 // ------------------------------------------------------
-// Subcard: Fundsachen (per-room, di dalam Room Detail —
-// beda dari card "Fundsachen" sidebar yang udah dihapus)
+// Subcard: Fundsachen (per-room, di dalam Room Detail)
 // ------------------------------------------------------
 
 function rmRenderFundsachenSubcard(items, roomNumber, onStatusChange, onAddNew){

@@ -1,7 +1,7 @@
 // ======================================================
 // roomManagementData.js
 // Semua akses Supabase untuk Room Management (rooms,
-// fundsachen, maintenance_requests, room_activity).
+// fundsachen, maintenance_requests, room_activity, traces).
 // Tidak ada rendering di sini — murni fetch/insert/update.
 // ======================================================
 
@@ -68,7 +68,7 @@ async function rmUpdateRoomStatus(roomNumbers, status, extra = {}){
 
 
 // ------------------------------------------------------
-// Occupancy (dari reservation, buat Room Overview)
+// Occupancy (dari reservation, buat summary bar)
 // ------------------------------------------------------
 
 async function rmFetchOccupiedRoomNumbers(){
@@ -114,9 +114,7 @@ async function rmFetchOpenFundsachen(limit = 5){
 
 }
 
-// Total open fundsachen (buat summary bar) -- rmFetchOpenFundsachen
-// di atas dibatasi `limit` (buat preview card), jadi butuh query
-// count terpisah biar angkanya bukan cuma "min(limit, total)".
+// Total open fundsachen (buat title-bar summary)
 async function rmFetchOpenFundsachenCount(){
 
     const { count, error } = await supabaseClient
@@ -286,6 +284,70 @@ async function rmUpdateMaintenanceStatus(id, roomNumber, title, status){
         });
 
     }
+
+    return { error };
+
+}
+
+
+// ------------------------------------------------------
+// Traces (tabel "traces" -- generic, context_type/context_id).
+// Card di Room Management nampilin traces property-wide yang
+// gak nempel ke reservasi/kamar tertentu, jadi context_type
+// dipatok "GENERAL" & context_id null. (context_type ROOM
+// butuh rooms.id UUID, bukan room_number -- kalau nanti mau
+// trace per-kamar, itu flow terpisah dari card global ini.)
+// ------------------------------------------------------
+
+const TRACE_OPEN_STATUSES = ["OPEN", "ACKNOWLEDGED", "IN_PROGRESS"];
+
+async function rmFetchOpenTraces(limit = 20){
+
+    const { data, error } = await supabaseClient
+        .from("traces")
+        .select("*")
+        .eq("context_type", "GENERAL")
+        .in("status", TRACE_OPEN_STATUSES)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+    if(error){
+        console.error(error);
+        return [];
+    }
+
+    return data;
+
+}
+
+async function rmCreateTrace(instruction, propertyId){
+
+    const { data, error } = await supabaseClient
+        .from("traces")
+        .insert({
+            property_id: propertyId,
+            context_type: "GENERAL",
+            instruction,
+            priority: "NORMAL",
+            status: "OPEN"
+        })
+        .select()
+        .single();
+
+    return { data, error };
+
+}
+
+async function rmCompleteTrace(id){
+
+    const { error } = await supabaseClient
+        .from("traces")
+        .update({
+            status: "COMPLETED",
+            completed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+        })
+        .eq("id", id);
 
     return { error };
 
