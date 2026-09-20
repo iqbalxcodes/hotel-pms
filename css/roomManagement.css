@@ -1,7 +1,74 @@
 /* ======================================================
-   ROOM MANAGEMENT — layout grid 3-kolom
-   Column 1 (overview) | Column 2 (list) | Column 3 (detail)
+   ROOM MANAGEMENT — title bar (inline summary, replaces the
+   old Room Overview card) + layout grid 3-kolom
+   Column 1 (fundsachen) | Column 2 (list) | Column 3 (detail)
    ====================================================== */
+
+.rm-title-bar {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 12px 4px;
+    overflow: hidden;
+}
+
+.rm-title-bar .rm-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex: none;
+}
+
+.rm-title-sep {
+    color: #999;
+    flex: none;
+}
+
+.rm-summary-viewport {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.rm-summary-track {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.rm-summary-item {
+    cursor: pointer;
+    color: #444;
+    font-size: 13px;
+    border: none;
+    background: none;
+}
+.rm-summary-item:hover { text-decoration: underline; }
+.rm-summary-item.rm-summary-active { font-weight: 700; color: #1565c0; }
+.rm-summary-item.rm-summary-dragging { opacity: .4; }
+.rm-summary-item.rm-drop-before { box-shadow: -2px 0 0 0 #1565c0; }
+.rm-summary-item.rm-drop-after { box-shadow: 2px 0 0 0 #1565c0; }
+
+.rm-summary-dash { color: #bbb; flex: none; }
+
+/* mobile: jadi running text (marquee ala-ala tag <marquee> lama) */
+@media (max-width: 700px) {
+
+    .rm-summary-track {
+        animation: rm-marquee 14s linear infinite;
+    }
+
+    @keyframes rm-marquee {
+        from { transform: translateX(100%); }
+        to   { transform: translateX(-100%); }
+    }
+
+}
+
+
 .rm-page {
     overflow: hidden;
 }
@@ -9,15 +76,14 @@
 .rm-grid {
     display: grid;
     gap: 16px;
-    grid-template-columns: 280px 420px 1fr 1fr;
-    grid-template-areas: "overview list traces detail";
+    grid-template-columns: 280px 420px 1fr;
+    grid-template-areas: "overview list detail";
     flex: 1 1 auto;
     min-height: 0;
 }
 
 .rm-overview,
 .rm-list,
-.rm-traces,
 .rm-detail {
     min-width: 0;
     min-height: 0;
@@ -25,41 +91,13 @@
     flex-direction: column;
 }
 
-.rm-overview { grid-area: overview; gap: 16px; overflow: hidden; }
+.rm-overview { grid-area: overview; gap: 16px; overflow-y: auto; }
 .rm-list     { grid-area: list; gap: 10px; }
-.rm-traces   { grid-area: traces; }
 .rm-detail   { grid-area: detail; }
 
-/* Overview: card pertama (stats) fixed, 2 card sisanya (fundsachen +
-   blocked) berbagi rata sisa tinggi kolom, masing2 scroll sendiri. */
-.rm-overview > .rm-card:first-child {
-    flex: none;
-}
 
-.rm-overview > .rm-card.rm-card-fill {
-    flex: 1 1 0;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-.rm-overview > .rm-card.rm-card-fill .rm-mini-list {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    margin-bottom: 0;
-}
-
-/* Mode detail (room dipilih): traces disembunyikan, detail melebar
-   span kolom 3+4. */
-.rm-grid[data-view="detail"] {
-    grid-template-areas: "overview list detail detail";
-}
-.rm-grid[data-view="detail"] .rm-traces {
-    display: none;
-}
 /* ======================================================
-   MINI CARDS di Column 1
+   MINI CARDS — Fundsachen preview (Column 1)
    ====================================================== */
 
 .rm-card {
@@ -76,28 +114,6 @@
     letter-spacing: 0.03em;
     text-transform: uppercase;
     color: #666;
-}
-
-.rm-stat-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px 12px;
-}
-
-.rm-stat {
-    display: flex;
-    flex-direction: column;
-}
-
-.rm-stat .rm-stat-value {
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1.1;
-}
-
-.rm-stat .rm-stat-label {
-    font-size: 11px;
-    color: #888;
 }
 
 .rm-mini-list {
@@ -181,8 +197,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
-    padding: 0;
-    gap: 0;
+    gap: 8px;
 }
 
 .rm-showing-header {
@@ -191,8 +206,6 @@
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
-    padding: 8px 12px;
-    border-bottom: 1px solid #eee;
 }
 
 .rm-showing-title {
@@ -236,14 +249,15 @@
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-    padding: 6px 12px;
-    border-bottom: 1px solid #eee;
 }
 
 .rm-list-scroll {
     flex: 1 1 auto;
     min-height: 0;
-    overflow: auto;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
 }
 
 .rm-table-footer {
@@ -251,11 +265,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 12px;
+    padding-top: 8px;
     border-top: 1px solid #eee;
     font-size: 12px;
     color: #555;
-    background: #fafafa;
 }
 
 .rm-page-nav {
@@ -495,7 +508,7 @@
 
     .rm-grid {
         grid-template-columns: 1fr 1fr;
-        grid-template-areas: "overview list" "traces detail";
+        grid-template-areas: "overview list";
     }
 
     .rm-detail { display: none; }
@@ -504,8 +517,7 @@
         grid-template-areas: "detail list";
     }
 
-    .rm-grid[data-view="detail"] .rm-overview,
-    .rm-grid[data-view="detail"] .rm-traces { display: none; }
+    .rm-grid[data-view="detail"] .rm-overview { display: none; }
     .rm-grid[data-view="detail"] .rm-detail { display: flex; }
 
 }
@@ -521,13 +533,12 @@
 
     .rm-grid {
         grid-template-columns: 1fr;
-        grid-template-areas: "overview" "list" "traces" "detail";
+        grid-template-areas: "overview" "list" "detail";
         overflow-y: auto;
     }
 
     .rm-list-scroll,
-    .rm-detail-scroll,
-    .rm-trace-list-scroll {
+    .rm-detail-scroll {
         max-height: 60vh;
     }
 
@@ -536,8 +547,7 @@
     }
 
     .rm-grid[data-view="detail"] .rm-overview,
-    .rm-grid[data-view="detail"] .rm-list,
-    .rm-grid[data-view="detail"] .rm-traces {
+    .rm-grid[data-view="detail"] .rm-list {
         display: none;
     }
 
@@ -560,143 +570,12 @@
 .rm-room-table td {
     padding: 6px 8px;
     border-bottom: 1px solid #eee;
-    box-sizing: border-box;
-    max-width: 0;
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .rm-room-table thead th {
-    position: sticky;
-    top: 0;
-    z-index: 1;
     background: #fafafa;
     border-bottom: 1px solid #ddd;
-}
-
-/* ======================================================
-   TRACES column
-   ====================================================== */
-
-.rm-traces-card {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-.rm-trace-filters {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 8px;
-}
-
-.rm-trace-filter-btn {
-    border: 1px solid #ccc;
-    background: #fff;
-    border-radius: 12px;
-    padding: 3px 10px;
-    font-size: 11px;
-    cursor: pointer;
-    color: #666;
-}
-.rm-trace-filter-btn:hover { background: #f0f0f0; }
-.rm-trace-filter-btn.active {
-    background: #1565c0;
-    border-color: #1565c0;
-    color: #fff;
-}
-
-.rm-trace-list-scroll {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 10px;
-}
-
-.rm-trace-item {
-    border: 1px solid #e2e2e2;
-    border-radius: 6px;
-    padding: 8px 10px;
-    background: #fff;
-    font-size: 12.5px;
-    border-left: 4px solid #ccc;
-}
-
-.rm-trace-item.priority-low     { border-left-color: #90a4ae; }
-.rm-trace-item.priority-normal  { border-left-color: #1565c0; }
-.rm-trace-item.priority-high    { border-left-color: #ef6c00; }
-.rm-trace-item.priority-urgent  { border-left-color: #c62828; }
-
-.rm-trace-item-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 6px;
-    margin-bottom: 3px;
-}
-
-.rm-trace-room {
-    font-weight: 700;
-    cursor: pointer;
-}
-.rm-trace-room:hover { text-decoration: underline; }
-
-.rm-trace-dept {
-    font-size: 9.5px;
-    text-transform: uppercase;
-    letter-spacing: .03em;
-    color: #999;
-}
-
-.rm-trace-instruction {
-    color: #333;
-    margin-bottom: 4px;
-}
-
-.rm-trace-item-bottom {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-}
-
-.rm-trace-due {
-    font-size: 11px;
-    color: #888;
-}
-
-.rm-trace-status-select {
-    font-size: 11px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 2px 4px;
-}
-
-.rm-trace-add {
-    flex: none;
-    border-top: 1px solid #eee;
-    padding-top: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.rm-trace-add-row {
-    display: flex;
-    gap: 6px;
-}
-.rm-trace-add-row > * { flex: 1 1 0; min-width: 0; }
-
-.rm-trace-add input,
-.rm-trace-add select,
-.rm-trace-add textarea {
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 5px 7px;
-    font-size: 12.5px;
-    box-sizing: border-box;
-    width: 100%;
 }

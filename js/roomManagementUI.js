@@ -92,36 +92,78 @@ function rmTimeAgo(value){
 
 
 // ======================================================
-// Column 1 — Room Overview
+// Title bar — inline summary stats (replaces old Room
+// Overview card). Draggable buat reorder, klik buat quick
+// filter (wiring/state ada di roomManagement.js).
 // ======================================================
 
-function rmRenderOverviewStats(rooms, occupiedSet){
+function rmRenderSummaryStrip(items, activeKey, handlers){
 
-    const total = rooms.length;
-    const occupied = rooms.filter(r => occupiedSet.has(r.room_number)).length;
+    const track = document.getElementById("rmSummaryTrack");
+    if(!track) return;
 
-    const dirty = rooms.filter(r => r.status === "DIRTY").length;
-    const ooo = rooms.filter(r => r.status === "OUT_OF_SERVICE").length;
-    const blocked = rooms.filter(r => r.status === "BLOCKED").length;
+    track.innerHTML = items.map((item, idx) => {
 
-    const available = rooms.filter(r =>
-        ["AVAILABLE", "CLEAN", "INSPECTED"].includes(r.status)
-        && !occupiedSet.has(r.room_number)
-    ).length;
+        const sep = idx === 0 ? "" : `<span class="rm-summary-dash">-</span>`;
+        const activeClass = item.key === activeKey ? "rm-summary-active" : "";
 
-    const el = document.getElementById("rmOverviewStats");
-    if(!el) return;
+        return `${sep}<span class="rm-summary-item ${activeClass}" draggable="true" data-key="${item.key}">${rmEscapeHtml(item.label)}: ${item.value}</span>`;
 
-    el.innerHTML = `
-        <div class="rm-stat"><span class="rm-stat-value">${total}</span><span class="rm-stat-label">Rooms</span></div>
-        <div class="rm-stat"><span class="rm-stat-value">${available}</span><span class="rm-stat-label">Available</span></div>
-        <div class="rm-stat"><span class="rm-stat-value">${occupied}</span><span class="rm-stat-label">Occupied</span></div>
-        <div class="rm-stat"><span class="rm-stat-value">${dirty}</span><span class="rm-stat-label">Dirty</span></div>
-        <div class="rm-stat"><span class="rm-stat-value">${ooo}</span><span class="rm-stat-label">Out of Order</span></div>
-        <div class="rm-stat"><span class="rm-stat-value">${blocked}</span><span class="rm-stat-label">Blocked</span></div>
-    `;
+    }).join("");
+
+    let dragKey = null;
+
+    track.querySelectorAll(".rm-summary-item").forEach(el => {
+
+        el.addEventListener("click", () => handlers.onItemClick(el.dataset.key));
+
+        el.addEventListener("dragstart", () => {
+            dragKey = el.dataset.key;
+            el.classList.add("rm-summary-dragging");
+        });
+
+        el.addEventListener("dragend", () => {
+            el.classList.remove("rm-summary-dragging");
+            track.querySelectorAll(".rm-summary-item").forEach(x => x.classList.remove("rm-drop-before", "rm-drop-after"));
+            dragKey = null;
+        });
+
+        el.addEventListener("dragover", (e) => {
+            if(!dragKey || dragKey === el.dataset.key) return;
+            e.preventDefault();
+            const rect = el.getBoundingClientRect();
+            const before = e.clientX < rect.left + rect.width / 2;
+            track.querySelectorAll(".rm-summary-item").forEach(x => x.classList.remove("rm-drop-before", "rm-drop-after"));
+            el.classList.add(before ? "rm-drop-before" : "rm-drop-after");
+        });
+
+        el.addEventListener("drop", (e) => {
+
+            e.preventDefault();
+            if(!dragKey || dragKey === el.dataset.key) return;
+
+            const rect = el.getBoundingClientRect();
+            const before = e.clientX < rect.left + rect.width / 2;
+
+            const order = items.map(i => i.key);
+            const from = order.indexOf(dragKey);
+            order.splice(from, 1);
+            let to = order.indexOf(el.dataset.key);
+            if(!before) to += 1;
+            order.splice(to, 0, dragKey);
+
+            handlers.onReorder(order);
+
+        });
+
+    });
 
 }
+
+
+// ======================================================
+// Column 1 — Fundsachen preview
+// ======================================================
 
 function rmRenderFundsachenPreview(items, onClickRoom){
 
@@ -149,40 +191,6 @@ function rmRenderFundsachenPreview(items, onClickRoom){
             const room = node.dataset.room;
             if(room) onClickRoom(room);
         });
-
-    });
-
-}
-
-function rmRenderBlockedList(rooms, onClickRoom){
-
-    const el = document.getElementById("rmBlockedList");
-    if(!el) return;
-
-    if(rooms.length === 0){
-        el.innerHTML = `<div class="rm-empty-note">No blocked or out-of-order rooms</div>`;
-        return;
-    }
-
-    el.innerHTML = rooms.map(r => {
-
-        const label = r.status === "BLOCKED" ? "BLOCKED" : "OUT OF ORDER";
-        const sub = r.status === "BLOCKED" && r.blocked_until
-            ? `Until ${rmFormatDate(r.blocked_until)}`
-            : `Since ${rmFormatDate(r.updated_at)}`;
-
-        return `
-            <div class="rm-mini-item" data-room="${rmEscapeHtml(r.room_number)}">
-                <div class="rm-mini-title">Room ${rmEscapeHtml(r.room_number)} · ${label}</div>
-                <div class="rm-mini-sub">${rmEscapeHtml(r.notes || "")} ${r.notes ? "·" : ""} ${sub}</div>
-            </div>
-        `;
-
-    }).join("");
-
-    el.querySelectorAll(".rm-mini-item").forEach(node => {
-
-        node.addEventListener("click", () => onClickRoom(node.dataset.room));
 
     });
 
@@ -231,7 +239,6 @@ function rmRenderRoomList(rooms, occupiedSet, selectedRoom, onClickRoom){
     });
 
     refreshStatusBadgeIcons();
-    rmInitCellMarquees();
 
 }
 
@@ -585,67 +592,15 @@ function rmRenderRoomTableHeader(){
 
 }
 
-function rmWrapCellText(text){
-    return `<span class="cell-text-wrap"><span class="cell-text-inner">${text}</span></span>`;
-}
-
 function rmBuildRoomCellHtml(key, r, isOccupied){
 
     switch(key){
         case "status": return renderStatusBadge(isOccupied ? "OCCUPIED" : r.status, { size: 18 });
-        case "room_number": return rmWrapCellText(rmEscapeHtml(r.room_number));
-        case "room_type": return rmWrapCellText(rmEscapeHtml(r.room_type || ""));
-        case "floor": return rmWrapCellText(String(r.floor ?? ""));
-        case "status_label": return rmWrapCellText(rmEscapeHtml(isOccupied ? "Occupied" : (r.status || "-").replace(/_/g, " ")));
+        case "room_number": return rmEscapeHtml(r.room_number);
+        case "room_type": return rmEscapeHtml(r.room_type || "");
+        case "floor": return r.floor ?? "";
+        case "status_label": return rmEscapeHtml(isOccupied ? "Occupied" : (r.status || "-").replace(/_/g, " "));
         default: return "";
     }
-
-}
-
-// ------------------------------------------------------
-// Cell marquee/fade -- sama pola kayak reservation.js
-// (bindCellMarquee/applyCellFade) tapi discope ke #rmRoomTable
-// biar gak nabrak listener punya tabel reservation.
-// ------------------------------------------------------
-
-function rmBindCellMarquee(wrap){
-
-    const inner = wrap.querySelector(".cell-text-inner");
-    if(!inner) return;
-
-    wrap.addEventListener("mouseenter", () => {
-        const over = inner.scrollWidth - wrap.clientWidth;
-        if(over <= 1) return;
-        wrap.classList.remove("cell-fade");
-        wrap.classList.add("cell-fade-both");
-        inner.style.transitionDuration = Math.max(0.6, over / 45) + "s";
-        inner.style.transform = `translateX(-${over}px)`;
-    });
-
-    wrap.addEventListener("mouseleave", () => {
-        inner.style.transform = "translateX(0)";
-        inner.style.transitionDuration = ".3s";
-        setTimeout(() => rmApplyCellFade(wrap), 300);
-    });
-
-}
-
-function rmApplyCellFade(wrap){
-
-    if(!wrap.isConnected) return;
-    const inner = wrap.querySelector(".cell-text-inner");
-    if(!inner) return;
-    const overflowing = inner.scrollWidth - wrap.clientWidth > 1;
-    wrap.classList.toggle("cell-fade", overflowing);
-    wrap.classList.remove("cell-fade-both");
-
-}
-
-function rmInitCellMarquees(){
-
-    document.querySelectorAll("#rmRoomTable .cell-text-wrap").forEach(wrap => {
-        rmBindCellMarquee(wrap);
-        rmApplyCellFade(wrap);
-    });
 
 }

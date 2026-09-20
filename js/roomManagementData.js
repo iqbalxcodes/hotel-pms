@@ -114,6 +114,25 @@ async function rmFetchOpenFundsachen(limit = 5){
 
 }
 
+// Total open fundsachen (buat summary bar) -- rmFetchOpenFundsachen
+// di atas dibatasi `limit` (buat preview card), jadi butuh query
+// count terpisah biar angkanya bukan cuma "min(limit, total)".
+async function rmFetchOpenFundsachenCount(){
+
+    const { count, error } = await supabaseClient
+        .from("fundsachen")
+        .select("*", { count: "exact", head: true })
+        .in("status", FUNDSACHEN_OPEN_STATUSES);
+
+    if(error){
+        console.error(error);
+        return 0;
+    }
+
+    return count ?? 0;
+
+}
+
 async function rmFetchFundsachenForRoom(roomNumber){
 
     const { data, error } = await supabaseClient
@@ -274,28 +293,6 @@ async function rmUpdateMaintenanceStatus(id, roomNumber, title, status){
 
 
 // ------------------------------------------------------
-// Blocked / Out of Order rooms
-// ------------------------------------------------------
-
-async function rmFetchBlockedOrOOORooms(){
-
-    const { data, error } = await supabaseClient
-        .from("rooms")
-        .select("*")
-        .in("status", ["BLOCKED", "OUT_OF_SERVICE"])
-        .order("updated_at", { ascending: false });
-
-    if(error){
-        console.error(error);
-        return [];
-    }
-
-    return data;
-
-}
-
-
-// ------------------------------------------------------
 // Room usage (reservation history untuk 1 kamar)
 // ------------------------------------------------------
 
@@ -412,78 +409,5 @@ async function rmFetchTodayReservationEvents(){
     });
 
     return events;
-
-}
-
-// ======================================================
-// Traces -- tabel `traces` UNIVERSAL (context_type: ROOM,
-// RESERVATION, MAINTENANCE_REQUEST, dll). room.html cuma
-// nampilin & bikin yang context_type="ROOM" -- filter ini
-// yang bikin kolom Traces di sini gak numpuk sama trace punya
-// reservation/maintenance page lain.
-//
-// TODO: created_by/assigned_to sengaja gak diisi -- butuh
-// daftar app_users buat mapping id->nama, belum ada UI-nya.
-// ======================================================
-
-async function rmFetchActiveTraces(limit = 100){
-
-    const { data, error } = await supabaseClient
-        .from("traces")
-        .select("*")
-        .eq("context_type", "ROOM")
-        .neq("status", "COMPLETED")
-        .order("due_at", { ascending: true, nullsFirst: false })
-        .limit(limit);
-
-    if(error){
-        console.error(error);
-        return [];
-    }
-
-    return data;
-
-}
-
-async function rmCreateTrace(payload){
-
-    // getActivePropertyId ASYNC -- wajib await, kalau nggak
-    // property_id ke-isi Promise object, insert bakal gagal.
-    let propertyId;
-
-    try {
-        propertyId = await getActivePropertyId();
-    } catch(e){
-        return { data: null, error: { message: "Gagal ambil active property: " + e.message } };
-    }
-
-    if(!propertyId){
-        return { data: null, error: { message: "Active property tidak ditemukan" } };
-    }
-
-    const { data, error } = await supabaseClient
-        .from("traces")
-        .insert({ ...payload, context_type: "ROOM", property_id: propertyId })
-        .select()
-        .single();
-
-    return { data, error };
-
-}
-
-async function rmUpdateTraceStatus(id, status){
-
-    const patch = { status, updated_at: new Date().toISOString() };
-
-    if(status === "COMPLETED"){
-        patch.completed_at = new Date().toISOString();
-    }
-
-    const { error } = await supabaseClient
-        .from("traces")
-        .update(patch)
-        .eq("id", id);
-
-    return { error };
 
 }

@@ -3,22 +3,38 @@
 // State + wiring. Memanggil roomManagementData.js (fetch/mutasi)
 // dan roomManagementUI.js (render).
 //
-// Search: dipindah dari input segaris ke search CARD (searchCardEngine,
-// columnSize:1 -> 4 field = 4 kolom, mirip halaman reservation).
-// Filter jadi AND multi-field (bukan cuma satu keyword substring).
-// Ditambah pagination client-side (dulu render semua rooms sekaligus).
+// Room Overview card & Blocked/OOO card dihapus -- datanya
+// pindah jadi summary bar inline di sebelah judul "Room
+// Management" (rmRenderSummaryStrip di UI file). Tiap item
+// bisa di-drag reorder (localStorage) dan diklik buat quick
+// filter ke Room List (kecuali Lost & Found Item -> dev
+// message, fundsachen page belum ada). Fundsachen preview
+// card TETAP ada.
 // ======================================================
 
-let rmActiveTraces = [];
 let rmAllRooms = [];
 let rmOccupiedSet = new Set();
 let rmSelectedRoom = null;
 
 let rmActiveSearchFields = {};
+let rmQuickFilter = null; // null | AVAILABLE | OCCUPIED | DIRTY | OUT_OF_SERVICE | BLOCKED
+let rmLastSummaryStats = { total: 0, available: 0, occupied: 0, dirty: 0, ooo: 0, blocked: 0, fundsachen: 0 };
 let rmCurrentPage = 1;
 const RM_PAGE_SIZE = 15;
 
 const RM_FIELDS_KEY = "rm_search_fields_config";
+const RM_SUMMARY_ORDER_KEY = "rm_summary_order_v1";
+const RM_SUMMARY_DEFAULT_ORDER = ["total", "available", "occupied", "dirty", "ooo", "blocked", "fundsachen"];
+
+const RM_SUMMARY_META = {
+    total:      { label: "Rooms",             filterKey: null },
+    available:  { label: "Available",         filterKey: "AVAILABLE" },
+    occupied:   { label: "Occupied",          filterKey: "OCCUPIED" },
+    dirty:      { label: "Dirty",             filterKey: "DIRTY" },
+    ooo:        { label: "Out of Order",      filterKey: "OUT_OF_SERVICE" },
+    blocked:    { label: "Blocked",           filterKey: "BLOCKED" },
+    fundsachen: { label: "Lost & Found Item", filterKey: null }
+};
 
 const RM_STATUS_OPTIONS = [
     { value: "", label: "Any" },
@@ -95,6 +111,23 @@ function rmMatchesFields(r, fields){
 
 }
 
+function rmQuickFilterPredicate(r){
+
+    if(!rmQuickFilter) return true;
+
+    const isOccupied = rmOccupiedSet.has(r.room_number);
+
+    switch(rmQuickFilter){
+        case "AVAILABLE": return ["AVAILABLE", "CLEAN", "INSPECTED"].includes(r.status) && !isOccupied;
+        case "OCCUPIED": return isOccupied;
+        case "DIRTY": return r.status === "DIRTY";
+        case "OUT_OF_SERVICE": return r.status === "OUT_OF_SERVICE";
+        case "BLOCKED": return r.status === "BLOCKED";
+        default: return true;
+    }
+
+}
+
 
 // ======================================================
 // Clock (sama seperti halaman lain)
@@ -136,25 +169,109 @@ function rmSetView(view){
 
 
 // ======================================================
+// Summary bar (title-bar inline stats, draggable + clickable)
+// ======================================================
+
+function rmGetSummaryOrder(){
+
+    try {
+
+        const saved = JSON.parse(localStorage.getItem(RM_SUMMARY_ORDER_KEY));
+
+        if(Array.isArray(saved)){
+            const cleaned = saved.filter(k => RM_SUMMARY_DEFAULT_ORDER.includes(k));
+            RM_SUMMARY_DEFAULT_ORDER.forEach(k => { if(!cleaned.includes(k)) cleaned.push(k); });
+            return cleaned;
+        }
+
+    } catch(e){}
+
+    return [...RM_SUMMARY_DEFAULT_ORDER];
+
+}
+
+function rmSaveSummaryOrder(order){
+    localStorage.setItem(RM_SUMMARY_ORDER_KEY, JSON.stringify(order));
+}
+
+function rmComputeSummaryStats(rooms, occupiedSet, fundsachenCount){
+
+    const total = rooms.length;
+    const occupied = rooms.filter(r => occupiedSet.has(r.room_number)).length;
+    const dirty = rooms.filter(r => r.status === "DIRTY").length;
+    const ooo = rooms.filter(r => r.status === "OUT_OF_SERVICE").length;
+    const blocked = rooms.filter(r => r.status === "BLOCKED").length;
+
+    const available = rooms.filter(r =>
+        ["AVAILABLE", "CLEAN", "INSPECTED"].includes(r.status) && !occupiedSet.has(r.room_number)
+    ).length;
+
+    return { total, available, occupied, dirty, ooo, blocked, fundsachen: fundsachenCount };
+
+}
+
+function rmRenderSummaryBar(){
+
+    const order = rmGetSummaryOrder();
+
+    const items = order.map(key => ({
+        key,
+        label: RM_SUMMARY_META[key].label,
+        value: rmLastSummaryStats[key] ?? 0
+    }));
+
+    const activeKey = rmQuickFilter
+        ? Object.keys(RM_SUMMARY_META).find(k => RM_SUMMARY_META[k].filterKey === rmQuickFilter)
+        : null;
+
+    rmRenderSummaryStrip(items, activeKey, {
+        onItemClick: rmHandleSummaryClick,
+        onReorder: (newOrder) => {
+            rmSaveSummaryOrder(newOrder);
+            rmRenderSummaryBar();
+        }
+    });
+
+}
+
+function rmHandleSummaryClick(key){
+
+    if(key === "fundsachen"){
+        rmShowMessage("Fundsachen page is still in development", "info");
+        return;
+    }
+
+    const meta = RM_SUMMARY_META[key];
+    rmQuickFilter = meta ? meta.filterKey : null;
+    rmCurrentPage = 1;
+
+    rmRenderFilteredList();
+    rmRenderSummaryBar();
+
+}
+
+
+// ======================================================
 // Load / refresh Column 1 + Column 2 (dipanggil di init
 // dan tiap kali ada perubahan status kamar)
 // ======================================================
 
 async function rmRefreshOverviewAndList(){
 
-    const [rooms, occupiedSet, fundsachen, blockedRooms] = await Promise.all([
+    const [rooms, occupiedSet, fundsachenPreview, fundsachenCount] = await Promise.all([
         rmFetchAllRooms(),
         rmFetchOccupiedRoomNumbers(),
         rmFetchOpenFundsachen(5),
-        rmFetchBlockedOrOOORooms()
+        rmFetchOpenFundsachenCount()
     ]);
 
     rmAllRooms = rooms;
     rmOccupiedSet = occupiedSet;
 
-    rmRenderOverviewStats(rooms, occupiedSet);
-    rmRenderFundsachenPreview(fundsachen, rmOpenRoomDetail);
-    rmRenderBlockedList(blockedRooms, rmOpenRoomDetail);
+    rmLastSummaryStats = rmComputeSummaryStats(rooms, occupiedSet, fundsachenCount);
+    rmRenderSummaryBar();
+
+    rmRenderFundsachenPreview(fundsachenPreview, rmOpenRoomDetail);
 
     rmRenderFilteredList();
 
@@ -162,11 +279,9 @@ async function rmRefreshOverviewAndList(){
 
 function rmRenderFilteredList(){
 
-    const hasFilter = Object.keys(rmActiveSearchFields).length > 0;
-
-    const filtered = !hasFilter
-        ? rmAllRooms
-        : rmAllRooms.filter(r => rmMatchesFields(r, rmActiveSearchFields));
+    const filtered = rmAllRooms.filter(r =>
+        rmMatchesFields(r, rmActiveSearchFields) && rmQuickFilterPredicate(r)
+    );
 
     const sorted = rmSortRooms(filtered, rmOccupiedSet);
 
@@ -266,90 +381,6 @@ function rmRenderChip(){
 // Column 3 default — Activity feed
 // ======================================================
 
-function rmBuildRoomLookup(){
-    return new Map(rmAllRooms.map(r => [r.id, r]));
-}
-
-async function rmLoadTraces(){
-
-    rmActiveTraces = await rmFetchActiveTraces();
-
-    rmRenderTracesList(
-        rmActiveTraces,
-        rmBuildRoomLookup(),
-        rmOpenRoomDetail,
-        rmHandleTraceStatusChange
-    );
-
-}
-
-async function rmHandleTraceStatusChange(id, status){
-
-    const { error } = await rmUpdateTraceStatus(id, status);
-
-    if(error){
-        rmShowMessage("Gagal update status trace", "error");
-        return;
-    }
-
-    await rmLoadTraces();
-
-}
-
-async function rmHandleAddTrace(){
-
-    const roomInput = document.getElementById("rmTraceRoomInput");
-    const deptInput = document.getElementById("rmTraceDeptInput");
-    const subtypeInput = document.getElementById("rmTraceSubtypeInput");
-    const priorityInput = document.getElementById("rmTracePriorityInput");
-    const dueInput = document.getElementById("rmTraceDueInput");
-    const commentInput = document.getElementById("rmTraceCommentInput");
-
-    const roomNumber = roomInput.value.trim();
-
-    if(!roomNumber){
-        rmShowMessage("Isi nomor kamar dulu", "error");
-        return;
-    }
-
-    const room = rmAllRooms.find(r => String(r.room_number) === roomNumber);
-
-    if(!room){
-        rmShowMessage(`Room ${roomNumber} tidak ditemukan`, "error");
-        return;
-    }
-
-    const comment = commentInput.value.trim();
-    const instruction = comment ? `${subtypeInput.value}: ${comment}` : subtypeInput.value;
-
-    const payload = {
-        context_type: "ROOM",
-        context_id: room.id,
-        assigned_department: deptInput.value,
-        priority: priorityInput.value,
-        due_at: dueInput.value ? new Date(dueInput.value).toISOString() : null,
-        status: "OPEN",
-        instruction
-    };
-
-    const { error } = await rmCreateTrace(payload);
-
-    if(error){
-        console.error(error);
-        rmShowMessage("Gagal menambah trace: " + error.message, "error");
-        return;
-    }
-
-    rmShowMessage("Trace added", "success");
-
-    roomInput.value = "";
-    commentInput.value = "";
-    dueInput.value = "";
-
-    await rmLoadTraces();
-
-}
-
 async function rmLoadActivityFeed(){
 
     const [activity, reservationEvents] = await Promise.all([
@@ -396,7 +427,6 @@ function rmBackToList(){
     rmSetView("list");
     rmRenderFilteredList();
     rmLoadActivityFeed();
-    rmLoadTraces();
 
 }
 
@@ -562,18 +592,6 @@ async function rmSetSelectedRoomsStatus(status){
 
 }
 
-async function waitForAuthReady(){
-        try {
-            if(window.supabaseClient && supabaseClient.auth && supabaseClient.auth.getSession){
-                await Promise.race([
-                    supabaseClient.auth.getSession(),
-                    new Promise(resolve => setTimeout(resolve, 1500))
-                ]);
-            }
-        } catch(e){
-    console.warn("waitForAuthReady failed, lanjut anyway:", e);
-    }
-}
 
 // ======================================================
 // pms:customize-toggle -- dispatch dari pmsTopbar.js, biar
@@ -590,8 +608,7 @@ document.addEventListener("pms:customize-toggle", (e) => {
 // ======================================================
 
 document.addEventListener("DOMContentLoaded", async () => {
-    
-    await waitForAuthReady();
+
     startClock();
 
     rmSearchCard.load();
@@ -627,22 +644,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("rmOooBtn").addEventListener("click", () => rmSetSelectedRoomsStatus("OUT_OF_SERVICE"));
     document.getElementById("rmBlockedBtn").addEventListener("click", () => rmSetSelectedRoomsStatus("BLOCKED"));
 
-    rmTracePopulateSubtypes();
-    document.getElementById("rmTraceDeptInput").addEventListener("change", rmTracePopulateSubtypes);
-    document.getElementById("rmTraceAddBtn").addEventListener("click", rmHandleAddTrace);
-
-    document.querySelectorAll(".rm-trace-filter-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            rmSetTraceFilter(btn.dataset.filter, rmActiveTraces, rmBuildRoomLookup(), rmOpenRoomDetail, rmHandleTraceStatusChange);
-        });
-    });
-
     rmSetView("list");
 
     try {
         await rmRefreshOverviewAndList();
         await rmLoadActivityFeed();
-        await rmLoadTraces();
     } catch(err){
         console.error("Room Management init failed:", err);
     }
