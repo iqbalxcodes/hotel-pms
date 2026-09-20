@@ -31,23 +31,10 @@
         <div class="rm-grid" id="rmGrid" data-view="list">
 
             <!-- ============================================== -->
-            <!-- COLUMN 1 — Fundsachen preview -->
+            <!-- COLUMN 1 — Search card -->
             <!-- ============================================== -->
 
-            <div class="rm-overview">
-
-                <div class="rm-card">
-                    <h4>Fundsachen <span id="rmFundsachenCount" class="rm-subcard-count"></span></h4>
-                    <div class="rm-mini-list" id="rmFundsachenList"></div>
-                </div>
-
-            </div>
-
-            <!-- ============================================== -->
-            <!-- COLUMN 2 — Search card + Room List (ct engine) -->
-            <!-- ============================================== -->
-
-            <div class="rm-list">
+            <div class="rm-col rm-col-search">
 
                 <div class="rm-card rm-search-card">
                     <form id="rmSearchForm">
@@ -58,6 +45,14 @@
                         </div>
                     </form>
                 </div>
+
+            </div>
+
+            <!-- ============================================== -->
+            <!-- COLUMN 2 — Showing card (search results + table, one card) -->
+            <!-- ============================================== -->
+
+            <div class="rm-col rm-col-showing">
 
                 <div class="rm-card rm-showing-card">
 
@@ -95,10 +90,37 @@
             </div>
 
             <!-- ============================================== -->
-            <!-- COLUMN 3 — Activity timeline (default) / Room Detail -->
+            <!-- COLUMN 3 — Traces (local stub, not connected to DB yet) -->
             <!-- ============================================== -->
 
-            <div class="rm-detail">
+            <div class="rm-col rm-col-traces">
+
+                <div class="rm-card rm-traces-card">
+                    <h4>Traces</h4>
+                    <div class="rm-mini-list" id="rmTracesList">
+                        <div class="rm-empty-note">No traces yet</div>
+                    </div>
+                    <div class="rm-quick-add">
+                        <input type="text" id="rmNewTraceText" placeholder="Add a trace / note">
+                        <button id="rmAddTraceBtn">+ Add trace</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ============================================== -->
+            <!-- COLUMN 4 — Room Activity (global timeline) -->
+            <!-- ============================================== -->
+
+            <div class="rm-col rm-col-activity">
+                <div class="rm-detail-scroll" id="rmActivityPane"></div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- Room Detail — spans columns 3+4 when a room is clicked -->
+            <!-- ============================================== -->
+
+            <div class="rm-col rm-col-detail" id="rmDetailCol">
                 <div class="rm-detail-scroll" id="rmDetailPane"></div>
             </div>
 

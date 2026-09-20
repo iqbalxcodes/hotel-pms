@@ -3,18 +3,18 @@
 // State + wiring. Memanggil roomManagementData.js (fetch/mutasi)
 // dan roomManagementUI.js (render).
 //
-// Room Overview card & Blocked/OOO card dihapus -- datanya
-// pindah jadi summary bar inline di sebelah judul "Room
-// Management" (rmRenderSummaryStrip di UI file). Tiap item
-// bisa di-drag reorder (localStorage) dan diklik buat quick
-// filter ke Room List (kecuali Lost & Found Item -> dev
-// message, fundsachen page belum ada). Fundsachen preview
-// card TETAP ada.
+// Fundsachen sidebar card DIHAPUS (kolom 1 sekarang cuma search
+// card). Layout jadi 4 kolom: search | showing | traces | activity.
+// Traces masih lokal doang (belum ada tabel DB), Room Activity
+// pindah dari "default content" detail pane jadi kolomnya sendiri
+// yang selalu tampil, digantiin Room Detail (span kolom 3+4) pas
+// user klik salah satu baris di Room List.
 // ======================================================
 
 let rmAllRooms = [];
 let rmOccupiedSet = new Set();
 let rmSelectedRoom = null;
+let rmTraces = []; // local-only stub, belum nyambung DB
 
 let rmActiveSearchFields = {};
 let rmQuickFilter = null; // null | AVAILABLE | OCCUPIED | DIRTY | OUT_OF_SERVICE | BLOCKED
@@ -52,12 +52,14 @@ const RM_SEARCH_FIELDS = [
     { key: "status", label: "Status", type: "select", options: RM_STATUS_OPTIONS }
 ];
 
-// columnSize:1 -> tiap field jadi kolomnya sendiri -> 4 field = 4 kolom
+// Search sekarang kolomnya sendiri (sempit, ~260px), bukan strip
+// horizontal lagi -- jadi field ditumpuk vertikal (columnSize besar
+// = cuma 1 kolom internal), bukan columnSize:1 (4 kolom) kayak dulu.
 const rmSearchCard = createSearchCard({
     storageKey: RM_FIELDS_KEY,
     containerId: "rmSearchFields",
     fields: RM_SEARCH_FIELDS,
-    columnSize: 1
+    columnSize: 4
 });
 
 const roomTable = createColumnTable({
@@ -156,8 +158,8 @@ function startClock(){
 
 
 // ======================================================
-// View state (list <-> detail), dipakai CSS di breakpoint
-// medium & mobile lewat [data-view]
+// View state (list <-> detail). "detail" -> kolom 3+4
+// (traces+activity) diganti Room Detail (span 2).
 // ======================================================
 
 function rmSetView(view){
@@ -252,16 +254,38 @@ function rmHandleSummaryClick(key){
 
 
 // ======================================================
-// Load / refresh Column 1 + Column 2 (dipanggil di init
+// Traces — local-only stub (belum ada tabel DB)
+// ======================================================
+
+function rmAddTrace(){
+
+    const input = document.getElementById("rmNewTraceText");
+    const text = input.value.trim();
+
+    if(!text){
+        rmShowMessage("Trace text tidak boleh kosong", "error");
+        return;
+    }
+
+    rmTraces.unshift(text);
+    input.value = "";
+
+    rmRenderTraces(rmTraces);
+    rmShowMessage("Trace added (local only — not connected to database yet)", "success");
+
+}
+
+
+// ======================================================
+// Load / refresh Column 2 + summary bar (dipanggil di init
 // dan tiap kali ada perubahan status kamar)
 // ======================================================
 
 async function rmRefreshOverviewAndList(){
 
-    const [rooms, occupiedSet, fundsachenPreview, fundsachenCount] = await Promise.all([
+    const [rooms, occupiedSet, fundsachenCount] = await Promise.all([
         rmFetchAllRooms(),
         rmFetchOccupiedRoomNumbers(),
-        rmFetchOpenFundsachen(5),
         rmFetchOpenFundsachenCount()
     ]);
 
@@ -270,8 +294,6 @@ async function rmRefreshOverviewAndList(){
 
     rmLastSummaryStats = rmComputeSummaryStats(rooms, occupiedSet, fundsachenCount);
     rmRenderSummaryBar();
-
-    rmRenderFundsachenPreview(fundsachenPreview, rmOpenRoomDetail);
 
     rmRenderFilteredList();
 
@@ -378,7 +400,7 @@ function rmRenderChip(){
 
 
 // ======================================================
-// Column 3 default — Activity feed
+// Column 4 default — Global Activity Feed
 // ======================================================
 
 async function rmLoadActivityFeed(){
@@ -394,7 +416,7 @@ async function rmLoadActivityFeed(){
 
 
 // ======================================================
-// Room Detail — open / back
+// Room Detail — open / back (nggantiin kolom 3+4)
 // ======================================================
 
 async function rmOpenRoomDetail(roomNumber){
@@ -448,7 +470,7 @@ async function rmLoadRoomSubData(roomNumber){
 
 
 // ------------------------------------------------------
-// Fundsachen handlers
+// Fundsachen handlers (per-room, di Room Detail subcard)
 // ------------------------------------------------------
 
 async function rmHandleFundsachenStatusChange(id, roomNumber, itemName, status){
@@ -614,12 +636,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     rmSearchCard.load();
     rmSearchCard.render();
 
+    rmRenderTraces(rmTraces);
+
     document.getElementById("rmSearchForm").addEventListener("submit", (e) => {
         e.preventDefault();
         rmApplySearch(rmSearchCard.gatherValues());
     });
 
     document.getElementById("rmSearchClearBtn").addEventListener("click", rmClearSearch);
+    document.getElementById("rmAddTraceBtn").addEventListener("click", rmAddTrace);
 
     document.getElementById("rmPrevPage").addEventListener("click", () => {
         if(rmCurrentPage <= 1) return;

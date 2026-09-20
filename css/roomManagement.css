@@ -1,7 +1,7 @@
 /* ======================================================
-   ROOM MANAGEMENT — title bar (inline summary, replaces the
-   old Room Overview card) + layout grid 3-kolom
-   Column 1 (fundsachen) | Column 2 (list) | Column 3 (detail)
+   ROOM MANAGEMENT — title bar (inline summary) + 4-kolom grid
+   Column 1 (search) | 2 (showing) | 3 (traces) | 4 (activity)
+   Klik baris kamar -> detail nggantiin kolom 3+4 (span 2).
    ====================================================== */
 
 .rm-title-bar {
@@ -76,28 +76,41 @@
 .rm-grid {
     display: grid;
     gap: 16px;
-    grid-template-columns: 280px 420px 1fr;
-    grid-template-areas: "overview list detail";
+    grid-template-columns: 260px 420px 1fr 1fr;
+    grid-template-areas: "search showing traces activity";
     flex: 1 1 auto;
     min-height: 0;
 }
 
-.rm-overview,
-.rm-list,
-.rm-detail {
+.rm-col {
     min-width: 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
 }
 
-.rm-overview { grid-area: overview; gap: 16px; overflow-y: auto; }
-.rm-list     { grid-area: list; gap: 10px; }
-.rm-detail   { grid-area: detail; }
+.rm-col-search   { grid-area: search; }
+.rm-col-showing  { grid-area: showing; }
+.rm-col-traces   { grid-area: traces; }
+.rm-col-activity { grid-area: activity; }
+.rm-col-detail   { grid-area: detail; display: none; }
+
+/* klik row kamar -> data-view="detail": kolom 1+2 (search/showing)
+   tetap keliatan, kolom 3+4 (traces/activity) diganti detail (span 2) */
+.rm-grid[data-view="detail"] {
+    grid-template-areas: "search showing detail detail";
+}
+.rm-grid[data-view="detail"] .rm-col-traces,
+.rm-grid[data-view="detail"] .rm-col-activity {
+    display: none;
+}
+.rm-grid[data-view="detail"] .rm-col-detail {
+    display: flex;
+}
 
 
 /* ======================================================
-   MINI CARDS — Fundsachen preview (Column 1)
+   Cards umum
    ====================================================== */
 
 .rm-card {
@@ -120,6 +133,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+    margin-bottom: 8px;
 }
 
 .rm-mini-item {
@@ -150,7 +164,7 @@
 
 
 /* ======================================================
-   COLUMN 2 — Search card
+   COLUMN 1 — Search card
    ====================================================== */
 
 .rm-search-card {
@@ -189,7 +203,7 @@
 
 
 /* ======================================================
-   COLUMN 2 — Showing card (toolbar + table + pagination)
+   COLUMN 2 — Showing card (toolbar + table + pagination, 1 card)
    ====================================================== */
 
 .rm-showing-card {
@@ -288,7 +302,42 @@
 
 
 /* ======================================================
-   COLUMN 3 — Activity pane (default) & Room Detail
+   COLUMN 3 — Traces (quick-add, local stub)
+   ====================================================== */
+
+.rm-quick-add {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rm-quick-add input,
+.rm-quick-add select,
+.rm-quick-add textarea {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px 7px;
+    font-size: 12.5px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.rm-quick-add button {
+    align-self: flex-start;
+    border: 1px solid #1565c0;
+    color: #1565c0;
+    background: #fff;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.rm-quick-add button:hover { background: #e3f2fd; }
+
+
+/* ======================================================
+   COLUMN 4 — Room Activity (default) & Room Detail pane
    ====================================================== */
 
 .rm-detail-scroll {
@@ -469,62 +518,34 @@
     font-size: 11px;
 }
 
-.rm-quick-add {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.rm-quick-add input,
-.rm-quick-add select,
-.rm-quick-add textarea {
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 5px 7px;
-    font-size: 12.5px;
-    box-sizing: border-box;
-    width: 100%;
-}
-
-.rm-quick-add button {
-    align-self: flex-start;
-    border: 1px solid #1565c0;
-    color: #1565c0;
-    background: #fff;
-    border-radius: 4px;
-    padding: 4px 10px;
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.rm-quick-add button:hover { background: #e3f2fd; }
-
 
 /* ======================================================
-   RESPONSIVE — medium (2 kolom, detail overlay col 1)
+   RESPONSIVE — medium (2 kolom, 2x2: search/showing | traces/activity)
    ====================================================== */
 
 @media (max-width: 1300px) and (min-width: 701px) {
 
     .rm-grid {
-        grid-template-columns: 1fr 1fr;
-        grid-template-areas: "overview list";
+        grid-template-columns: 260px 1fr;
+        grid-template-areas:
+            "search   traces"
+            "showing  activity";
     }
-
-    .rm-detail { display: none; }
 
     .rm-grid[data-view="detail"] {
-        grid-template-areas: "detail list";
+        grid-template-areas:
+            "search  detail"
+            "showing detail";
     }
-
-    .rm-grid[data-view="detail"] .rm-overview { display: none; }
-    .rm-grid[data-view="detail"] .rm-detail { display: flex; }
 
 }
 
 
 /* ======================================================
-   RESPONSIVE — mobile (1 kolom, stacked)
+   RESPONSIVE — mobile (flex stack, bukan grid -- grid row
+   auto-height + flex:1 1 auto child = collapse jadi 0 tinggi,
+   itu sebabnya isi tabel kemarin gak keliatan. Flex stack
+   biasa + max-height eksplisit di scroll area = aman.)
    ====================================================== */
 
 @media (max-width: 700px) {
@@ -532,23 +553,30 @@
     .rm-page { overflow: visible; }
 
     .rm-grid {
-        grid-template-columns: 1fr;
-        grid-template-areas: "overview" "list" "detail";
-        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
     }
+
+    .rm-col { flex: none; }
+    .rm-showing-card { flex: none; }
 
     .rm-list-scroll,
     .rm-detail-scroll {
-        max-height: 60vh;
+        flex: none;
+        max-height: 55vh;
+        overflow-y: auto;
     }
 
-    .rm-grid[data-view="detail"] {
-        grid-template-areas: "detail";
-    }
-
-    .rm-grid[data-view="detail"] .rm-overview,
-    .rm-grid[data-view="detail"] .rm-list {
+    .rm-grid[data-view="detail"] .rm-col-search,
+    .rm-grid[data-view="detail"] .rm-col-showing,
+    .rm-grid[data-view="detail"] .rm-col-traces,
+    .rm-grid[data-view="detail"] .rm-col-activity {
         display: none;
+    }
+
+    .rm-grid[data-view="detail"] .rm-col-detail {
+        display: flex;
     }
 
 }

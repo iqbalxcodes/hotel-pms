@@ -92,9 +92,8 @@ function rmTimeAgo(value){
 
 
 // ======================================================
-// Title bar — inline summary stats (replaces old Room
-// Overview card). Draggable buat reorder, klik buat quick
-// filter (wiring/state ada di roomManagement.js).
+// Title bar — inline summary stats (draggable + clickable).
+// Wiring/state ada di roomManagement.js.
 // ======================================================
 
 function rmRenderSummaryStrip(items, activeKey, handlers){
@@ -162,37 +161,24 @@ function rmRenderSummaryStrip(items, activeKey, handlers){
 
 
 // ======================================================
-// Column 1 — Fundsachen preview
+// Column 3 — Traces (local stub, render only, no DB)
 // ======================================================
 
-function rmRenderFundsachenPreview(items, onClickRoom){
+function rmRenderTraces(traces){
 
-    const el = document.getElementById("rmFundsachenList");
+    const el = document.getElementById("rmTracesList");
     if(!el) return;
 
-    const countEl = document.getElementById("rmFundsachenCount");
-    if(countEl) countEl.innerText = `${items.length} open`;
-
-    if(items.length === 0){
-        el.innerHTML = `<div class="rm-empty-note">No open reports</div>`;
+    if(traces.length === 0){
+        el.innerHTML = `<div class="rm-empty-note">No traces yet</div>`;
         return;
     }
 
-    el.innerHTML = items.map(item => `
-        <div class="rm-mini-item" data-room="${rmEscapeHtml(item.room_number || "")}">
-            <div class="rm-mini-title">Room ${rmEscapeHtml(item.room_number || "-")} · ${rmEscapeHtml(item.item_name)}</div>
-            <div class="rm-mini-sub">${rmTimeAgo(item.found_at)} · ${rmEscapeHtml(item.status)}</div>
+    el.innerHTML = traces.map(text => `
+        <div class="rm-mini-item">
+            <div class="rm-mini-title">${rmEscapeHtml(text)}</div>
         </div>
     `).join("");
-
-    el.querySelectorAll(".rm-mini-item").forEach(node => {
-
-        node.addEventListener("click", () => {
-            const room = node.dataset.room;
-            if(room) onClickRoom(room);
-        });
-
-    });
 
 }
 
@@ -244,12 +230,13 @@ function rmRenderRoomList(rooms, occupiedSet, selectedRoom, onClickRoom){
 
 
 // ======================================================
-// Column 3 (default) — Global Activity Timeline
+// Column 4 — Global Activity Timeline (own card now, not
+// the default content of the detail pane anymore)
 // ======================================================
 
 function rmRenderActivityFeed(activityRows, reservationEvents){
 
-    const el = document.getElementById("rmDetailPane");
+    const el = document.getElementById("rmActivityPane");
     if(!el) return;
 
     const merged = [
@@ -378,7 +365,8 @@ function rmCheckSpan(label, isTrue){
 
 
 // ------------------------------------------------------
-// Subcard: Fundsachen
+// Subcard: Fundsachen (per-room, di dalam Room Detail —
+// beda dari card "Fundsachen" sidebar yang udah dihapus)
 // ------------------------------------------------------
 
 function rmRenderFundsachenSubcard(items, roomNumber, onStatusChange, onAddNew){
