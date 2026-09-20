@@ -13,7 +13,7 @@ const SB_DEFAULT_STRUCTURE = [
         { id: "nav-dashboard", label: "Dashboard", icon: "layout-dashboard", href: "index.html" },
         { id: "nav-reservations", label: "Reservations", icon: "calendar-check", href: "reservation.html" },
         { id: "nav-rooms", label: "Rooms", icon: "bed", href: "room.html" },
-        { id: "nav-guests", label: "Guests", icon: "users", href: "guest.html" }
+        { id: "nav-guests", label: "Clients", icon: "users", href: "client.html" }
     ]},
     { id: "grp-hotel-ops", label: "HOTEL OPERATIONS", icon: "concierge-bell", items: [
         { id: "nav-housekeeping", label: "Housekeeping", icon: "spray-can", href: "room.html" },
